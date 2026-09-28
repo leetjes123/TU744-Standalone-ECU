@@ -1,0 +1,36 @@
+#include <winver.h>
+
+#define IDI_APPICON 101
+
+// Application icon
+IDI_APPICON ICON "icon.ico"
+
+// DPI awareness manifest
+1 RT_MANIFEST "app.manifest"
+
+VS_VERSION_INFO VERSIONINFO
+FILEVERSION    TW_VERSION_MAJOR,TW_VERSION_MINOR,TW_VERSION_PATCH,0
+PRODUCTVERSION TW_VERSION_MAJOR,TW_VERSION_MINOR,TW_VERSION_PATCH,0
+FILEFLAGSMASK  VS_FFI_FILEFLAGSMASK
+FILEFLAGS      0
+FILEOS         VOS__WINDOWS32
+FILETYPE       VFT_APP
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904B0"
+        BEGIN
+            VALUE "CompanyName",      "Tuning Wizard project"
+            VALUE "FileDescription",  "Standalone ECU Calibration Tool"
+            VALUE "FileVersion",      TW_VERSION
+            VALUE "InternalName",     "TuningWizard"
+            VALUE "OriginalFilename", "TuningWizard.exe"
+            VALUE "ProductName",      "Tuning Wizard"
+            VALUE "ProductVersion",   TW_VERSION
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x0409, 0x04B0
+    END
+END

@@ -1,0 +1,101 @@
+$MOD167
+$SEGMENTED
+$CASE
+NAME FLASHWORKER
+PUBLIC flash_worker_start, flash_worker_end
+FLASH_WORKER SECTION CODE WORD 'FCODE'
+; Relocatable RAM worker: R8=flash page, R9=word offset, R10=data,
+; R11=1 erase / 2 program. Caller validates addresses and masks interrupts.
+; No flash code/data reads while busy. All branches are PC relative.
+flash_worker_start PROC FAR
+    PUSH R1
+    PUSH R2
+    PUSH R3
+    PUSH R5
+    PUSH R6
+    PUSH R7
+    PUSH R12
+    MOV R1,#0AAAH
+    MOV R2,#0554H
+    MOV R3,#00AAH
+    EXTP #0,#1
+    MOV [R1],R3
+    MOV R3,#0055H
+    EXTP #0,#1
+    MOV [R2],R3
+    CMP R11,#1
+    JMPR cc_NZ,program_word
+    MOV R3,#0080H
+    EXTP #0,#1
+    MOV [R1],R3
+    MOV R3,#00AAH
+    EXTP #0,#1
+    MOV [R1],R3
+    MOV R3,#0055H
+    EXTP #0,#1
+    MOV [R2],R3
+    MOV R3,#0030H
+    EXTP R8,#1
+    MOV [R9],R3
+    MOV R10,#0FFFFH
+    JMPR cc_UC,poll_begin
+program_word:
+    MOV R3,#00A0H
+    EXTP #0,#1
+    MOV [R1],R3
+    EXTP R8,#1
+    MOV [R9],R10
+poll_begin:
+    MOV R7,#0FFFFH
+    MOV R12,#0100H
+poll_data:
+    SRVWDT
+    EXTP R8,#1
+    MOV R5,[R9]
+    MOV R6,R5
+    XOR R6,R10
+    AND R6,#0080H
+    JMPR cc_Z,complete
+    AND R5,#0020H
+    JMPR cc_NZ,last_read
+    SUB R7,#1
+    JMPR cc_NZ,poll_data
+    SUB R12,#1
+    JMPR cc_NZ,poll_data
+timed_out:
+    ; A busy embedded operation may ignore F0. Never return to flash code
+    ; after a software timeout. Outputs remain stopped; reset is required.
+    SRST
+    JMPR cc_UC,timed_out
+last_read:
+    EXTP R8,#1
+    MOV R5,[R9]
+    XOR R5,R10
+    AND R5,#0080H
+    JMPR cc_NZ,failed
+complete:
+    ; DQ7 can become valid before other bits: reread in array mode.
+    EXTP R8,#1
+    MOV R5,[R9]
+    CMP R5,R10
+    JMPR cc_NZ,failed
+    MOV R4,#1
+    JMPR cc_UC,finish
+failed:
+    MOV R4,#0
+finish:
+    MOV R3,#00F0H
+    EXTP #0,#1
+    MOV [R1],R3
+    POP R12
+    POP R7
+    POP R6
+    POP R5
+    POP R3
+    POP R2
+    POP R1
+    RETS
+flash_worker_start ENDP
+flash_worker_end:
+FLASH_WORKER ENDS
+END
