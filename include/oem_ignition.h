@@ -5,8 +5,7 @@
    (37CA0..387B4, with sub_3886E), unchanged ROM bins/M744_C167_FULL.bin.
    Field names are the OEM RAM/SFR addresses the ROM uses; the caller maps
    the compare images onto its own channels. Counts are 1/8 tooth (0.75 deg),
-   240 counts per 180-degree segment. Map: docs/audits/tu744-high-rpm-2026-09-26
-   /oem/IGNITION-MAP.md. Verified against the ROM by tests/test_oem_ignition.py. */
+   240 counts per 180-degree segment. */
 #define OEM_IGN_IE 0x0040U
 #define OEM_IGN_IR 0x0080U
 #define OEM_IGN_CCM0_CC0_T1 0x0008U  /* CCM0.3  */

@@ -125,7 +125,7 @@ void oem_cadence_rejected(OemCadence *s, u8 mask);
 
 /* Byte-exact native record storage. Words inside the 24-byte records are
    little-endian, unlike the tuning transport. Native phase addresses are tags,
-   not pointers into standalone RAM. See docs/OEM-DIAGNOSTICS.md. */
+   not pointers into standalone RAM. */
 #define OEM_DTC_SLOTS 20U
 #define OEM_DTC_RECORD_SIZE 24U
 typedef struct {

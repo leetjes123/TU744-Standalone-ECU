@@ -7,3 +7,6 @@ __pycache__/
 Objects/
 Listings/
 .claude/
+/tools/
+/tests/
+/docs/

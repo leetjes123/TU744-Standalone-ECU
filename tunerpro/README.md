@@ -57,7 +57,7 @@ throttle learning procedure.
 
 ## Install and connect
 
-1. Copy `TU744.dll` (from the release folder, or `build/tunerpro/` if you built it) into your TunerPro plugin
+1. Copy `TU744.dll` (from `release/TU744-v0.0.1/tunerpro/`) into your TunerPro plugin
    directory (normally `Documents/TunerPro Files/Plugins`), then restart TunerPro RT.
 2. Select **TU744 schema-4 RAM tuning** as emulation hardware and
    **TU744 schema-4 logging** as the acquisition interface. Configure the adapter's
@@ -105,44 +105,10 @@ Generic builds do not bundle or substitute a base map. The dated stock-M95080
 delivery package includes the user's explicitly supplied, converted LRE-B4 tune;
 see its README and conversion report. Missing/unreadable calibration still
 prevents start. A valid schema-4 tune can be uploaded and saved while stopped.
-Alternatively, `tools/pack_stock_tune.py` creates a new firmware file with a
-supplied tune in its reserved slot, without ECU programming. It checks file
-identity/schema and CRC framing; the ECU performs full field validation on boot.
-It does not convert older formats.
 
 Cranking cells are VE percent. After-start and acceleration use multiplication
 percentages with 100% neutral. Required fuel and injector dead time remain time
-quantities. See `docs/FUELING.md` for the complete contract.
-
-## Build and verification
-
-From the repository root:
-
-```powershell
-python firmware/tu5jp_standalone/tools/build.py stock-95080
-python firmware/tu5jp_standalone/tools/build_tunerpro.py
-python firmware/tu5jp_standalone/tools/tunerpro_definition.py
-python firmware/tu5jp_standalone/tools/tunerpro_logging.py
-```
-
-Use the user-provided SDK in `third_party/tunerpro/sdk`, or set `TUNERPRO_SDK`
-to the folder containing `ITPPlugin.h`. The plugin uses x86 MSVC (`VCVARS32`
-can override its environment script). SDK files are excluded from the package.
-Firmware uses Keil C166.
-
-DLL tests exercise the C++ client against the actual firmware C parser and load
-the DLL through its SDK exports. Connected tests substitute serial/registry-write
-functions inside the test process so the built DLL exchanges framed, fragmented,
-echoed traffic with that parser, without opening a serial port. They cover the
-host's match/mismatch/I/O-error verification contract and progress reporting. Definition tests
-check packet bounds, addresses and selected unit conversions; they do not prove
-GUI interoperability or electrical timing. Map tracing is not implemented.
-Legacy monitor fields retain their width limits; use the stored DTCs when investigating faulty readings.
-
-See `docs/STOCK-95080.md` and `docs/EXPERIMENTAL.md` for storage details and
-outstanding hardware work. Builds do not flash the ECU or install the plugin.
-Interface reference: [TunerPro plugin development](https://www.tunerpro.net/pluginDevelopment.htm)
-and locally supplied SDK contract 3 headers.
+quantities.
 
 ## 2026-09-23 connection correction
 
@@ -153,15 +119,13 @@ TunerPro requires name hashes; its command and display references do not resolve
 correctly. The corrected generator matches the native host routine and all 44
 identifiers in TunerPro's supplied ELM327 ADX. Component metadata now advertises
 version 0.2 consistently with the ADX dependency. These changes require replacing
-PC files and restarting TunerPro, without reflashing the ECU. Details and evidence:
-`docs/audits/tu5jp-tunerpro-connection-2026-09-23/` at the repository root.
+PC files and restarting TunerPro, without reflashing the ECU.
 
 The follow-up fixes three remaining PC-side problems: ADX replies lacked the
 publish-data flag, so valid packets did not update readings or the rate counter;
 VerifyData returned S_OK (0) for matching data instead of the SDK's TRUE (1);
 and transfers ignored the SDK progress interface. A persistent transfer result
-now appears in the plugin panel. Evidence and release details are in
-`docs/audits/tu5jp-tunerpro-connection-2026-09-23-r2/`. No ECU reflash is needed.
+now appears in the plugin panel. No ECU reflash is needed.
 
 ## XDF layout (fileversion 5.0)
 
@@ -192,7 +156,7 @@ cut, launch, anti-lag, fan, pump, check-engine lamp, and one line per start/outp
 block (no sync, no valid tune, sensor, stale data, reset after save, deadline,
 power, outputs not released, output fault). Raw quality bytes, tune generation,
 save status and the private LRE fault masks were removed from the lists; the
-plugin panel and `tools/tune_client.py status`/`faults` still report them.
+plugin panel still reports them.
 
 The plugin panel has **Read DTCs** and **Clear DTCs**. Read lists every stored DTC
 with its P-code and description, whether it is active now, the check-engine lamp
@@ -201,5 +165,4 @@ RPM, MAP, TPS, coolant and intake temperature, battery voltage, speed, engine
 state and fuel trim. Reading works with any firmware that has the diagnostic
 history. **Clear DTCs** asks for confirmation, needs the engine stopped with the
 key on, and requires firmware from 24 September 2026. It then reads the list
-back. A fault that is still present is stored again. The same functions are
-`tools/tune_client.py COMx dtcs` and `clear-dtcs`.
+back. A fault that is still present is stored again.

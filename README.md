@@ -29,7 +29,6 @@ injectors, coils and idle stepper as fitted to the TU).
 | [`tunerpro/`](tunerpro) | TunerPro RT plugin source, XDF map definitions and ADX logging definition |
 | [`wizard/`](wizard) | Tuning Wizard – a standalone tuning/logging program (source) |
 | `src/`, `include/`, `target/` | ECU firmware source (C167, Keil C166) |
-| `tools/`, `tests/`, `docs/` | Build scripts, tests and technical documentation |
 
 ### The release folder
 
@@ -72,7 +71,6 @@ different, so check your air/fuel ratio and fine-tune from there.
   Tuning Wizard from the release folder.
 - Recommended: a **wideband lambda controller** (e.g. 14point7 Spartan). Its
   0–5 V output goes to the ECU's former upstream (narrowband) O2 sensor input.
-  See [docs/WIDEBAND.md](docs/WIDEBAND.md).
 
 ---
 
@@ -121,12 +119,12 @@ open the ECU or use debug mode again.
 
 1. Close the ECU and plug it back into the **original loom**.
 2. If you use a wideband, wire its 0–5 V signal to the former upstream O2 sensor
-   input (see [docs/WIDEBAND.md](docs/WIDEBAND.md)).
+   input.
 3. Connect the KKL cable to the car's diagnostic socket.
 
 ### 4. Set up TunerPro RT
 
-1. Copy **`tunerpro/TU744.dll`** into TunerPro's plugin folder
+1. Copy **`release/TU744-v0.0.1/tunerpro/TU744.dll`** into TunerPro's plugin folder
    (normally `Documents\TunerPro Files\Plugins`) and restart TunerPro.
 2. For emulation hardware choose **TU744 schema-4 RAM tuning**. For data
    acquisition choose **TU744 schema-4 logging**. Set your COM port (19200 baud, 8N1).
@@ -172,21 +170,14 @@ Check in the live data that the throttle reads about 0% released and 100% fully 
 ## Building from source
 
 Only needed if you want to change the software. You need Keil C166 (firmware),
-Visual Studio (plugin, tests, Wizard) and Python 3.
+Visual Studio (plugin, Wizard) and Python 3.
 
 ```powershell
-python tools/build.py stock-95080          # firmware -> build/stock-95080
-python tools/package_ecu.py basemaps/TU5JP_1.6_8v_speed_density.bin out   # firmware + basemap
-$env:TUNERPRO_SDK = "<path to TunerPro plugin SDK>"
-python tools/build_tunerpro.py             # TunerPro plugin + its tests
-python tools/build.py stock-native         # native firmware tests
 cmake -S wizard -B wizard/build; cmake --build wizard/build --config Release
 ```
 
 The firmware name and version are set in [`include/identity.h`](include/identity.h)
-and returned by protocol command `00`. The serial protocol is described in
-[docs/PROTOCOL.md](docs/PROTOCOL.md). Some differential tests need the original
-Bosch ROM, which is not included in this repository.
+and returned by protocol command `00`.
 
 ## Credits
 

@@ -42,7 +42,7 @@ sbit PIN_KNOCK_BF2 = P8 ^ 5;  /* band-pass select bit 2 */
 #define KNOCK_FILTER_KHZ_DEFAULT 16U
 /* OEM knock-IC boot timeline, measured by running the unchanged ROM in the
    Keil C166 simulator (own BUSCON0 wait states, stock 95080 contents),
-   20 MHz CPU states from reset (tests/keil_knock_boot.py):
+   20 MHz CPU states from reset:
      1 090 687  P3 latch   1 090 693  DP3 (P3 drivers on)
      1 090 762  P8 latch   1 090 768  DP8 (MF low)
      1 411 604  G1 low     1 411 610  KTI low     1 411 613  KSA3 low
