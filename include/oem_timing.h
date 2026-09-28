@@ -3,8 +3,7 @@
 #include "ecu.h"
 typedef struct { u16 teeth, fraction; } OemAngleStage;
 typedef struct { s16 correction; u16 duration; u8 previous_fallback; } OemDwell;
-/* TU5JP timing primitives. Counts are 1/8 tooth = 0.75 crank degrees.
-   Source ROM and supplied functional evidence: docs/OEM-SCHEDULER.md. */
+/* TU5JP timing primitives. Counts are 1/8 tooth = 0.75 crank degrees. */
 void oem_angle_split(u16 counts, OemAngleStage *out);
 u16 oem_angle_refine(u16 period, u16 fraction, u16 correction, u8 dwell);
 void oem_dwell_update(OemDwell *state, u16 base, u16 measured,

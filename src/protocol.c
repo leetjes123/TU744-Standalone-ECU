@@ -137,8 +137,7 @@ static void monitor(void) {
 }
 /* Command 13: compact live frame, version 2 (40 bytes, big endian). The
    fields a tuner watches while driving, and the map cell the fuel plan
-   used, for cell-accurate autotune. Command 10 stays for older loggers.
-   See docs/LIVE-MONITOR.md for the layout. */
+   used, for cell-accurate autotune. Command 10 stays for older loggers. */
 static void live_frame(void) {
     u8 b[40];
     Controls *s = &ecu.control;

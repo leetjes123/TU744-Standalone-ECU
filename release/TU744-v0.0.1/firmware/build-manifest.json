@@ -9,7 +9,6 @@
   "exact_oem_dtc_parity": false,
   "calibration_included": false,
   "source_tree_unchanged_during_build": true,
-  "limitations": "See docs/EXPERIMENTAL.md and docs/RELEASE.md.",
   "source_sha256": {
     "include/control.h": "77dc88b2e72e4879af3774390cefb108f71e031d6019149b6c3e1dca88e44413",
     "include/diagnostic_monitors.h": "cd63135c394da694380db5c2479035532b988ed6ab1445644b2a392d15033972",
@@ -88,8 +87,6 @@
     "target/c167/TRAPS.A66": "e0ffbca656b809615fa46952c953b1aa5f035a4c4cb9e54b4cc7b3c6221da3dc"
   },
   "build_inputs_sha256": {
-    "tools/artifacts.py": "757882dab6d61abd392a8d003e21800470719875bbd3bfa73995ad98cb42d4bd",
-    "tools/build.py": "40cae5db27a13bed26c8b8e4ca6510a3bc5b7f05a1e98ef5ba212cd0e77c93db",
     "TU5JP.uvproj": "f53f32709f39f6ecf6625a627fde5995950a249b3f34990812eeb7fe1842cf2c"
   },
   "toolchain_sha256": {

@@ -19,11 +19,10 @@ source checkouts. Generated C++ definitions are checked in; regenerating them
 requires the adjacent standalone firmware tree and its ROM-derived DTC table.
 The firmware source and XDF generator remain the authorities for calibration.
 
-Before running desktop integration tests, build the firmware parser library:
+Before running desktop integration tests, build the firmware parser library
+(`build/oem/oem.dll`):
 
 ```powershell
-python ../tools/build.py oem-library
-python ../tests/test_protocol.py
 python tools/wizard_definition.py --check
 ctest --test-dir build -C Release --output-on-failure
 ```

@@ -4,7 +4,7 @@
     <flags>0x1</flags>
     <fileversion>5.0</fileversion>
     <deftitle>TU744 schema 4 - Speed-density</deftitle>
-    <description>For 3072-byte schema-4 standalone calibration files only. Not an OEM ROM or full firmware image. Confirm LR 00 04 at 0x900 and the selected load mode. XDF does not select the ECU fueling mode (see Feature switches). Each description gives the offset and the range the ECU accepts; an update outside it is rejected and the previous tune stays active. See docs/FUELING.md and tunerpro/README.md.</description>
+    <description>For 3072-byte schema-4 standalone calibration files only. Not an OEM ROM or full firmware image. Confirm LR 00 04 at 0x900 and the selected load mode. XDF does not select the ECU fueling mode (see Feature switches). Each description gives the offset and the range the ECU accepts; an update outside it is rejected and the previous tune stays active. See tunerpro/README.md.</description>
     <author>TU744 project</author>
     <BASEOFFSET offset="0" subtract="0" />
     <DEFAULTS datasizeinbits="8" sigdigits="2" outputtype="1" signed="0" lsbfirst="0" float="0" />
