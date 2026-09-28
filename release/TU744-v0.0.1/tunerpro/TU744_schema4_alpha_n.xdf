@@ -1,0 +1,3482 @@
+<?xml version='1.0' encoding='utf-8'?>
+<XDFFORMAT version="1.70">
+  <XDFHEADER>
+    <flags>0x1</flags>
+    <fileversion>5.0</fileversion>
+    <deftitle>TU744 schema 4 - Alpha-N</deftitle>
+    <description>For 3072-byte schema-4 standalone calibration files only. Not an OEM ROM or full firmware image. Confirm LR 00 04 at 0x900 and the selected load mode. XDF does not select the ECU fueling mode (see Feature switches). Each description gives the offset and the range the ECU accepts; an update outside it is rejected and the previous tune stays active. See docs/FUELING.md and tunerpro/README.md.</description>
+    <author>TU744 project</author>
+    <BASEOFFSET offset="0" subtract="0" />
+    <DEFAULTS datasizeinbits="8" sigdigits="2" outputtype="1" signed="0" lsbfirst="0" float="0" />
+    <REGION type="0xFFFFFFFF" startaddress="0x0" size="0xC00" regionflags="0x0" name="Schema-4 calibration" desc="3072 bytes, big endian" />
+    <CATEGORY index="0x0" name="Fuel" />
+    <CATEGORY index="0x1" name="Fuel - start and warm-up" />
+    <CATEGORY index="0x2" name="Fuel - acceleration" />
+    <CATEGORY index="0x3" name="Injectors" />
+    <CATEGORY index="0x4" name="Ignition" />
+    <CATEGORY index="0x5" name="Rev limit and fuel cut" />
+    <CATEGORY index="0x6" name="Launch and anti-lag" />
+    <CATEGORY index="0x7" name="Idle" />
+    <CATEGORY index="0x8" name="Closed loop (STFT)" />
+    <CATEGORY index="0x9" name="Oxygen sensor and wideband" />
+    <CATEGORY index="0xa" name="Sensors" />
+    <CATEGORY index="0xb" name="Fan, pump, boost and gauge" />
+    <CATEGORY index="0xc" name="Engine state" />
+    <CATEGORY index="0xd" name="Vehicle speed and gear" />
+    <CATEGORY index="0xe" name="Feature switches" />
+    <CATEGORY index="0xf" name="Axis breakpoints" />
+    <CATEGORY index="0x10" name="DTC switches" />
+    <CATEGORY index="0x11" name="DTC switches - individual codes" />
+    <CATEGORY index="0x12" name="DTC thresholds" />
+    <CATEGORY index="0x13" name="TPS calibration" />
+  </XDFHEADER>
+  <XDFTABLE uniqueid="0x4000" flags="0x0">
+    <title>Running VE</title>
+    <description>Volumetric efficiency for the air-charge fuel calculation. Columns: RPM; rows: TPS. Offset 0x000.</description>
+    <CATEGORYMEM index="0" category="1" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x400" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x440" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>TPS %</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x0" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>255</max>
+      <units>VE %</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4001" flags="0x0">
+    <title>Target AFR</title>
+    <description>Closed-loop target, and fuel scaling when "Use target AFR in fuel calculation" is on. Offset 0x200. ECU accepts 7.0..22.0 AFR.</description>
+    <CATEGORYMEM index="0" category="1" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x400" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x440" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>TPS %</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x200" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>7</min>
+      <max>22</max>
+      <units>AFR</units>
+      <decimalpl>1</decimalpl>
+      <outputtype>1</outputtype>
+      <MATH equation="X/10">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFFLAG uniqueid="0x4002" flags="0x0">
+    <title>Use target AFR in fuel calculation</title>
+    <description>On: fuel is scaled by stoichiometric AFR / target AFR. Off: target AFR only feeds closed loop. Offset 0x8D0. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="1" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8d0" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x4003" flags="0x0">
+    <title>Stoichiometric AFR</title>
+    <description>Offset 0x912. ECU accepts 7.0..22.0 AFR.</description>
+    <CATEGORYMEM index="0" category="1" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x912" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>7</min>
+    <max>22</max>
+    <units>AFR</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x4004" flags="0x0">
+    <title>Alpha-N fueling (TPS load axis)</title>
+    <description>On: TPS is the load axis and MAP is not used for fuel. Must match the XDF you opened. Stopped engine only. Offset 0x5D4. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="1" />
+    <CATEGORYMEM index="1" category="15" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5d4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFTABLE uniqueid="0x4005" flags="0x0">
+    <title>Cranking VE</title>
+    <description>Replaces running VE while cranking; not a pulsewidth. Includes MAP in speed-density mode. Offset 0x490. ECU accepts 0..1000 %.</description>
+    <CATEGORYMEM index="0" category="2" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x490" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>1000</max>
+      <units>VE %</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4006" flags="0x0">
+    <title>Warm-up multiplier</title>
+    <description>100% is neutral. Running fuel only. Offset 0x480.</description>
+    <CATEGORYMEM index="0" category="2" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x480" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>255</max>
+      <units>%</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4007" flags="0x0">
+    <title>After-start multiplier</title>
+    <description>100% is neutral. Starts at this value and decays linearly to 100% over the after-start duration. Offset 0x4B0. ECU accepts 100..255 %.</description>
+    <CATEGORYMEM index="0" category="2" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x4b0" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>100</min>
+      <max>255</max>
+      <units>%</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4008" flags="0x0">
+    <title>After-start duration</title>
+    <description>Offset 0x4C0.</description>
+    <CATEGORYMEM index="0" category="2" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x4c0" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>25.5</max>
+      <units>s</units>
+      <decimalpl>1</decimalpl>
+      <outputtype>1</outputtype>
+      <MATH equation="X/10">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4009" flags="0x0">
+    <title>Acceleration multiplier</title>
+    <description>100% is neutral. Columns: TPS rate; rows: throttle position before the change. Offset 0x759. ECU accepts 100..255 %.</description>
+    <CATEGORYMEM index="0" category="3" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x740" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>8</indexcount>
+      <units>TPS %/s</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x750" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="6" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>6</indexcount>
+      <units>Previous TPS %</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x759" mmedelementsizebits="8" mmedrowcount="6" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>100</min>
+      <max>255</max>
+      <units>%</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x400a" flags="0x0">
+    <title>Acceleration RPM modifier</title>
+    <description>Scales only the enrichment above 100%. 100% keeps it all, 0% disables it at this RPM. Offset 0x799.</description>
+    <CATEGORYMEM index="0" category="3" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x789" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>8</indexcount>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x799" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>255</max>
+      <units>%</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFCONSTANT uniqueid="0x400b" flags="0x0">
+    <title>Acceleration TPS-rate threshold</title>
+    <description>Enrichment starts when the TPS rate exceeds this. Offset 0x756. ECU accepts 0..255 %/s.</description>
+    <CATEGORYMEM index="0" category="3" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x756" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>255</max>
+    <units>%/s</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x400c" flags="0x0">
+    <title>Acceleration qualification time</title>
+    <description>TPS rate must stay above the threshold this long. Offset 0x758. ECU accepts 0..490 ms.</description>
+    <CATEGORYMEM index="0" category="3" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x758" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>490</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="(X-1)*10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x400d" flags="0x0">
+    <title>Acceleration decay</title>
+    <description>Offset 0x90A. ECU accepts 10..5000 ms.</description>
+    <CATEGORYMEM index="0" category="3" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x90a" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>10</min>
+    <max>5000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x400e" flags="0x0">
+    <title>Required fuel per 720 degrees</title>
+    <description>Pulsewidth at 100% VE, 100 kPa (speed-density) and 0 C inlet air, per engine cycle. Paired injection splits it into two events. Offset 0x5DF. ECU accepts 1..20000 us.</description>
+    <CATEGORYMEM index="0" category="4" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5df" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1</min>
+    <max>20000</max>
+    <units>us</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFTABLE uniqueid="0x400f" flags="0x0">
+    <title>Injector dead time</title>
+    <description>Added after all fuel multipliers; not added when fuel is zero. Columns: battery volts. Offset 0x540.</description>
+    <CATEGORYMEM index="0" category="4" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="4" />
+      <LABEL index="1" value="6" />
+      <LABEL index="2" value="8" />
+      <LABEL index="3" value="10" />
+      <LABEL index="4" value="12" />
+      <LABEL index="5" value="14" />
+      <LABEL index="6" value="16" />
+      <LABEL index="7" value="18" />
+      <outputtype>4</outputtype>
+      <indexcount>8</indexcount>
+      <units>V</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x540" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>5000</max>
+      <units>us</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFCONSTANT uniqueid="0x4010" flags="0x0">
+    <title>Maximum injector duty</title>
+    <description>Offset 0x8CF. ECU accepts 10..95 %.</description>
+    <CATEGORYMEM index="0" category="4" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8cf" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>10</min>
+    <max>95</max>
+    <units>%</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4011" flags="0x0">
+    <title>Injection phase</title>
+    <description>Only multiples of 6 degrees are accepted. The paired event is 180 degrees later. Offset 0x918. ECU accepts 0..162 deg.</description>
+    <CATEGORYMEM index="0" category="4" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x918" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>162</max>
+    <units>deg</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFTABLE uniqueid="0x4012" flags="0x0">
+    <title>Ignition advance</title>
+    <description>Columns: RPM; rows: TPS. Offset 0x100. ECU accepts -20..50 deg.</description>
+    <CATEGORYMEM index="0" category="5" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x400" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x440" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>TPS %</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x100" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>-20</min>
+      <max>50</max>
+      <units>deg BTDC</units>
+      <decimalpl>1</decimalpl>
+      <outputtype>1</outputtype>
+      <MATH equation="X*0.5-20">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4013" flags="0x0">
+    <title>Ignition dwell</title>
+    <description>Coil charge time. Columns: battery volts. Offset 0x530.</description>
+    <CATEGORYMEM index="0" category="5" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="4" />
+      <LABEL index="1" value="6" />
+      <LABEL index="2" value="8" />
+      <LABEL index="3" value="10" />
+      <LABEL index="4" value="12" />
+      <LABEL index="5" value="14" />
+      <LABEL index="6" value="16" />
+      <LABEL index="7" value="18" />
+      <outputtype>4</outputtype>
+      <indexcount>8</indexcount>
+      <units>V</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x530" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>500</min>
+      <max>6000</max>
+      <units>us</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4014" flags="0x0">
+    <title>IAT ignition retard</title>
+    <description>Subtracted from advance. Columns: inlet air temperature. Offset 0x510.</description>
+    <CATEGORYMEM index="0" category="5" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x510" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>30</max>
+      <units>deg</units>
+      <decimalpl>1</decimalpl>
+      <outputtype>1</outputtype>
+      <MATH equation="X/2">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFCONSTANT uniqueid="0x4015" flags="0x0">
+    <title>Cranking advance</title>
+    <description>Offset 0x91A. ECU accepts -10..20 deg BTDC.</description>
+    <CATEGORYMEM index="0" category="5" />
+    <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x91a" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>-10</min>
+    <max>20</max>
+    <units>deg BTDC</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4016" flags="0x0">
+    <title>Trigger reference offset</title>
+    <description>Crank angle between the trigger reference and TDC cylinder 1. Verify with a timing light. Offset 0x605. ECU accepts 0..359.9 deg.</description>
+    <CATEGORYMEM index="0" category="5" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x605" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>359.9</max>
+    <units>deg</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x4017" flags="0x0">
+    <title>Use CC9 dwell feedback</title>
+    <description>Enable only with a qualified CC9 input. Missing or invalid feedback falls back to calibrated dwell. Stopped engine only. Offset 0x93A. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="5" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x93a" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x4018" flags="0x0">
+    <title>Hard rev limit</title>
+    <description>Cut starts here and holds until RPM falls to the recovery RPM. Offset 0x5DB. ECU accepts 1500..10000 RPM.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5db" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1500</min>
+    <max>10000</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4019" flags="0x0">
+    <title>Rev-limit recovery</title>
+    <description>Must be below the hard rev limit. Offset 0x5DD. ECU accepts 1000..9999 RPM.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5dd" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1000</min>
+    <max>9999</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x401a" flags="0x0">
+    <title>Rev limiter cuts fuel only</title>
+    <description>Leave both "cuts ... only" switches off to cut fuel and spark. Also applies to the soft cut. Offset 0x7B4. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x401b" flags="0x0">
+    <title>Rev limiter cuts spark only</title>
+    <description>Leave both "cuts ... only" switches off to cut fuel and spark. Also applies to the soft cut. Offset 0x7B4. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x401c" flags="0x0">
+    <title>Soft rev cut</title>
+    <description>Progressive cut from the soft-cut start RPM up to the hard rev limit. Offset 0x7B4. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x401d" flags="0x0">
+    <title>Soft-cut start RPM</title>
+    <description>Must be below the hard rev limit. Offset 0x7B5. ECU accepts 0..9999 RPM.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b5" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>9999</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x401e" flags="0x0">
+    <title>Soft-cut maximum</title>
+    <description>Cut fraction reached at the hard rev limit; rises linearly from 0 at the start RPM. Offset 0x7B7. ECU accepts 0..100 %.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b7" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>%</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x401f" flags="0x0">
+    <title>Overrun fuel cut</title>
+    <description>Cuts fuel on closed throttle above the entry RPM, with coolant at least 60 C. Resumes 200 RPM above idle target. Offset 0x5D4. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <CATEGORYMEM index="1" category="15" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5d4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x4020" flags="0x0">
+    <title>Overrun entry RPM</title>
+    <description>Offset 0x5E9. ECU accepts 0..10000 RPM.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5e9" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>10000</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4021" flags="0x0">
+    <title>Overrun maximum MAP</title>
+    <description>Offset 0x5EB. ECU accepts 0..255 kPa.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5eb" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>255</max>
+    <units>kPa</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4022" flags="0x0">
+    <title>Overrun delay</title>
+    <description>Offset 0x603. ECU accepts 0..25.5 s.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x603" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>25.5</max>
+    <units>s</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4023" flags="0x0">
+    <title>Overboost cut MAP</title>
+    <description>Fuel and spark are cut above this MAP. Boost control also stops here. Offset 0x90E. ECU accepts 100..600 kPa.</description>
+    <CATEGORYMEM index="0" category="6" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x90e" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>100</min>
+    <max>600</max>
+    <units>kPa</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x4024" flags="0x0">
+    <title>Launch control</title>
+    <description>Launch must still be armed from the tool each time. Stopped engine only. Offset 0x5D4. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <CATEGORYMEM index="1" category="15" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5d4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x4025" flags="0x0">
+    <title>Launch RPM limit</title>
+    <description>Hard launch limit. Must not exceed the hard rev limit. Offset 0x5E7. ECU accepts 1500..10000 RPM.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5e7" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1500</min>
+    <max>10000</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4026" flags="0x0">
+    <title>Launch maximum speed</title>
+    <description>Moving launch is only permitted below this speed. Offset 0x7AF. ECU accepts 1..255 km/h.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7af" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1</min>
+    <max>255</max>
+    <units>km/h</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4027" flags="0x0">
+    <title>Launch minimum TPS</title>
+    <description>Offset 0x8C5. ECU accepts 0..100 %.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>%</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4028" flags="0x0">
+    <title>Launch arm time</title>
+    <description>An arm expires after this. 0 disables arming. Offset 0x930. ECU accepts 0 or 1000..30000 ms.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x930" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>30000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x4029" flags="0x0">
+    <title>Launch cuts fuel only</title>
+    <description>Leave both launch "cuts ... only" switches off to cut fuel and spark. Offset 0x7B4. Bit mask 0x10.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x10</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x402a" flags="0x0">
+    <title>Launch cuts spark only</title>
+    <description>Leave both launch "cuts ... only" switches off to cut fuel and spark. Offset 0x7B4. Bit mask 0x20.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x20</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x402b" flags="0x0">
+    <title>Soft launch</title>
+    <description>Progressive cut from the soft-launch start RPM up to the launch RPM limit. Offset 0x7B4. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x402c" flags="0x0">
+    <title>Soft-launch start RPM</title>
+    <description>Offset 0x932. ECU accepts 0 or 1000 RPM up to below the launch RPM limit.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x932" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>9999</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x402d" flags="0x0">
+    <title>Soft-launch maximum cut</title>
+    <description>Offset 0x934. ECU accepts 0..100 %.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x934" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>%</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x402e" flags="0x0">
+    <title>Anti-lag</title>
+    <description>One-shot per arm, while launch is active. Requires launch control and anti-lag settings below. Offset 0x7B4. Bit mask 0x40.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x40</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x402f" flags="0x0">
+    <title>Anti-lag cuts spark instead of fuel</title>
+    <description>Converts launch cuts to spark-only during anti-lag. Requires Anti-lag. Offset 0x7B4. Bit mask 0x80.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x80</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x4030" flags="0x0">
+    <title>Anti-lag maximum time</title>
+    <description>Offset 0x936. ECU accepts 100..3000 ms when Anti-lag is on.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x936" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>3000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4031" flags="0x0">
+    <title>Anti-lag maximum coolant</title>
+    <description>Offset 0x938. ECU accepts 60..110 C when Anti-lag is on.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x938" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>110</max>
+    <units>C</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4032" flags="0x0">
+    <title>Anti-lag maximum intake air</title>
+    <description>Offset 0x939. ECU accepts 0..80 C when Anti-lag is on.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x939" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>80</max>
+    <units>C</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4033" flags="0x0">
+    <title>Anti-lag ignition advance</title>
+    <description>Offset 0x7B8. ECU accepts -20..50 deg BTDC.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b8" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>-20</min>
+    <max>50</max>
+    <units>deg BTDC</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X*0.5-20">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4034" flags="0x0">
+    <title>Anti-lag VE</title>
+    <description>Replaces running VE during anti-lag. Offset 0x7B9. ECU accepts 1..255 % when Anti-lag is on.</description>
+    <CATEGORYMEM index="0" category="7" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b9" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>255</max>
+    <units>VE %</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4035" flags="0x0">
+    <title>Idle control mode</title>
+    <description>0 = fixed steps at the idle step interval, 1 = PI stepper, 2 = spark only. Offset 0x5D8. ECU accepts 0..2 mode.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5d8" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>2</max>
+    <units>mode</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFTABLE uniqueid="0x4036" flags="0x0">
+    <title>Idle target</title>
+    <description>Offset 0x4D0.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x4d0" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>500</min>
+      <max>2500</max>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4037" flags="0x0">
+    <title>Idle base position</title>
+    <description>Offset 0x4F0. ECU accepts 0 up to IAC maximum position.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x4f0" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>220</max>
+      <units>steps</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4038" flags="0x0">
+    <title>Idle start addition</title>
+    <description>Added while cranking, then decays over the idle start duration. Offset 0x500. ECU accepts 0 up to IAC maximum position.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x500" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>220</max>
+      <units>steps</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4039" flags="0x0">
+    <title>Idle spark correction</title>
+    <description>Columns: idle target minus actual RPM. Offset 0x620.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x610" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>8</indexcount>
+      <units>RPM error</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x620" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>-20</min>
+      <max>20</max>
+      <units>deg</units>
+      <decimalpl>1</decimalpl>
+      <outputtype>1</outputtype>
+      <MATH equation="X/2-20">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFCONSTANT uniqueid="0x403a" flags="0x0">
+    <title>Idle start duration</title>
+    <description>Offset 0x5EE. ECU accepts 0..25.5 s.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5ee" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>25.5</max>
+    <units>s</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x403b" flags="0x0">
+    <title>Idle TPS threshold</title>
+    <description>Idle control is active at or below this throttle. Offset 0x5E6. ECU accepts 0..20 %.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5e6" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>20</max>
+    <units>%</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x403c" flags="0x0">
+    <title>Idle RPM deadband</title>
+    <description>Offset 0x604. ECU accepts 0..255 RPM.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x604" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>255</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x403d" flags="0x0">
+    <title>Idle proportional gain</title>
+    <description>Offset 0x630. ECU accepts 0..1 steps/RPM.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x630" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>1</max>
+    <units>steps/RPM</units>
+    <decimalpl>4</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10000">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x403e" flags="0x0">
+    <title>Idle integral gain</title>
+    <description>Offset 0x632. ECU accepts 0..0.1 steps/(RPM*s).</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x632" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>0.1</max>
+    <units>steps/(RPM*s)</units>
+    <decimalpl>5</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/100000">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x403f" flags="0x0">
+    <title>Idle step interval</title>
+    <description>Used by idle control mode 0. Offset 0x924. ECU accepts 20..1000 ms.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x924" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>20</min>
+    <max>1000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4040" flags="0x0">
+    <title>IAC maximum position</title>
+    <description>Offset 0x910. ECU accepts 1..220 steps.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x910" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1</min>
+    <max>220</max>
+    <units>steps</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4041" flags="0x0">
+    <title>IAC home timeout</title>
+    <description>Offset 0x91C. ECU accepts 3000..10000 ms.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x91c" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>3000</min>
+    <max>10000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4042" flags="0x0">
+    <title>IAC homing steps</title>
+    <description>Closing steps driven at key-on to find the end stop; that point becomes position 0. 0 = 250 steps. Steps x 12 ms must fit in the IAC home timeout. Stopped engine only. Offset 0x93C. ECU accepts 0, or from IAC maximum position up to 800 steps.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x93c" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>800</max>
+    <units>steps</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4043" flags="0x0">
+    <title>Fan idle feedforward</title>
+    <description>Extra IAC steps while the fan runs. 0 disables the fan preload. Offset 0x8C0. ECU accepts 0..255 steps.</description>
+    <CATEGORYMEM index="0" category="8" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c0" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>255</max>
+    <units>steps</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x4044" flags="0x0">
+    <title>Short-term fuel trim</title>
+    <description>Closed-loop correction using the oxygen sensor. Offset 0x5D4. Bit mask 0x20.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <CATEGORYMEM index="1" category="15" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5d4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x20</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x4045" flags="0x0">
+    <title>STFT maximum (lean correction)</title>
+    <description>Offset 0x731. ECU accepts 100.0..150.0 %.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x731" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>100</min>
+    <max>150</max>
+    <units>%</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/1.28">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4046" flags="0x0">
+    <title>STFT minimum (rich correction)</title>
+    <description>Offset 0x732. ECU accepts 50.0..100.0 %.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x732" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>50</min>
+    <max>100</max>
+    <units>%</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/1.28">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4047" flags="0x0">
+    <title>STFT update interval</title>
+    <description>Offset 0x730. ECU accepts 10..2550 ms.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x730" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>10</min>
+    <max>2550</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X*10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4048" flags="0x0">
+    <title>STFT delay after start</title>
+    <description>Offset 0x8C7. ECU accepts 0..255 s.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c7" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>255</max>
+    <units>s</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4049" flags="0x0">
+    <title>STFT minimum RPM</title>
+    <description>Offset 0x7BA. ECU accepts 0..12000 RPM.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7ba" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>12000</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x404a" flags="0x0">
+    <title>STFT maximum RPM</title>
+    <description>Offset 0x7BC. ECU accepts 0..12000 RPM.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7bc" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>12000</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x404b" flags="0x0">
+    <title>STFT minimum coolant</title>
+    <description>Offset 0x7BE. ECU accepts -40..127 C.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x7be" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>-40</min>
+    <max>127</max>
+    <units>C</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x404c" flags="0x0">
+    <title>STFT maximum TPS</title>
+    <description>0 means no TPS limit. Offset 0x7BF. ECU accepts 0..100 %.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7bf" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>%</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x404d" flags="0x0">
+    <title>Narrowband trim step</title>
+    <description>Correction per update, towards the opposite side of the switching point. Offset 0x8C2. ECU accepts 0.78..12.5 %.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c2" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0.78</min>
+    <max>12.5</max>
+    <units>%</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/1.28">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x404e" flags="0x0">
+    <title>Narrowband lean threshold</title>
+    <description>Below this the mixture is lean. Must be below the rich threshold. Offset 0x8C3. ECU accepts 0..995 mV.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c3" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>995</max>
+    <units>mV</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X*5">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x404f" flags="0x0">
+    <title>Narrowband rich threshold</title>
+    <description>Above this the mixture is rich. Offset 0x8C4. ECU accepts 5..1000 mV.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>5</min>
+    <max>1000</max>
+    <units>mV</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X*5">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4050" flags="0x0">
+    <title>Narrowband minimum target AFR</title>
+    <description>Narrowband trim only runs while target AFR is inside this window. Offset 0x8C8. ECU accepts 0..25.5 AFR.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c8" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>25.5</max>
+    <units>AFR</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4051" flags="0x0">
+    <title>Narrowband maximum target AFR</title>
+    <description>Offset 0x8C9. ECU accepts 0..25.5 AFR.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c9" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>25.5</max>
+    <units>AFR</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4052" flags="0x0">
+    <title>Wideband trim gain</title>
+    <description>Trim change per second for a 100% relative AFR error. Offset 0x90C. ECU accepts 0..2 1/s.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x90c" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>2</max>
+    <units>1/s</units>
+    <decimalpl>3</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/1000">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4053" flags="0x0">
+    <title>Wideband AFR deadband</title>
+    <description>Offset 0x8C1. ECU accepts 0..25.5 AFR.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8c1" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>25.5</max>
+    <units>AFR</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4054" flags="0x0">
+    <title>Wideband maximum trim step</title>
+    <description>Largest change per update. 0 means unlimited. Offset 0x8CD. ECU accepts 0..199 %.</description>
+    <CATEGORYMEM index="0" category="9" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x8cd" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>199</max>
+    <units>%</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/1.28">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x4055" flags="0x0">
+    <title>Wideband oxygen sensor</title>
+    <description>Off: narrowband on AN6. On: 0-5 V wideband controller output on AN6; requires "Upstream heater relay fitted". Offset 0x600. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x600" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x4056" flags="0x0">
+    <title>Wideband AFR at 0 V</title>
+    <description>Offset 0x601. ECU accepts 5..24.9 AFR.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x601" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>5</min>
+    <max>24.9</max>
+    <units>AFR</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4057" flags="0x0">
+    <title>Wideband AFR at 5 V</title>
+    <description>Offset 0x602. ECU accepts 5.1..25 AFR.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x602" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>5.1</min>
+    <max>25</max>
+    <units>AFR</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x4058" flags="0x0">
+    <title>Wideband signal qualification</title>
+    <description>Trim uses the wideband only after warm-up and continuous in-range samples. Offset 0x926. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x926" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x4059" flags="0x0">
+    <title>Wideband warm-up time</title>
+    <description>Offset 0x928. ECU accepts 10000..60000 ms when qualification is on.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x928" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>60000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x405a" flags="0x0">
+    <title>Wideband good-signal time</title>
+    <description>Offset 0x92A. ECU accepts 500..10000 ms when qualification is on.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x92a" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>10000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x405b" flags="0x0">
+    <title>Wideband minimum valid signal</title>
+    <description>Offset 0x92C. ECU accepts 10 mV up to below the maximum, when qualification is on.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x92c" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>4989</max>
+    <units>mV</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x405c" flags="0x0">
+    <title>Wideband maximum valid signal</title>
+    <description>Offset 0x92E. ECU accepts up to 4990 mV, above the minimum, when qualification is on.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x92e" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>4990</max>
+    <units>mV</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x405d" flags="0x0">
+    <title>Upstream heater relay fitted</title>
+    <description>The upstream heater output powers the heater (or wideband controller). Offset 0x916. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x916" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x405e" flags="0x0">
+    <title>Downstream heater relay fitted</title>
+    <description>Offset 0x916. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="10" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x916" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x405f" flags="0x0">
+    <title>TPS closed ADC</title>
+    <description>Ignition on, engine stopped: release the pedal and use Capture closed in the TU744 controls panel. Raw counts are also shown in the ADX TPS calibration list. Apply both endpoints together, then Download BIN from Emulator. Save the ECU tune to flash to retain calibration after a key cycle. Offset 0x7B0. ECU accepts 0..923 ADC counts.</description>
+    <CATEGORYMEM index="0" category="20" />
+    <CATEGORYMEM index="1" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b0" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>923</max>
+    <units>ADC counts</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4060" flags="0x0">
+    <title>TPS open ADC</title>
+    <description>Ignition on, engine stopped: fully press the pedal and use Capture open in the TU744 controls panel. Release the pedal before Apply TPS. Open must be at least 100 counts above closed. Manual editing uses the raw ADC value, not TPS percent; upload both endpoints in one complete BIN if an intermediate pair is invalid. Offset 0x7B2. ECU accepts 100..1023 ADC counts.</description>
+    <CATEGORYMEM index="0" category="20" />
+    <CATEGORYMEM index="1" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7b2" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>100</min>
+    <max>1023</max>
+    <units>ADC counts</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFTABLE uniqueid="0x4061" flags="0x0">
+    <title>MAP sensor transfer</title>
+    <description>Pressure at evenly spaced ADC counts. Must not decrease. Offset 0x594. ECU accepts 0..600 kPa.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="0" />
+      <LABEL index="1" value="68" />
+      <LABEL index="2" value="136" />
+      <LABEL index="3" value="205" />
+      <LABEL index="4" value="273" />
+      <LABEL index="5" value="341" />
+      <LABEL index="6" value="409" />
+      <LABEL index="7" value="477" />
+      <LABEL index="8" value="546" />
+      <LABEL index="9" value="614" />
+      <LABEL index="10" value="682" />
+      <LABEL index="11" value="750" />
+      <LABEL index="12" value="818" />
+      <LABEL index="13" value="887" />
+      <LABEL index="14" value="955" />
+      <LABEL index="15" value="1023" />
+      <outputtype>4</outputtype>
+      <indexcount>16</indexcount>
+      <units>ADC</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x594" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>600</max>
+      <units>kPa</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFCONSTANT uniqueid="0x4062" flags="0x0">
+    <title>Coolant thermistor pull-up</title>
+    <description>Offset 0x550. ECU accepts 1..20000 ohm.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x550" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1</min>
+    <max>20000</max>
+    <units>ohm</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFTABLE uniqueid="0x4063" flags="0x0">
+    <title>Coolant thermistor resistance</title>
+    <description>Must decrease as temperature rises. Stopped engine only. Offset 0x552.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x552" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>1</min>
+      <max>65535</max>
+      <units>ohm</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFCONSTANT uniqueid="0x4064" flags="0x0">
+    <title>Intake thermistor pull-up</title>
+    <description>Offset 0x572. ECU accepts 1..20000 ohm.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x572" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1</min>
+    <max>20000</max>
+    <units>ohm</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFTABLE uniqueid="0x4065" flags="0x0">
+    <title>Intake thermistor resistance</title>
+    <description>Must decrease as temperature rises. Stopped engine only. Offset 0x574.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x574" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>1</min>
+      <max>65535</max>
+      <units>ohm</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFCONSTANT uniqueid="0x4066" flags="0x0">
+    <title>TPS filter</title>
+    <description>Weight kept from the previous filtered value on each new sample. 0 = unfiltered. Offset 0x628. ECU accepts 0..93.8 %.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x628" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>93.75</max>
+    <units>%</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/2.56">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4067" flags="0x0">
+    <title>MAP filter</title>
+    <description>Weight kept from the previous filtered value on each new sample. 0 = unfiltered. Offset 0x629. ECU accepts 0..93.8 %.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x629" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>93.75</max>
+    <units>%</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/2.56">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4068" flags="0x0">
+    <title>Coolant filter</title>
+    <description>Weight kept from the previous filtered value on each new sample. 0 = unfiltered. Offset 0x62A. ECU accepts 0..93.8 %.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x62a" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>93.75</max>
+    <units>%</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/2.56">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4069" flags="0x0">
+    <title>Intake air filter</title>
+    <description>Weight kept from the previous filtered value on each new sample. 0 = unfiltered. Offset 0x62B. ECU accepts 0..93.8 %.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x62b" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>93.75</max>
+    <units>%</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/2.56">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x406a" flags="0x0">
+    <title>Oxygen sensor filter</title>
+    <description>Weight kept from the previous filtered value on each new sample. 0 = unfiltered. Offset 0x62C. ECU accepts 0..93.8 %.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x62c" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>93.75</max>
+    <units>%</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/2.56">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x406b" flags="0x0">
+    <title>Battery filter</title>
+    <description>Weight kept from the previous filtered value on each new sample. 0 = unfiltered. Offset 0x62D. ECU accepts 0..93.8 %.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x62d" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>93.75</max>
+    <units>%</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/2.56">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x406c" flags="0x0">
+    <title>Sensor freshness limit</title>
+    <description>An ADC sample older than this is flagged stale. Offset 0x920. ECU accepts 20..100 ms.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x920" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>20</min>
+    <max>100</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x406d" flags="0x0">
+    <title>Minimum battery voltage</title>
+    <description>Below this the battery reading is out of range. Offset 0x91E. ECU accepts 5..12 V.</description>
+    <CATEGORYMEM index="0" category="11" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x91e" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>5</min>
+    <max>12</max>
+    <units>V</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/1000">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x406e" flags="0x0">
+    <title>Fan on temperature</title>
+    <description>Offset 0x5E2. ECU accepts 70..120 C.</description>
+    <CATEGORYMEM index="0" category="12" />
+    <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x5e2" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>70</min>
+    <max>120</max>
+    <units>C</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x406f" flags="0x0">
+    <title>Fan off temperature</title>
+    <description>Must be below the fan-on temperature. Offset 0x5E3. ECU accepts -40..119 C.</description>
+    <CATEGORYMEM index="0" category="12" />
+    <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x5e3" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>-40</min>
+    <max>119</max>
+    <units>C</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4070" flags="0x0">
+    <title>Fuel pump prime</title>
+    <description>Offset 0x5EC. ECU accepts 0..10 s.</description>
+    <CATEGORYMEM index="0" category="12" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5ec" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>10</max>
+    <units>s</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x4071" flags="0x0">
+    <title>Boost control</title>
+    <description>Offset 0x5D4. Bit mask 0x10.</description>
+    <CATEGORYMEM index="0" category="12" />
+    <CATEGORYMEM index="1" category="15" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5d4" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x10</mask>
+  </XDFFLAG>
+  <XDFTABLE uniqueid="0x4072" flags="0x0">
+    <title>Boost duty</title>
+    <description>Columns: RPM; rows: TPS. Offset 0x300.</description>
+    <CATEGORYMEM index="0" category="12" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x400" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x440" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>TPS %</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x300" mmedelementsizebits="8" mmedrowcount="16" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>100</max>
+      <units>%</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4073" flags="0x0">
+    <title>Coolant gauge high duty</title>
+    <description>Offset 0x5F0.</description>
+    <CATEGORYMEM index="0" category="12" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <embedinfo type="1" />
+      <outputtype>2</outputtype>
+      <indexcount>16</indexcount>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x5f0" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>100</max>
+      <units>%</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFCONSTANT uniqueid="0x4074" flags="0x0">
+    <title>Running threshold</title>
+    <description>Must exceed the cranking re-entry threshold. Offset 0x904. ECU accepts 101..2000 RPM.</description>
+    <CATEGORYMEM index="0" category="13" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x904" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>101</min>
+    <max>2000</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4075" flags="0x0">
+    <title>Cranking re-entry threshold</title>
+    <description>Offset 0x906. ECU accepts 100..1999 RPM.</description>
+    <CATEGORYMEM index="0" category="13" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x906" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>100</min>
+    <max>1999</max>
+    <units>RPM</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4076" flags="0x0">
+    <title>Running qualification</title>
+    <description>Offset 0x908. ECU accepts 100..5000 ms.</description>
+    <CATEGORYMEM index="0" category="13" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x908" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>100</min>
+    <max>5000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4077" flags="0x0">
+    <title>Plan age limit</title>
+    <description>Outputs are inhibited if the fuel/spark plan is older than this. Offset 0x922. ECU accepts 20..50 ms.</description>
+    <CATEGORYMEM index="0" category="13" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x922" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>20</min>
+    <max>50</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4078" flags="0x0">
+    <title>VSS pulses per metre</title>
+    <description>Offset 0x914. ECU accepts 1..100 pulses/m.</description>
+    <CATEGORYMEM index="0" category="14" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x914" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>1</min>
+    <max>100</max>
+    <units>pulses/m</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x4079" flags="0x0">
+    <title>Final drive ratio</title>
+    <description>Offset 0x7A1. ECU accepts 0.1..10 :1.</description>
+    <CATEGORYMEM index="0" category="14" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7a1" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0.1</min>
+    <max>10</max>
+    <units>:1</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/100">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x407a" flags="0x0">
+    <title>Gear 1 ratio</title>
+    <description>Offset 0x7A3. ECU accepts 0.1..10 :1.</description>
+    <CATEGORYMEM index="0" category="14" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7a3" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0.1</min>
+    <max>10</max>
+    <units>:1</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/100">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x407b" flags="0x0">
+    <title>Gear 2 ratio</title>
+    <description>Offset 0x7A5. ECU accepts 0.1..10 :1.</description>
+    <CATEGORYMEM index="0" category="14" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7a5" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0.1</min>
+    <max>10</max>
+    <units>:1</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/100">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x407c" flags="0x0">
+    <title>Gear 3 ratio</title>
+    <description>Offset 0x7A7. ECU accepts 0.1..10 :1.</description>
+    <CATEGORYMEM index="0" category="14" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7a7" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0.1</min>
+    <max>10</max>
+    <units>:1</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/100">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x407d" flags="0x0">
+    <title>Gear 4 ratio</title>
+    <description>Offset 0x7A9. ECU accepts 0.1..10 :1.</description>
+    <CATEGORYMEM index="0" category="14" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7a9" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0.1</min>
+    <max>10</max>
+    <units>:1</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/100">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x407e" flags="0x0">
+    <title>Gear 5 ratio</title>
+    <description>Offset 0x7AB. ECU accepts 0.1..10 :1.</description>
+    <CATEGORYMEM index="0" category="14" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7ab" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0.1</min>
+    <max>10</max>
+    <units>:1</units>
+    <decimalpl>2</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/100">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x407f" flags="0x0">
+    <title>Tyre circumference</title>
+    <description>Offset 0x7AD. ECU accepts 500..4000 mm.</description>
+    <CATEGORYMEM index="0" category="14" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x7ad" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>500</min>
+    <max>4000</max>
+    <units>mm</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFTABLE uniqueid="0x4080" flags="0x0">
+    <title>RPM axis</title>
+    <description>Strictly increasing. Used by: VE, AFR, ignition, boost. Offset 0x400. ECU accepts 0..12000 RPM.</description>
+    <CATEGORYMEM index="0" category="16" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="1" />
+      <LABEL index="1" value="2" />
+      <LABEL index="2" value="3" />
+      <LABEL index="3" value="4" />
+      <LABEL index="4" value="5" />
+      <LABEL index="5" value="6" />
+      <LABEL index="6" value="7" />
+      <LABEL index="7" value="8" />
+      <LABEL index="8" value="9" />
+      <LABEL index="9" value="10" />
+      <LABEL index="10" value="11" />
+      <LABEL index="11" value="12" />
+      <LABEL index="12" value="13" />
+      <LABEL index="13" value="14" />
+      <LABEL index="14" value="15" />
+      <LABEL index="15" value="16" />
+      <outputtype>4</outputtype>
+      <indexcount>16</indexcount>
+      <units>point</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x400" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>12000</max>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4081" flags="0x0">
+    <title>MAP axis</title>
+    <description>Strictly increasing. Used by: speed-density VE, AFR and ignition. Offset 0x420. ECU accepts 0..600 kPa.</description>
+    <CATEGORYMEM index="0" category="16" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="1" />
+      <LABEL index="1" value="2" />
+      <LABEL index="2" value="3" />
+      <LABEL index="3" value="4" />
+      <LABEL index="4" value="5" />
+      <LABEL index="5" value="6" />
+      <LABEL index="6" value="7" />
+      <LABEL index="7" value="8" />
+      <LABEL index="8" value="9" />
+      <LABEL index="9" value="10" />
+      <LABEL index="10" value="11" />
+      <LABEL index="11" value="12" />
+      <LABEL index="12" value="13" />
+      <LABEL index="13" value="14" />
+      <LABEL index="14" value="15" />
+      <LABEL index="15" value="16" />
+      <outputtype>4</outputtype>
+      <indexcount>16</indexcount>
+      <units>point</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x420" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>600</max>
+      <units>kPa</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4082" flags="0x0">
+    <title>TPS axis</title>
+    <description>Strictly increasing. Used by: Alpha-N VE, AFR and ignition; boost. Offset 0x440. ECU accepts 0..100 %.</description>
+    <CATEGORYMEM index="0" category="16" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="1" />
+      <LABEL index="1" value="2" />
+      <LABEL index="2" value="3" />
+      <LABEL index="3" value="4" />
+      <LABEL index="4" value="5" />
+      <LABEL index="5" value="6" />
+      <LABEL index="6" value="7" />
+      <LABEL index="7" value="8" />
+      <LABEL index="8" value="9" />
+      <LABEL index="9" value="10" />
+      <LABEL index="10" value="11" />
+      <LABEL index="11" value="12" />
+      <LABEL index="12" value="13" />
+      <LABEL index="13" value="14" />
+      <LABEL index="14" value="15" />
+      <LABEL index="15" value="16" />
+      <outputtype>4</outputtype>
+      <indexcount>16</indexcount>
+      <units>point</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x440" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>100</max>
+      <units>%</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4083" flags="0x0">
+    <title>Temperature axis</title>
+    <description>Strictly increasing. Used by: all temperature tables. Offset 0x460. ECU accepts -40..150 C.</description>
+    <CATEGORYMEM index="0" category="16" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="1" />
+      <LABEL index="1" value="2" />
+      <LABEL index="2" value="3" />
+      <LABEL index="3" value="4" />
+      <LABEL index="4" value="5" />
+      <LABEL index="5" value="6" />
+      <LABEL index="6" value="7" />
+      <LABEL index="7" value="8" />
+      <LABEL index="8" value="9" />
+      <LABEL index="9" value="10" />
+      <LABEL index="10" value="11" />
+      <LABEL index="11" value="12" />
+      <LABEL index="12" value="13" />
+      <LABEL index="13" value="14" />
+      <LABEL index="14" value="15" />
+      <LABEL index="15" value="16" />
+      <outputtype>4</outputtype>
+      <indexcount>16</indexcount>
+      <units>point</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x460" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="16" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>-40</min>
+      <max>150</max>
+      <units>C</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4084" flags="0x0">
+    <title>AE TPS-rate axis</title>
+    <description>Strictly increasing. Used by: acceleration multiplier. Offset 0x740. ECU accepts 0..10000 %/s.</description>
+    <CATEGORYMEM index="0" category="16" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="1" />
+      <LABEL index="1" value="2" />
+      <LABEL index="2" value="3" />
+      <LABEL index="3" value="4" />
+      <LABEL index="4" value="5" />
+      <LABEL index="5" value="6" />
+      <LABEL index="6" value="7" />
+      <LABEL index="7" value="8" />
+      <outputtype>4</outputtype>
+      <indexcount>8</indexcount>
+      <units>point</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x740" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>10000</max>
+      <units>%/s</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4085" flags="0x0">
+    <title>AE previous-TPS axis</title>
+    <description>Strictly increasing. Used by: acceleration multiplier. Offset 0x750. ECU accepts 0..100 %.</description>
+    <CATEGORYMEM index="0" category="16" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="1" />
+      <LABEL index="1" value="2" />
+      <LABEL index="2" value="3" />
+      <LABEL index="3" value="4" />
+      <LABEL index="4" value="5" />
+      <LABEL index="5" value="6" />
+      <outputtype>4</outputtype>
+      <indexcount>6</indexcount>
+      <units>point</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x750" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="6" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>100</max>
+      <units>%</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4086" flags="0x0">
+    <title>AE RPM axis</title>
+    <description>Strictly increasing. Used by: acceleration RPM modifier. Offset 0x789. ECU accepts 0..12000 RPM.</description>
+    <CATEGORYMEM index="0" category="16" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="1" />
+      <LABEL index="1" value="2" />
+      <LABEL index="2" value="3" />
+      <LABEL index="3" value="4" />
+      <LABEL index="4" value="5" />
+      <LABEL index="5" value="6" />
+      <LABEL index="6" value="7" />
+      <LABEL index="7" value="8" />
+      <outputtype>4</outputtype>
+      <indexcount>8</indexcount>
+      <units>point</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x789" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>0</min>
+      <max>12000</max>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFTABLE uniqueid="0x4087" flags="0x0">
+    <title>Idle RPM-error axis</title>
+    <description>Strictly increasing. Used by: idle spark correction. Offset 0x610. ECU accepts -3000..3000 RPM.</description>
+    <CATEGORYMEM index="0" category="16" />
+    <XDFAXIS id="x" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="1" />
+      <LABEL index="1" value="2" />
+      <LABEL index="2" value="3" />
+      <LABEL index="3" value="4" />
+      <LABEL index="4" value="5" />
+      <LABEL index="5" value="6" />
+      <LABEL index="6" value="7" />
+      <LABEL index="7" value="8" />
+      <outputtype>4</outputtype>
+      <indexcount>8</indexcount>
+      <units>point</units>
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="y" uniqueid="0x0">
+      <EMBEDDEDDATA mmedelementsizebits="8" mmedmajorstridebits="-32" mmedminorstridebits="0" />
+      <LABEL index="0" value="" />
+      <outputtype>4</outputtype>
+      <indexcount>1</indexcount>
+      <units />
+      <decimalpl>0</decimalpl>
+      <datatype>0</datatype>
+      <unittype>0</unittype>
+      <DALINK index="0" />
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+    <XDFAXIS id="z">
+      <EMBEDDEDDATA mmedtypeflags="0x01" mmedaddress="0x610" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="8" mmedmajorstridebits="0" mmedminorstridebits="0" />
+      <min>-3000</min>
+      <max>3000</max>
+      <units>RPM</units>
+      <decimalpl>0</decimalpl>
+      <outputtype>2</outputtype>
+      <MATH equation="X">
+        <VAR id="X" />
+      </MATH>
+    </XDFAXIS>
+  </XDFTABLE>
+  <XDFFLAG uniqueid="0x4088" flags="0x0">
+    <title>P0106/P0107/P0108/P0109 MAP sensor</title>
+    <description>Event 0x43. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x948. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x948" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4089" flags="0x0">
+    <title>P0110/P0111/P0112/P0113 Intake air temperature sensor</title>
+    <description>Event 0x5B. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x94B. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x94b" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x408a" flags="0x0">
+    <title>P0115/P0116/P0117/P0118 Coolant temperature sensor</title>
+    <description>Event 0x61. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x94C. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x94c" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x408b" flags="0x0">
+    <title>P0120/P0121/P0122/P0123 Throttle position sensor</title>
+    <description>Event 0x1B. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x943. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x943" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x408c" flags="0x0">
+    <title>P0130 Upstream O2 sensor circuit (narrowband only)</title>
+    <description>No switching during the activity window, or invalid signal. Event 0x2D. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x945. Bit mask 0x20.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x945" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x20</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x408d" flags="0x0">
+    <title>P0130/P0131/P0132/P0134 Upstream O2 sensor signal (narrowband only)</title>
+    <description>Event 0x45. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x948. Bit mask 0x20.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x948" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x20</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x408e" flags="0x0">
+    <title>P0133 Upstream O2 slow response, lean to rich (narrowband only)</title>
+    <description>Event 0x3F. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x947. Bit mask 0x80.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x947" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x80</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x408f" flags="0x0">
+    <title>P0133 Upstream O2 slow response, rich to lean (narrowband only)</title>
+    <description>Event 0x40. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x948. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x948" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4090" flags="0x0">
+    <title>P0171/P0172 Fuel trim at its lean/rich limit</title>
+    <description>STFT held at its limit for "Fuel-trim limit time". Event 0x27. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x944. Bit mask 0x80.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x944" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x80</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4091" flags="0x0">
+    <title>P0300 Misfire, multiple cylinders - level 1</title>
+    <description>Crank interval deviation above "Misfire crank-window deviation". Event 0x03. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x940. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x940" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4092" flags="0x0">
+    <title>P0300 Misfire, multiple cylinders - level 2</title>
+    <description>Crank interval deviation above twice "Misfire crank-window deviation". Event 0x08. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x941. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x941" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4093" flags="0x0">
+    <title>P0301 Misfire cylinder 1 - level 1</title>
+    <description>Needs established DEPHIA polarity. Event 0x04. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x940. Bit mask 0x10.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x940" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x10</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4094" flags="0x0">
+    <title>P0301 Misfire cylinder 1 - level 2</title>
+    <description>Needs established DEPHIA polarity. Event 0x09. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x941. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x941" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4095" flags="0x0">
+    <title>P0302 Misfire cylinder 2 - level 1</title>
+    <description>Needs established DEPHIA polarity. Event 0x07. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x940. Bit mask 0x80.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x940" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x80</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4096" flags="0x0">
+    <title>P0302 Misfire cylinder 2 - level 2</title>
+    <description>Needs established DEPHIA polarity. Event 0x0C. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x941. Bit mask 0x10.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x941" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x10</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4097" flags="0x0">
+    <title>P0303 Misfire cylinder 3 - level 1</title>
+    <description>Needs established DEPHIA polarity. Event 0x05. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x940. Bit mask 0x20.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x940" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x20</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4098" flags="0x0">
+    <title>P0303 Misfire cylinder 3 - level 2</title>
+    <description>Needs established DEPHIA polarity. Event 0x0A. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x941. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x941" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x4099" flags="0x0">
+    <title>P0304 Misfire cylinder 4 - level 1</title>
+    <description>Needs established DEPHIA polarity. Event 0x06. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x940. Bit mask 0x40.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x940" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x40</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x409a" flags="0x0">
+    <title>P0304 Misfire cylinder 4 - level 2</title>
+    <description>Needs established DEPHIA polarity. Event 0x0B. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x941. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x941" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x409b" flags="0x0">
+    <title>P0335 Crankshaft position sensor circuit</title>
+    <description>Loss of an acquired 60-2 pattern. Event 0x0D. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x941. Bit mask 0x20.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x941" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x20</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x409c" flags="0x0">
+    <title>P0336 Crankshaft position range/performance</title>
+    <description>Loss of an acquired 60-2 pattern (second OEM event). Event 0x4A. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x949. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x949" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x409d" flags="0x0">
+    <title>P0501/P0502/P0503 Vehicle speed sensor</title>
+    <description>Event 0x68. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x94D. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x94d" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x409e" flags="0x0">
+    <title>P0560/P0561/P0562/P0563 System voltage</title>
+    <description>Event 0x65. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x94C. Bit mask 0x20.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x94c" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x20</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x409f" flags="0x0">
+    <title>P0606 Processor self-test</title>
+    <description>RAM pattern, arithmetic and control-flow test. Event 0x50. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x94A. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x94a" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a0" flags="0x0">
+    <title>P1327 Cylinder phase (DEPHIA) - no capture</title>
+    <description>Armed CC8 phase capture missing or timed out. Event 0x1A. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x943. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x943" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a1" flags="0x0">
+    <title>P1327 Cylinder phase (DEPHIA) - implausible delay</title>
+    <description>Captured delay outside the DEPHIA minimum/maximum. Event 0x4B. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x949. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x949" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a2" flags="0x0">
+    <title>P1523/P1524/P1525 Idle stepper driver (L9935)</title>
+    <description>Event 0x56. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x94A. Bit mask 0x40.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x94a" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x40</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a3" flags="0x0">
+    <title>P1526/P1529 Idle stepper position supervisor</title>
+    <description>Event 0x4D. On: the monitor can set this DTC. Off: it is never raised, and an active one is recovered. Stopped engine only. Offset 0x949. Bit mask 0x20.</description>
+    <CATEGORYMEM index="0" category="17" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x949" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x20</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a4" flags="0x0">
+    <title>P0123 Throttle position circuit high (out of range, high side)</title>
+    <description>Event 0x1B, subtype 1. Only acts while the "Throttle position sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x99B. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x99b" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a5" flags="0x0">
+    <title>P0122 Throttle position circuit low (out of range, low side)</title>
+    <description>Event 0x1B, subtype 2. Only acts while the "Throttle position sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x99B. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x99b" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a6" flags="0x0">
+    <title>P0120 Throttle position sensor circuit (no conversion, stale or misconfigured)</title>
+    <description>Event 0x1B, subtype 4. Only acts while the "Throttle position sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x99B. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x99b" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a7" flags="0x0">
+    <title>P0121 Throttle position range/performance (changes faster than its slew limit)</title>
+    <description>Event 0x1B, subtype 8. Only acts while the "Throttle position sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x99B. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x99b" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a8" flags="0x0">
+    <title>P0108 MAP sensor circuit high (out of range, high side)</title>
+    <description>Event 0x43, subtype 1. Only acts while the "MAP sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9C3. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9c3" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40a9" flags="0x0">
+    <title>P0107 MAP sensor circuit low (out of range, low side)</title>
+    <description>Event 0x43, subtype 2. Only acts while the "MAP sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9C3. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9c3" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40aa" flags="0x0">
+    <title>P0109 MAP sensor circuit intermittent (no conversion, stale or misconfigured)</title>
+    <description>Event 0x43, subtype 4. Only acts while the "MAP sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9C3. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9c3" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40ab" flags="0x0">
+    <title>P0106 MAP sensor range/performance (changes faster than its slew limit)</title>
+    <description>Event 0x43, subtype 8. Only acts while the "MAP sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9C3. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9c3" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40ac" flags="0x0">
+    <title>P0113 Intake air temperature circuit high (out of range, high side)</title>
+    <description>Event 0x5B, subtype 1. Only acts while the "Intake air temperature sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9DB. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9db" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40ad" flags="0x0">
+    <title>P0112 Intake air temperature circuit low (out of range, low side)</title>
+    <description>Event 0x5B, subtype 2. Only acts while the "Intake air temperature sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9DB. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9db" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40ae" flags="0x0">
+    <title>P0110 Intake air temperature circuit (no conversion, stale or misconfigured)</title>
+    <description>Event 0x5B, subtype 4. Only acts while the "Intake air temperature sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9DB. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9db" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40af" flags="0x0">
+    <title>P0111 Intake air temperature range/performance (changes faster than its slew limit)</title>
+    <description>Event 0x5B, subtype 8. Only acts while the "Intake air temperature sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9DB. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9db" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b0" flags="0x0">
+    <title>P0118 Coolant temperature circuit high (out of range, high side)</title>
+    <description>Event 0x61, subtype 1. Only acts while the "Coolant temperature sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E1. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e1" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b1" flags="0x0">
+    <title>P0117 Coolant temperature circuit low (out of range, low side)</title>
+    <description>Event 0x61, subtype 2. Only acts while the "Coolant temperature sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E1. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e1" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b2" flags="0x0">
+    <title>P0115 Coolant temperature circuit (no conversion, stale or misconfigured)</title>
+    <description>Event 0x61, subtype 4. Only acts while the "Coolant temperature sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E1. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e1" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b3" flags="0x0">
+    <title>P0116 Coolant temperature range/performance (changes faster than its slew limit)</title>
+    <description>Event 0x61, subtype 8. Only acts while the "Coolant temperature sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E1. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e1" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b4" flags="0x0">
+    <title>P0563 System voltage high (out of range, high side)</title>
+    <description>Event 0x65, subtype 1. Only acts while the "System voltage" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E5. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b5" flags="0x0">
+    <title>P0562 System voltage low (out of range, low side)</title>
+    <description>Event 0x65, subtype 2. Only acts while the "System voltage" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E5. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b6" flags="0x0">
+    <title>P0560 System voltage malfunction (no conversion, stale or misconfigured)</title>
+    <description>Event 0x65, subtype 4. Only acts while the "System voltage" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E5. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b7" flags="0x0">
+    <title>P0561 System voltage unstable (changes faster than its slew limit)</title>
+    <description>Event 0x65, subtype 8. Only acts while the "System voltage" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E5. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b8" flags="0x0">
+    <title>P0503 Vehicle speed sensor intermittent/high (speed above "VSS maximum plausible speed" or a jump above 80 km/h)</title>
+    <description>Event 0x68, subtype 1. Only acts while the "Vehicle speed sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E8. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e8" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40b9" flags="0x0">
+    <title>P0502 Vehicle speed sensor circuit low (pulses lost after the vehicle was moving)</title>
+    <description>Event 0x68, subtype 2. Only acts while the "Vehicle speed sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E8. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e8" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40ba" flags="0x0">
+    <title>P0501 Vehicle speed sensor range/performance (implausible change between samples)</title>
+    <description>Event 0x68, subtype 8. Only acts while the "Vehicle speed sensor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9E8. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9e8" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40bb" flags="0x0">
+    <title>P0171 System too lean (trim held at its positive (lean) limit)</title>
+    <description>Event 0x27, subtype 1. Only acts while the "Fuel trim at its lean/rich limit" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9A7. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9a7" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40bc" flags="0x0">
+    <title>P0172 System too rich (trim held at its negative (rich) limit)</title>
+    <description>Event 0x27, subtype 2. Only acts while the "Fuel trim at its lean/rich limit" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9A7. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9a7" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40bd" flags="0x0">
+    <title>P0132 Upstream O2 sensor circuit high (signal at the upper rail)</title>
+    <description>Event 0x45, subtype 1. Only acts while the "Upstream O2 sensor signal (narrowband only)" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9C5. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9c5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40be" flags="0x0">
+    <title>P0131 Upstream O2 sensor circuit low (signal at the lower rail)</title>
+    <description>Event 0x45, subtype 2. Only acts while the "Upstream O2 sensor signal (narrowband only)" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9C5. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9c5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40bf" flags="0x0">
+    <title>P0134 Upstream O2 sensor no activity (no switching during the activity window)</title>
+    <description>Event 0x45, subtype 4. Only acts while the "Upstream O2 sensor signal (narrowband only)" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9C5. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9c5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40c0" flags="0x0">
+    <title>P0130 Upstream O2 sensor circuit (stale signal)</title>
+    <description>Event 0x45, subtype 8. Only acts while the "Upstream O2 sensor signal (narrowband only)" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9C5. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9c5" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40c1" flags="0x0">
+    <title>P1529 Manufacturer specific - idle actuator range/performance (homing did not finish in time)</title>
+    <description>Event 0x4D, subtype 4. Only acts while the "Idle stepper position supervisor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9CD. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9cd" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40c2" flags="0x0">
+    <title>P1526 Manufacturer specific - idle actuator circuit (stepper bridges could not be switched off)</title>
+    <description>Event 0x4D, subtype 8. Only acts while the "Idle stepper position supervisor" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9CD. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9cd" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40c3" flags="0x0">
+    <title>P1525 Manufacturer specific - idle actuator group (no SPI response from the driver)</title>
+    <description>Event 0x56, subtype 1. Only acts while the "Idle stepper driver (L9935)" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9D6. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9d6" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40c4" flags="0x0">
+    <title>P1525 Manufacturer specific - idle actuator group (repeated open-load response)</title>
+    <description>Event 0x56, subtype 2. Only acts while the "Idle stepper driver (L9935)" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9D6. Bit mask 0x02.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9d6" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x2</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40c5" flags="0x0">
+    <title>P1524 Manufacturer specific - idle actuator group (driver diagnostic code 10b)</title>
+    <description>Event 0x56, subtype 4. Only acts while the "Idle stepper driver (L9935)" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9D6. Bit mask 0x04.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9d6" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x4</mask>
+  </XDFFLAG>
+  <XDFFLAG uniqueid="0x40c6" flags="0x0">
+    <title>P1523 Manufacturer specific - idle actuator group (driver diagnostic code 00b)</title>
+    <description>Event 0x56, subtype 8. Only acts while the "Idle stepper driver (L9935)" switch is on. Do not switch off every code of one event: the ECU treats an all-off event as all-on. Use the event switch in "DTC switches" instead. Offset 0x9D6. Bit mask 0x08.</description>
+    <CATEGORYMEM index="0" category="18" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x9d6" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x8</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x40c7" flags="0x0">
+    <title>DTC fail samples</title>
+    <description>Consecutive failing results before a DTC is set. 0 = 3. Offset 0x94E. ECU accepts 0..100 samples.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x94e" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>samples</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40c8" flags="0x0">
+    <title>DTC pass samples</title>
+    <description>Consecutive passing results before a DTC recovers. 0 = 3. Offset 0x94F. ECU accepts 0..100 samples.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x94f" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>samples</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40c9" flags="0x0">
+    <title>Fuel-trim limit time</title>
+    <description>P0171/P0172 after STFT stays at its limit this long. 0 = 10000. Offset 0x950. ECU accepts 0 or 1000..60000 ms.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x950" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>60000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40ca" flags="0x0">
+    <title>Narrowband activity window</title>
+    <description>P0134/P0130 when the narrowband does not switch within this window. 0 = 5000. Offset 0x952. ECU accepts 0 or 1000..30000 ms.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x952" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>30000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40cb" flags="0x0">
+    <title>Narrowband slow-response time</title>
+    <description>P0133 when a lean/rich transition takes longer. 0 = 1500. Offset 0x954. ECU accepts 0 or 100..10000 ms.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x954" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>10000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40cc" flags="0x0">
+    <title>Misfire crank-window deviation</title>
+    <description>Level 1 misfire threshold; level 2 uses twice this. 0 = 35. Offset 0x956. ECU accepts 0..100 %.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x956" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>%</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40cd" flags="0x0">
+    <title>Misfire occurrences per 128 observations</title>
+    <description>0 = 4. Offset 0x957. ECU accepts 0..100 samples.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x957" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>samples</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40ce" flags="0x0">
+    <title>VSS maximum plausible speed</title>
+    <description>0 = 250. Offset 0x95B. ECU accepts 0..255 km/h.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x95b" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>255</max>
+    <units>km/h</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40cf" flags="0x0">
+    <title>TPS slew limit</title>
+    <description>Faster change sets the range/performance code. 0 = 3000 %/s. Offset 0x964. ECU accepts 0..6553.5 %/s.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x964" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>6553.5</max>
+    <units>%/s</units>
+    <decimalpl>1</decimalpl>
+    <outputtype>1</outputtype>
+    <MATH equation="X/10">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40d0" flags="0x0">
+    <title>MAP slew limit</title>
+    <description>Faster change sets the range/performance code. 0 = 3000 kPa/s. Offset 0x966. ECU accepts 0..65535 kPa/s.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x966" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>65535</max>
+    <units>kPa/s</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40d1" flags="0x0">
+    <title>Temperature slew limit</title>
+    <description>Faster change sets the range/performance code. 0 = 100 C/s. Offset 0x968. ECU accepts 0..65535 C/s.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x968" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>65535</max>
+    <units>C/s</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40d2" flags="0x0">
+    <title>Battery slew limit</title>
+    <description>Faster change sets the range/performance code. 0 = 50000 mV/s. Offset 0x96A. ECU accepts 0..65535 mV/s.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x96a" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>65535</max>
+    <units>mV/s</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40d3" flags="0x0">
+    <title>DEPHIA capture timeout</title>
+    <description>P1327 when no phase capture arrives within this. 0 = 2000. Offset 0x958. ECU accepts 0..10000 ms.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x958" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>10000</max>
+    <units>ms</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40d4" flags="0x0">
+    <title>DEPHIA minimum delay</title>
+    <description>0 with maximum and delta also 0 = defaults 66/168/18. Offset 0x95C. ECU accepts 0..65535 T1 ticks.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x95c" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>65535</max>
+    <units>T1 ticks</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40d5" flags="0x0">
+    <title>DEPHIA maximum delay</title>
+    <description>Offset 0x95E. ECU accepts 0..65535 T1 ticks.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x95e" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>65535</max>
+    <units>T1 ticks</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFCONSTANT uniqueid="0x40d6" flags="0x0">
+    <title>DEPHIA direction delta</title>
+    <description>Offset 0x960. ECU accepts 0..65535 T1 ticks.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x960" mmedelementsizebits="16" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>65535</max>
+    <units>T1 ticks</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+  <XDFFLAG uniqueid="0x40d7" flags="0x0">
+    <title>DEPHIA cylinder-1 polarity inverted</title>
+    <description>Establish by board waveform/cylinder testing before trusting per-cylinder misfire codes. Offset 0x962. Bit mask 0x01.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x962" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <mask>0x1</mask>
+  </XDFFLAG>
+  <XDFCONSTANT uniqueid="0x40d8" flags="0x0">
+    <title>Output feedback fail count</title>
+    <description>Reserved until the P6.5/P6.6/P6.7 diagnostic transport is accepted. Offset 0x95A. ECU accepts 0..100 samples.</description>
+    <CATEGORYMEM index="0" category="19" />
+    <EMBEDDEDDATA mmedtypeflags="0x00" mmedaddress="0x95a" mmedelementsizebits="8" mmedrowcount="1" mmedcolcount="1" mmedmajorstridebits="0" mmedminorstridebits="0" />
+    <min>0</min>
+    <max>100</max>
+    <units>samples</units>
+    <decimalpl>0</decimalpl>
+    <outputtype>2</outputtype>
+    <MATH equation="X">
+      <VAR id="X" />
+    </MATH>
+  </XDFCONSTANT>
+</XDFFORMAT>

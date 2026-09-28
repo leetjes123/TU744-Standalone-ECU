@@ -1,0 +1,4 @@
+LIBRARY TU744
+EXPORTS
+    TPCreatePlugin
+    TPReleasePlugin

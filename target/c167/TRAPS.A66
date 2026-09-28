@@ -1,0 +1,49 @@
+$MOD167
+$SEGMENTED
+NAME TRAPS
+TPSW DEFR 0FF10H
+TP2 DEFR 0FFC0H
+TP7 DEFR 0FFD0H
+TP8 DEFR 0FFD4H
+TP6 DEFR 0FFCCH
+TCM4 DEFR 0FF22H
+TCM0 DEFR 0FF52H
+TCM1 DEFR 0FF54H
+TCM5 DEFR 0FF24H
+TCM6 DEFR 0FF26H
+TCM7 DEFR 0FF28H
+?PR?TRAPS SECTION CODE PUBLIC 'FCODE'
+; No C prologue, stack access, call, or diagnostic formatting before safing.
+trap_nmi PROC INTERRUPT = 2
+    JMPA cc_UC,trap_safe
+trap_nmi ENDP
+trap_overflow PROC INTERRUPT = 4
+    JMPA cc_UC,trap_safe
+trap_overflow ENDP
+trap_underflow PROC INTERRUPT = 6
+    JMPA cc_UC,trap_safe
+trap_underflow ENDP
+trap_hardware PROC INTERRUPT = 10
+trap_safe:
+    BCLR TPSW.11
+    MOV TCM0,#0
+    MOV TCM1,#0
+    MOV TCM4,#0
+    MOV TCM5,#0
+    MOV TCM6,#0
+    MOV TCM7,#0
+    BSET TP2.0
+    BSET TP2.1
+    BSET TP7.4
+    BSET TP7.5
+    BSET TP7.6
+    BSET TP8.7
+    BSET TP8.1
+    BSET TP8.3
+    BSET TP6.2
+    BSET TP6.4
+trap_wait:
+    JMPR cc_UC,trap_wait
+trap_hardware ENDP
+?PR?TRAPS ENDS
+END

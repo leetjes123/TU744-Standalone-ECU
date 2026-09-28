@@ -1,0 +1,31 @@
+#include <windows.h>
+101 DIALOGEX 0, 0, 315, 459
+STYLE DS_SETFONT | WS_POPUP | WS_CAPTION | WS_SYSMENU
+EXSTYLE WS_EX_TOOLWINDOW
+CAPTION "TU744 controls"
+FONT 9, "Segoe UI"
+BEGIN
+    LTEXT "K-line adapter port:", -1, 10, 12, 92, 14
+    EDITTEXT 1001, 107, 10, 76, 16, ES_AUTOHSCROLL
+    PUSHBUTTON "Apply port", 1004, 190, 9, 54, 18
+    PUSHBUTTON "Read ECU status", 1005, 10, 38, 82, 21
+    PUSHBUTTON "Save ECU tune to flash", 1002, 99, 38, 126, 21
+    PUSHBUTTON "Close", IDCANCEL, 252, 9, 52, 18
+    LTEXT "Live edits change RAM. Stop the engine before saving. A successful flash save still requires a physical ECU reset/key cycle.", -1, 10, 69, 295, 28
+    LTEXT "", 1003, 10, 105, 295, 35
+    LTEXT "Last BIN transfer:", -1, 10, 145, 295, 12
+    LTEXT "", 1006, 10, 160, 295, 42
+    PUSHBUTTON "Read DTCs", 1007, 10, 208, 82, 21
+    PUSHBUTTON "Clear DTCs", 1008, 99, 208, 82, 21
+    EDITTEXT 1009, 10, 235, 295, 92, ES_MULTILINE | ES_READONLY | ES_AUTOVSCROLL | WS_VSCROLL
+    GROUPBOX "TPS calibration - ignition on, engine stopped", -1, 10, 333, 295, 118
+    PUSHBUTTON "Read TPS", 1010, 19, 349, 66, 19
+    LTEXT "Current ADC:", -1, 96, 353, 69, 12
+    LTEXT "--", 1014, 169, 353, 46, 12
+    PUSHBUTTON "Capture closed", 1011, 19, 374, 85, 19
+    EDITTEXT 1015, 111, 375, 44, 17, ES_NUMBER | ES_AUTOHSCROLL
+    PUSHBUTTON "Capture open", 1012, 168, 374, 79, 19
+    EDITTEXT 1016, 253, 375, 42, 17, ES_NUMBER | ES_AUTOHSCROLL
+    PUSHBUTTON "Apply TPS", 1013, 19, 400, 85, 20
+    LTEXT "Applies both endpoints to ECU RAM. Then Download BIN from Emulator and save the tune to flash.", -1, 114, 399, 181, 40
+END

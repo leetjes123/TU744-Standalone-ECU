@@ -1,0 +1,3016 @@
+{
+  "rom_sha256": "5710015f7c5c066c860a1757fd893f305701608c25af8ff23bfcb4fd1e4837b3",
+  "shared_lifecycle": {
+    "implemented_native_contracts": [
+      "allocation",
+      "ingestion",
+      "recovery",
+      "completion",
+      "subtype",
+      "phase_confirmation_healing",
+      "mil_demand",
+      "aging",
+      "clear_admission",
+      "clear_worker",
+      "cycle_initialization",
+      "reconciliation",
+      "drive_phase",
+      "warmup_phase",
+      "timestamp",
+      "native_iat_coolant_composition",
+      "operating_state",
+      "context_conversion",
+      "adaptive_dividers",
+      "rotation_capture_period_speed",
+      "analog_publication_frontend",
+      "native_supply_voltage_composition",
+      "native_vehicle_speed_diagnostic_composition",
+      "native_vehicle_speed_input_composition",
+      "native_digital_input_composition",
+      "native_readiness_composition",
+      "ported_clear_composition"
+    ],
+    "runtime_integration": "owner_integrated_native_inputs_pending",
+    "persistence_history": "boot_foreground_shutdown_integrated_physical_release_blocked",
+    "all_event_trigger_parity": false,
+    "physical_mil_flashing": false
+  },
+  "coverage_summary": {
+    "event_slots": 107,
+    "reportable_events": 73,
+    "distinct_report_words": 94,
+    "producer_control_flow_resolved": 72,
+    "producer_control_flow_unresolved_events": [
+      "31"
+    ],
+    "ported_monitor_producers": 4,
+    "standalone_available_events": 6,
+    "standalone_port_candidate_events": 32,
+    "standalone_adaptation_candidate_events": 1,
+    "standalone_narrowband_candidate_events": 4,
+    "standalone_unresolved_events": 2,
+    "standalone_unavailable_events": 28,
+    "standalone_available_event_ids": [
+      "1B",
+      "43",
+      "5B",
+      "61",
+      "65",
+      "68"
+    ],
+    "complete_monitor_parity": 0
+  },
+  "unresolved_table_driven_callsites": [
+    "646EA",
+    "64874",
+    "64DE2",
+    "64E34",
+    "65E18",
+    "65E80",
+    "65F56",
+    "65FB4"
+  ],
+  "events": [
+    {
+      "event": 0,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "not_reportable",
+      "direct_callsites": [],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 1,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2FA0C"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 2,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2FA3A"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 3,
+      "report_words": [
+        "0300",
+        "0300",
+        "0300",
+        "0300"
+      ],
+      "config_index": 35,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "700DC",
+        "702A4",
+        "70422",
+        "708EC"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 4,
+      "report_words": [
+        "0301",
+        "0301",
+        "0301",
+        "0301"
+      ],
+      "config_index": 35,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "70114",
+        "70316",
+        "7045C",
+        "7093A"
+      ],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 5,
+      "report_words": [
+        "0303",
+        "0303",
+        "0303",
+        "0303"
+      ],
+      "config_index": 35,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "70114",
+        "70316",
+        "7045C",
+        "7093A"
+      ],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 6,
+      "report_words": [
+        "0304",
+        "0304",
+        "0304",
+        "0304"
+      ],
+      "config_index": 35,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "70114",
+        "70316",
+        "7045C",
+        "7093A"
+      ],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 7,
+      "report_words": [
+        "0302",
+        "0302",
+        "0302",
+        "0302"
+      ],
+      "config_index": 35,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "70114",
+        "70316",
+        "7045C",
+        "7093A"
+      ],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 8,
+      "report_words": [
+        "0300",
+        "0300",
+        "0300",
+        "0300"
+      ],
+      "config_index": 33,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "7014C",
+        "706FC"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 9,
+      "report_words": [
+        "0301",
+        "0301",
+        "0301",
+        "0301"
+      ],
+      "config_index": 34,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "70184",
+        "70732"
+      ],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 10,
+      "report_words": [
+        "0303",
+        "0303",
+        "0303",
+        "0303"
+      ],
+      "config_index": 34,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "70184",
+        "70732"
+      ],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 11,
+      "report_words": [
+        "0304",
+        "0304",
+        "0304",
+        "0304"
+      ],
+      "config_index": 34,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "70184",
+        "70732"
+      ],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 12,
+      "report_words": [
+        "0302",
+        "0302",
+        "0302",
+        "0302"
+      ],
+      "config_index": 34,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "70184",
+        "70732"
+      ],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the 60-2 capture provides the combustion-speed observable, but the OEM misfire and cylinder-attribution path is not ported",
+      "standalone_evidence": "rotation.c edge history; OEM producers 0x700DC..0x7093A; Citroen training PDF pp.51-52",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 13,
+      "report_words": [
+        "0338",
+        "0337",
+        "0335",
+        "0336"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "67948"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the stock ECU has crank capture and coil-derived DEPHIA phase capture; exact OEM gates and conditioning still require a producer port",
+      "standalone_evidence": "CC8 phase capture 0x67C5A..0x67E30; P1327 producers 0x67C44/0x67C52; Citroen PDF pp.30-32",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 14,
+      "report_words": [
+        "D109",
+        "D109",
+        "D109",
+        "D109"
+      ],
+      "config_index": 0,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "5CD18"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the standalone has no OEM BSI/gearbox/ESP communication state and disables both on-chip CAN modules",
+      "standalone_evidence": "target/c167/START167.A66 CAN1DIS=CAN2DIS=1; standalone exposes K-line only",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 15,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "5E12A",
+        "5E15C"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 16,
+      "report_words": [
+        "D000",
+        "D000",
+        "D000",
+        "D000"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "5DF98",
+        "5DFCC"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the standalone has no OEM BSI/gearbox/ESP communication state and disables both on-chip CAN modules",
+      "standalone_evidence": "target/c167/START167.A66 CAN1DIS=CAN2DIS=1; standalone exposes K-line only",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 17,
+      "report_words": [
+        "D118",
+        "D118",
+        "D118",
+        "D118"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the standalone has no OEM BSI/gearbox/ESP communication state and disables both on-chip CAN modules",
+      "standalone_evidence": "target/c167/START167.A66 CAN1DIS=CAN2DIS=1; standalone exposes K-line only",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 18,
+      "report_words": [
+        "D109",
+        "D109",
+        "D109",
+        "D109"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the standalone has no OEM BSI/gearbox/ESP communication state and disables both on-chip CAN modules",
+      "standalone_evidence": "target/c167/START167.A66 CAN1DIS=CAN2DIS=1; standalone exposes K-line only",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 19,
+      "report_words": [
+        "D113",
+        "D113",
+        "D113",
+        "D113"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the standalone has no OEM BSI/gearbox/ESP communication state and disables both on-chip CAN modules",
+      "standalone_evidence": "target/c167/START167.A66 CAN1DIS=CAN2DIS=1; standalone exposes K-line only",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 20,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 21,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 22,
+      "report_words": [
+        "D109",
+        "D109",
+        "D109",
+        "D109"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the standalone has no OEM BSI/gearbox/ESP communication state and disables both on-chip CAN modules",
+      "standalone_evidence": "target/c167/START167.A66 CAN1DIS=CAN2DIS=1; standalone exposes K-line only",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 23,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 24,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 25,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "bounded_dynamic",
+      "direct_callsites": [],
+      "dynamic_callsites": [
+        "5E068",
+        "5E0B2"
+      ],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 26,
+      "report_words": [
+        "1327",
+        "1327",
+        "1327",
+        "1327"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "67C52"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the stock ECU has crank capture and coil-derived DEPHIA phase capture; exact OEM gates and conditioning still require a producer port",
+      "standalone_evidence": "CC8 phase capture 0x67C5A..0x67E30; P1327 producers 0x67C44/0x67C52; Citroen PDF pp.30-32",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 27,
+      "report_words": [
+        "0123",
+        "0122",
+        "0120",
+        "0121"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4C01A"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "available",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "standalone acquires the throttle potentiometer on AN8",
+      "standalone_evidence": "src/sensors.c sample(8); OEM event/report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 28,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F744"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 29,
+      "report_words": [
+        "0533",
+        "0532",
+        "0530",
+        "0531"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "5E770"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "no air-conditioning pressure signal is connected to the standalone",
+      "standalone_evidence": "no standalone sensor or board binding for OEM A/C pressure information",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 30,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "not_reportable",
+      "direct_callsites": [],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 31,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F7D4"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 32,
+      "report_words": [
+        "0201",
+        "0201",
+        "0201",
+        "0201"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "661B0"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 33,
+      "report_words": [
+        "0203",
+        "0203",
+        "0203",
+        "0203"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "661F4"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 34,
+      "report_words": [
+        "0204",
+        "0204",
+        "0204",
+        "0204"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "66238"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 35,
+      "report_words": [
+        "0202",
+        "0202",
+        "0202",
+        "0202"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "6627E"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 36,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F804"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 37,
+      "report_words": [
+        "0171",
+        "0172",
+        "0170",
+        "0170"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "59CD2",
+        "5A64E"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "these four events belong to OEM LTFT cells and the standalone intentionally has no LTFT",
+      "standalone_evidence": "OEM B26E=ABDA high-load multiplicative, B270=ABDE low-load multiplicative, B2C0=ABE2 speed-additive, B2C2=ABE6 fixed-additive",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 38,
+      "report_words": [
+        "0171",
+        "0172",
+        "0170",
+        "0170"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "59CE0",
+        "5A65C"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "these four events belong to OEM LTFT cells and the standalone intentionally has no LTFT",
+      "standalone_evidence": "OEM B26E=ABDA high-load multiplicative, B270=ABDE low-load multiplicative, B2C0=ABE2 speed-additive, B2C2=ABE6 fixed-additive",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 39,
+      "report_words": [
+        "0171",
+        "0172",
+        "0170",
+        "0170"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "5A686"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "adaptation_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the overall rich/lean regulation condition is meaningful in either oxygen mode, using a qualified sustained STFT-limit/error monitor",
+      "standalone_evidence": "event 0x27 uses the separate B272 descriptor; src/lambda.c supplies mode-specific closed-loop correction",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 40,
+      "report_words": [
+        "1520",
+        "1520",
+        "1520",
+        "1520"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4598E"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the downstream oxygen sensor/heater and catalyst-monitoring observable are not fitted",
+      "standalone_evidence": "no bound downstream sensor; event 0x28 is proved downstream-heater related",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 41,
+      "report_words": [
+        "0480",
+        "0480",
+        "0480",
+        "0480"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "5F552"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 42,
+      "report_words": [
+        "0481",
+        "0481",
+        "0481",
+        "0481"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "5F560"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 43,
+      "report_words": [
+        "0141",
+        "0141",
+        "0141",
+        "0141"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4314C"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the downstream oxygen sensor/heater and catalyst-monitoring observable are not fitted",
+      "standalone_evidence": "no bound downstream sensor; event 0x28 is proved downstream-heater related",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 44,
+      "report_words": [
+        "0141",
+        "0141",
+        "0141",
+        "0141"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "6535C",
+        "653B4"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the downstream oxygen sensor/heater and catalyst-monitoring observable are not fitted",
+      "standalone_evidence": "no bound downstream sensor; event 0x28 is proved downstream-heater related",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 45,
+      "report_words": [
+        "0130",
+        "0130",
+        "0130",
+        "0130"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "42FBE"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "narrowband_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM upstream switching-signal monitor is valid only when narrowband mode is selected",
+      "standalone_evidence": "AN6 acquisition; OEM producers at 0x42FBE/0x436F6/0x437F6/0x451A2",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 46,
+      "report_words": [
+        "0135",
+        "0135",
+        "0135",
+        "0135"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "653F8",
+        "65454"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 47,
+      "report_words": [
+        "0420",
+        "0420",
+        "0420",
+        "0420"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4474E"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the downstream oxygen sensor/heater and catalyst-monitoring observable are not fitted",
+      "standalone_evidence": "no bound downstream sensor; event 0x28 is proved downstream-heater related",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 48,
+      "report_words": [
+        "1110",
+        "1110",
+        "1110",
+        "1110"
+      ],
+      "config_index": 0,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "65D06"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unresolved",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the P-code mapping is known but the vehicle function and required observable are not proven well enough to accept or reject",
+      "standalone_evidence": "OEM report mapping and producer callsite only; monitor contract investigation pending",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 49,
+      "report_words": [
+        "0232",
+        "0231",
+        "0230",
+        "0230"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "unresolved",
+      "direct_callsites": [],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 50,
+      "report_words": [
+        "1303",
+        "1303",
+        "1303",
+        "1303"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B3D0"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "knock DTCs are explicitly outside the requested standalone diagnostic scope",
+      "standalone_evidence": "owner direction 2026-09-22; ROM 0x4B374 onward derives events 0x32..0x38 from knock diagnostic bits/counters and event 0x39 from knock input state",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 51,
+      "report_words": [
+        "1303",
+        "1303",
+        "1303",
+        "1303"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B41C"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "knock DTCs are explicitly outside the requested standalone diagnostic scope",
+      "standalone_evidence": "owner direction 2026-09-22; ROM 0x4B374 onward derives events 0x32..0x38 from knock diagnostic bits/counters and event 0x39 from knock input state",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 52,
+      "report_words": [
+        "1303",
+        "1303",
+        "1303",
+        "1303"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B468"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "knock DTCs are explicitly outside the requested standalone diagnostic scope",
+      "standalone_evidence": "owner direction 2026-09-22; ROM 0x4B374 onward derives events 0x32..0x38 from knock diagnostic bits/counters and event 0x39 from knock input state",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 53,
+      "report_words": [
+        "1303",
+        "1303",
+        "1303",
+        "1303"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B4B4"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "knock DTCs are explicitly outside the requested standalone diagnostic scope",
+      "standalone_evidence": "owner direction 2026-09-22; ROM 0x4B374 onward derives events 0x32..0x38 from knock diagnostic bits/counters and event 0x39 from knock input state",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 54,
+      "report_words": [
+        "1303",
+        "1303",
+        "1303",
+        "1303"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B72C"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "knock DTCs are explicitly outside the requested standalone diagnostic scope",
+      "standalone_evidence": "owner direction 2026-09-22; ROM 0x4B374 onward derives events 0x32..0x38 from knock diagnostic bits/counters and event 0x39 from knock input state",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 55,
+      "report_words": [
+        "1303",
+        "1303",
+        "1303",
+        "1303"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B7A8"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "knock DTCs are explicitly outside the requested standalone diagnostic scope",
+      "standalone_evidence": "owner direction 2026-09-22; ROM 0x4B374 onward derives events 0x32..0x38 from knock diagnostic bits/counters and event 0x39 from knock input state",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 56,
+      "report_words": [
+        "1303",
+        "1303",
+        "1303",
+        "1303"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4BA34"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "knock DTCs are explicitly outside the requested standalone diagnostic scope",
+      "standalone_evidence": "owner direction 2026-09-22; ROM 0x4B374 onward derives events 0x32..0x38 from knock diagnostic bits/counters and event 0x39 from knock input state",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 57,
+      "report_words": [
+        "0328",
+        "0327",
+        "0329",
+        "0326"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B210"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "knock DTCs are explicitly outside the requested standalone diagnostic scope",
+      "standalone_evidence": "owner direction 2026-09-22; ROM 0x4B374 onward derives events 0x32..0x38 from knock diagnostic bits/counters and event 0x39 from knock input state",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 58,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B280"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 59,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B2F0"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 60,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "4B360"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 61,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2FA6A"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 62,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F9DE"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 63,
+      "report_words": [
+        "0133",
+        "0133",
+        "0133",
+        "0133"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "436F6"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "narrowband_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM upstream switching-signal monitor is valid only when narrowband mode is selected",
+      "standalone_evidence": "AN6 acquisition; OEM producers at 0x42FBE/0x436F6/0x437F6/0x451A2",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 64,
+      "report_words": [
+        "0133",
+        "0133",
+        "0133",
+        "0133"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "437F6"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "narrowband_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM upstream switching-signal monitor is valid only when narrowband mode is selected",
+      "standalone_evidence": "AN6 acquisition; OEM producers at 0x42FBE/0x436F6/0x437F6/0x451A2",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 65,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F924"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 66,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F8C4"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 67,
+      "report_words": [
+        "0108",
+        "0107",
+        "0109",
+        "0106"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "3EDFC"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "available",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "standalone acquires manifold pressure on AN0",
+      "standalone_evidence": "src/sensors.c sample(0); OEM event/report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 68,
+      "report_words": [
+        "0138",
+        "0137",
+        "0140",
+        "0136"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "42850"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the downstream oxygen sensor/heater and catalyst-monitoring observable are not fitted",
+      "standalone_evidence": "no bound downstream sensor; event 0x28 is proved downstream-heater related",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 69,
+      "report_words": [
+        "0132",
+        "0131",
+        "0134",
+        "0130"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "451A2"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "narrowband_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM upstream switching-signal monitor is valid only when narrowband mode is selected",
+      "standalone_evidence": "AN6 acquisition; OEM producers at 0x42FBE/0x436F6/0x437F6/0x451A2",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 70,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F864"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 71,
+      "report_words": [
+        "0650",
+        "0650",
+        "0650",
+        "0650"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "65500"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 72,
+      "report_words": [
+        "0485",
+        "0485",
+        "0485",
+        "0485"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "655F4"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 73,
+      "report_words": [
+        "0485",
+        "0485",
+        "0485",
+        "0485"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "65666"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 74,
+      "report_words": [
+        "0338",
+        "0337",
+        "0335",
+        "0336"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "67786"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the stock ECU has crank capture and coil-derived DEPHIA phase capture; exact OEM gates and conditioning still require a producer port",
+      "standalone_evidence": "CC8 phase capture 0x67C5A..0x67E30; P1327 producers 0x67C44/0x67C52; Citroen PDF pp.30-32",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 75,
+      "report_words": [
+        "1327",
+        "1327",
+        "1327",
+        "1327"
+      ],
+      "config_index": 0,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "67C44"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the stock ECU has crank capture and coil-derived DEPHIA phase capture; exact OEM gates and conditioning still require a producer port",
+      "standalone_evidence": "CC8 phase capture 0x67C5A..0x67E30; P1327 producers 0x67C44/0x67C52; Citroen PDF pp.30-32",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 76,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "40BBE"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 77,
+      "report_words": [
+        "1528",
+        "1527",
+        "1529",
+        "1526"
+      ],
+      "config_index": 0,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "69BFA"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "these manufacturer P152x events belong to the idle stepper/driver supervisor, and the standalone already captures L9935 response status",
+      "standalone_evidence": "OEM producers 0x6574C/0x65C76/0x69B68; standalone src/iac.c response/open/short/thermal accounting",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 78,
+      "report_words": [
+        "0171",
+        "0172",
+        "0170",
+        "0170"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "59CEE",
+        "5A66A"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "these four events belong to OEM LTFT cells and the standalone intentionally has no LTFT",
+      "standalone_evidence": "OEM B26E=ABDA high-load multiplicative, B270=ABDE low-load multiplicative, B2C0=ABE2 speed-additive, B2C2=ABE6 fixed-additive",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 79,
+      "report_words": [
+        "0171",
+        "0172",
+        "0170",
+        "0170"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "59CFC",
+        "5A678"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "these four events belong to OEM LTFT cells and the standalone intentionally has no LTFT",
+      "standalone_evidence": "OEM B26E=ABDA high-load multiplicative, B270=ABDE low-load multiplicative, B2C0=ABE2 speed-additive, B2C2=ABE6 fixed-additive",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 80,
+      "report_words": [
+        "0606",
+        "0606",
+        "0606",
+        "0606"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "631DE"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "processor and program-memory self-tests are implementable, but must test the standalone image rather than relabel calibration CRC or deadlines",
+      "standalone_evidence": "OEM P0606/P0605 producers at 0x631DE/0x63480; standalone lifecycle differs",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 81,
+      "report_words": [
+        "0350",
+        "0350",
+        "0350",
+        "0350"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "37700",
+        "37B20",
+        "37C0A"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 82,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "not_reportable",
+      "direct_callsites": [],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 83,
+      "report_words": [
+        "0410",
+        "0410",
+        "0410",
+        "0410"
+      ],
+      "config_index": 31,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F582"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "secondary-air equipment is not installed",
+      "standalone_evidence": "owner hardware scope; Citroen training PDF pp.51-52 marks equipment variants",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 84,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F590"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 85,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F954"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 86,
+      "report_words": [
+        "1525",
+        "1525",
+        "1524",
+        "1523"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "65784",
+        "65C86"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "these manufacturer P152x events belong to the idle stepper/driver supervisor, and the standalone already captures L9935 response status",
+      "standalone_evidence": "OEM producers 0x6574C/0x65C76/0x69B68; standalone src/iac.c response/open/short/thermal accounting",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 87,
+      "report_words": [
+        "0351",
+        "0351",
+        "0351",
+        "0351"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "37720",
+        "37988",
+        "37A58",
+        "37B8A"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 88,
+      "report_words": [
+        "0352",
+        "0352",
+        "0352",
+        "0352"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "37740",
+        "379BC",
+        "37A8C",
+        "37BAA"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the OEM output-driver feedback interface is present but unused by the standalone",
+      "standalone_evidence": "OEM sub_6489C clocks P6.5 and samples P6.7; P6.6 is companion control; standalone board_init only configures P6.2/P6.4",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 89,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "37760",
+        "379F0",
+        "37AC0",
+        "37BCA"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 90,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "37780",
+        "37A24",
+        "37AF4",
+        "37BEA"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 91,
+      "report_words": [
+        "0113",
+        "0112",
+        "0110",
+        "0111"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "69966"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "available",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "standalone and native frontend acquire intake-air temperature",
+      "standalone_evidence": "src/sensors.c sample(11); ported OEM IAT producer",
+      "producer": "C port with native-contract tests",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 92,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F894"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 93,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F8F4"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 94,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F834"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 95,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "not_reportable",
+      "direct_callsites": [],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 96,
+      "report_words": [
+        "0445",
+        "0444",
+        "0443",
+        "0443"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "656FC"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "purge-canister equipment is not installed",
+      "standalone_evidence": "owner hardware scope; Citroen training PDF pp.51-52 marks equipment variants",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 97,
+      "report_words": [
+        "0118",
+        "0117",
+        "0115",
+        "0116"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "696C6"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "available",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "standalone and native frontend acquire coolant temperature",
+      "standalone_evidence": "src/sensors.c sample(10); ported OEM coolant producer",
+      "producer": "C port with native-contract tests",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 98,
+      "report_words": [
+        "1608",
+        "1608",
+        "1608",
+        "1608"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "66398"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unresolved",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "the P-code mapping is known but the vehicle function and required observable are not proven well enough to accept or reject",
+      "standalone_evidence": "OEM report mapping and producer callsite only; monitor contract investigation pending",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 99,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F774"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 100,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2F7A4"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 101,
+      "report_words": [
+        "0563",
+        "0562",
+        "0560",
+        "0561"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "66704"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "available",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "standalone and native frontend acquire supply voltage",
+      "standalone_evidence": "src/sensors.c sample(5); ported OEM voltage producer",
+      "producer": "C port with native-contract tests",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 102,
+      "report_words": [
+        "0605",
+        "0605",
+        "0605",
+        "0605"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "63480"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "port_candidate",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "processor and program-memory self-tests are implementable, but must test the standalone image rather than relabel calibration CRC or deadlines",
+      "standalone_evidence": "OEM P0606/P0605 producers at 0x631DE/0x63480; standalone lifecycle differs",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 103,
+      "report_words": [
+        "1613",
+        "1613",
+        "1613",
+        "1613"
+      ],
+      "config_index": 37,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "64608",
+        "6466E"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the standalone does not reproduce the OEM immobilizer/configuration identity contract",
+      "standalone_evidence": "standalone reconstruction scope replaces OEM immobilizer behavior",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 104,
+      "report_words": [
+        "0503",
+        "0502",
+        "0500",
+        "0501"
+      ],
+      "config_index": 32,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "2A28A"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "available",
+      "standalone_allowed_subtypes": [
+        1,
+        2,
+        4,
+        8
+      ],
+      "standalone_reason": "standalone has a timestamped vehicle-speed capture input",
+      "standalone_evidence": "target/c167/board.c vss_isr; ported OEM VSS input/producer",
+      "producer": "C port with native-contract tests",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 105,
+      "report_words": [
+        "1615",
+        "1615",
+        "1615",
+        "1615"
+      ],
+      "config_index": 30,
+      "reportable": true,
+      "mapping_proven": true,
+      "producer_resolution": "direct",
+      "direct_callsites": [
+        "31864"
+      ],
+      "dynamic_callsites": [],
+      "standalone_applicability": "unavailable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "the standalone does not reproduce the OEM immobilizer/configuration identity contract",
+      "standalone_evidence": "standalone reconstruction scope replaces OEM immobilizer behavior",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    },
+    {
+      "event": 106,
+      "report_words": [
+        "0000",
+        "0000",
+        "0000",
+        "0000"
+      ],
+      "config_index": 0,
+      "reportable": false,
+      "mapping_proven": true,
+      "producer_resolution": "not_reportable",
+      "direct_callsites": [],
+      "dynamic_callsites": [],
+      "standalone_applicability": "not_reportable",
+      "standalone_allowed_subtypes": [],
+      "standalone_reason": "event has no public report word",
+      "standalone_evidence": "OEM report table",
+      "producer": "pending",
+      "runtime_integration": "pending",
+      "lifecycle": "pending",
+      "parity_complete": false
+    }
+  ]
+}

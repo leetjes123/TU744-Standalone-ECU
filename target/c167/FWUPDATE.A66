@@ -1,0 +1,241 @@
+$MOD167
+$SEGMENTED
+$CASE
+NAME FWUPDATE
+PUBLIC fw_update_start, fw_update_end
+S0TBUF DEFR 0FEB0H
+S0RBUF DEFR 0FEB2H
+S0RIC  DEFR 0FF6EH
+S0TIC  DEFR 0FF6CH
+FW_UPDATE SECTION CODE WORD 'FCODE'
+; Relocatable RAM firmware-update handler, entered by protocol command 01
+; with interrupts disabled and engine outputs stopped. It never returns.
+;
+; Wire protocol (raw bytes, no framing), identical to the LRE-B4 RAM handler
+; so the same host tools program both firmwares:
+;   01 pp hh ll          read word at page pp, offset hhll; reply hi, lo
+;   02 pp hh ll 4*(h l)  program four words from pp:hhll (hi byte first)
+;   03                   reply 57h (unimplemented memory write, as LRE-B4)
+;   05 pp hh ll          erase the sector containing pp:hhll
+;   06                   software reset
+;   other                reply FFh (hosts probe with 66h and expect FFh)
+; Additions (LRE-B4 answers both with FFh, so a host can tell them apart):
+;   07                   reply 5Ah, failed flash operations (saturating)
+;   08 pp                reply 5Ah, s1 hi, s1 lo, s2 hi, s2 lo: word sums of
+;                        page pp, s1 += w and s2 += s1 over offsets 0..3FFEh
+; Pages are 16 KiB (pp = byte address / 4000h). Every transmitted byte waits
+; for its single-wire K-line echo, which it consumes. Erase and program poll
+; completion here (LRE-B4 returned at once), servicing the watchdog.
+; Only PC-relative branches; R0..R14 of the current bank are used (R0, the
+; C user-stack pointer, is free because the handler never returns).
+; NEAR: RET must stay a near return (a FAR procedure assembles it as RETS).
+fw_update_start PROC NEAR
+    BCLR S0RIC.7
+    MOV R13,#0
+command:
+    CALLR rx
+    CMP R2,#1
+    JMPR cc_EQ,read_word
+    CMP R2,#2
+    JMPR cc_EQ,program
+    CMP R2,#5
+    JMPR cc_EQ,erase
+    CMP R2,#8
+    JMPR cc_EQ,page_sum
+    CMP R2,#6
+    JMPR cc_NE,short_reply
+    SRST
+short_reply:
+    MOV R3,#0FFH
+    CMP R2,#3
+    JMPR cc_NE,not_write
+    MOV R3,#57H
+not_write:
+    CMP R2,#7
+    JMPR cc_NE,reply_one
+    MOV R2,#5AH
+    CALLR tx
+    MOV R3,R13
+reply_one:
+    MOV R2,R3
+    CALLR tx
+    JMPR cc_UC,command
+read_word:
+    CALLR address
+    EXTP R8,#1
+    MOV R10,[R9]
+    MOV R2,R10
+    SHR R2,#8
+    CALLR tx
+    MOV R2,R10
+    CALLR tx
+    JMPR cc_UC,command
+program:
+    CALLR address
+    ; All four words arrive before programming starts. poll uses R3..R6.
+    CALLR rx_word
+    MOV R0,R10
+    CALLR rx_word
+    MOV R1,R10
+    CALLR rx_word
+    MOV R7,R10
+    CALLR rx_word
+    MOV R14,R10
+    MOV R10,R0
+    CALLR program_word
+    ADD R9,#2
+    MOV R10,R1
+    CALLR program_word
+    ADD R9,#2
+    MOV R10,R7
+    CALLR program_word
+    ADD R9,#2
+    MOV R10,R14
+    CALLR program_word
+    JMPR cc_UC,command
+erase:
+    CALLR address
+    CALLR unlock
+    MOV R3,#0080H
+    EXTP #0,#1
+    MOV [R11],R3
+    CALLR unlock
+    MOV R3,#0030H
+    EXTP R8,#1
+    MOV [R9],R3
+    MOV R10,#0FFFFH
+    CALLR poll
+    JMPR cc_UC,command
+page_sum:
+    CALLR rx
+    MOV R8,R2
+    MOV R9,#0
+    MOV R4,#0
+    MOV R5,#0
+sum_word:
+    SRVWDT
+    EXTP R8,#1
+    MOV R10,[R9]
+    ADD R4,R10
+    ADD R5,R4
+    ADD R9,#2
+    CMP R9,#4000H
+    JMPR cc_ULT,sum_word
+    MOV R2,#5AH
+    CALLR tx
+    MOV R6,R4
+    CALLR tx_word
+    MOV R6,R5
+    CALLR tx_word
+    JMPR cc_UC,command
+; ---- subroutines (CALLR/RET within this segment) ----
+; R2 = next received byte, 0..255.
+rx:
+    SRVWDT
+    JNB S0RIC.7,rx
+    MOV R2,DPP3:S0RBUF
+    AND R2,#00FFH
+    BCLR S0RIC.7
+    RET
+; R10 = received word, high byte first.
+rx_word:
+    CALLR rx
+    MOV R10,R2
+    SHL R10,#8
+    CALLR rx
+    OR R10,R2
+    RET
+; R8 = page, R9 = even offset within it; R11/R12 = unlock addresses.
+address:
+    CALLR rx
+    MOV R8,R2
+    CALLR rx_word
+    MOV R9,R10
+    BCLR R9.0
+    MOV R11,#0AAAH
+    MOV R12,#0554H
+    RET
+; Transmit R2 low byte, then consume its echo (bounded ~25 ms).
+tx:
+    AND R2,#00FFH
+    MOV DPP3:S0TBUF,R2
+    MOV R3,#0FFFFH
+tx_echo:
+    SRVWDT
+    JB S0RIC.7,tx_done
+    SUB R3,#1
+    JMPR cc_NZ,tx_echo
+    RET
+tx_done:
+    BCLR S0RIC.7
+    RET
+; Transmit R6 high byte then low byte.
+tx_word:
+    MOV R2,R6
+    SHR R2,#8
+    CALLR tx
+    MOV R2,R6
+    CALLR tx
+    RET
+unlock:
+    MOV R3,#00AAH
+    EXTP #0,#1
+    MOV [R11],R3
+    MOV R3,#0055H
+    EXTP #0,#1
+    MOV [R12],R3
+    RET
+program_word:
+    CALLR unlock
+    MOV R3,#00A0H
+    EXTP #0,#1
+    MOV [R11],R3
+    EXTP R8,#1
+    MOV [R9],R10
+; Data polling at R8:R9 until it reads R10: DQ7 toggles to its final value,
+; DQ5 set means the embedded operation exceeded its limit. A failure or
+; software timeout (~several seconds) is counted, the array is reset to read
+; mode and the host sees it through command 07 and the page sums.
+poll:
+    MOV R3,#0FFFFH
+    MOV R6,#0100H
+poll_data:
+    SRVWDT
+    EXTP R8,#1
+    MOV R4,[R9]
+    MOV R5,R4
+    XOR R5,R10
+    AND R5,#0080H
+    JMPR cc_Z,poll_final
+    AND R4,#0020H
+    JMPR cc_NZ,poll_last
+    SUB R3,#1
+    JMPR cc_NZ,poll_data
+    SUB R6,#1
+    JMPR cc_NZ,poll_data
+    JMPR cc_UC,poll_failed
+poll_last:
+    EXTP R8,#1
+    MOV R4,[R9]
+    XOR R4,R10
+    AND R4,#0080H
+    JMPR cc_NZ,poll_failed
+poll_final:
+    ; DQ7 can become valid before the other bits: reread in array mode.
+    EXTP R8,#1
+    MOV R4,[R9]
+    CMP R4,R10
+    JMPR cc_EQ,poll_done
+poll_failed:
+    CMP R13,#0FFH
+    JMPR cc_UGE,poll_done
+    ADD R13,#1
+poll_done:
+    MOV R3,#00F0H
+    EXTP #0,#1
+    MOV [R11],R3
+    RET
+fw_update_start ENDP
+fw_update_end:
+FW_UPDATE ENDS
+END

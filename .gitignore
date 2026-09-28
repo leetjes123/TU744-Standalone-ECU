@@ -1,0 +1,9 @@
+build/
+__pycache__/
+*.uvguix.*
+*.uvgui.*
+*.uvopt
+*.uvoptx
+Objects/
+Listings/
+.claude/
