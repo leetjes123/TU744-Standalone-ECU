@@ -48,8 +48,7 @@ struct App {
     DWORD monitorLastUpdateTick=0;
     char statusLine[256]="Ready",pendingSettingName[96]={},search[96]={};
     bool showAbout=false,showReviewIssues=false,confirmSave=false,confirmFirmwareFlash=false;
-    bool flashCompletionHandled=true,backupBeforeFlash=true,flashBackupPending=false;
-    char backupPath[260]={};
+    bool flashCompletionHandled=true;
     std::vector<unsigned char> pendingFirmwareImage;
     FirmwareImageInfo pendingFirmwareInfo;
     enum class PendingAction { None, Open, Close, Read } pendingAction=PendingAction::None;

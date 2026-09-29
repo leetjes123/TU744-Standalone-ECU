@@ -57,6 +57,13 @@ inhibits and cuts still apply. A zero measured AFR means unavailable, including
 narrowband mode. The dashboard shows a dash; CSV retains zero and a separate
 AFR-valid signal. Target AFR is never substituted for measured AFR.
 
+The bottom monitor row stays visible across tabs and during operations, wrapping
+to fit the window. It includes measured AFR, Lean/Rich/Stoich, VE, ignition timing
+and signed STFT correction. Unavailable or stale readings show labeled dashes.
+Mixture uses the ECU's narrowband classification, or measured wideband AFR within
+0.1 of the active tune's stoichiometric AFR for Stoich (14.7 until the active tune
+has been read). Ignition timing is planned advance, and STFT is applied trim.
+
 Logging records accepted monitor samples, including sync state, sync-loss count,
 status bitfields and map weights. Open a CSV log for plots, zoom and comparison.
 Unavailable or stale live data is not shown as fresh. A lost connection requires
@@ -107,12 +114,12 @@ collection; resume these explicitly after the scan.
 ## Firmware update
 
 Choose **ECU > Update firmware** and a 512 KiB raw image with a valid reset vector.
-The default option reads and saves the current ECU tune before programming.
+Click **Program firmware** to start directly, without a tune-backup Save As dialog.
 Both calibration slots are erased. An embedded tune is used only if the image contains one.
 The bare stock-profile build contains no tune: after flashing, reconnect, open your
 saved schema-4 tune, Write active tune, Save tune to ECU flash, and key-cycle.
-The wizard waits for each erase and verifies handler failure status and page sums.
-A handler without verification support is explicitly reported as unverified.
+The wizard waits for each erase and checks handler failure status where supported.
+Firmware page checksum checking is disabled.
 
 On an uncertain programming result, the wizard leaves the RAM handler running
 and reports failure rather than resetting an incomplete image. Physical flashing

@@ -44,7 +44,8 @@ It also checks definition overlap/bounds, axes, autotune gates and flash erase s
 - Persistence: command 24, poll command 25 byte 8 for completion. Saving latches
   service mode; the ECU requires a key cycle afterwards.
 - Firmware update: 512 KiB image with `FA 00` reset vector, erasing both tune slots,
-  probing erase completion and checking handler status/page sums where supported.
+  probing erase completion and checking handler status where supported. Firmware
+  page checksums are not requested or compared.
 
 No ECU identity/security indication is displayed. Firmware version remains an
 internal protocol operation. Unsupported legacy fields are absent from logs.
