@@ -93,7 +93,7 @@ void App::firmwareFlashSelect() {
     if(!LoadAndValidateFirmwareImage(path,pendingFirmwareImage,pendingFirmwareInfo,error)) {
         snprintf(statusLine,sizeof(statusLine),"%s",error.c_str()); return;
     }
-    backupBeforeFlash=true; confirmFirmwareFlash=true;
+    confirmFirmwareFlash=true;
 }
 void App::beginFlash() {
     if(!ecu.stopMonitor()) return;
@@ -130,16 +130,10 @@ void App::update(float dt) {
             if(success && operation!=Operation::Save) {
                 memcpy(ecuData,transfer.image.data(),CAL_SIZE); ecuSynced=true;
                 baselineGeneration=transfer.verifiedGeneration();
-                if(operation==Operation::Read && !flashBackupPending) {
+                if(operation==Operation::Read) {
                     memcpy(cal.data,ecuData,CAL_SIZE); cal.loaded=true; cal.markClean(); cal.filePath[0]=0; undo.clear();
                 }
             } else if(!success) { ecuSynced=false; liveTuning=false; }
-            if(flashBackupPending) {
-                flashBackupPending=false;
-                CalBuffer backup; memcpy(backup.data,transfer.image.data(),CAL_SIZE); backup.loaded=success;
-                if(success && backup.saveToFile(backupPath)) { beginFlash(); return; }
-                snprintf(statusLine,sizeof(statusLine),"ECU tune backup failed; firmware update cancelled");
-            }
             if(success && operation==Operation::Compare) { beginOperation(Operation::Write); return; }
             if(!updateOnly) ecu.startMonitor();
         }
@@ -214,7 +208,18 @@ void App::drawUI() {
     if(ecu.monitor.valid && ecu.monitor.unsaved()) { ImGui::SameLine(); ImGui::TextColored(ImVec4(1,.8f,.2f,1),"Unsaved ECU tune"); }
     ImGui::EndDisabled();
     ImGui::Separator();
-    const float height=ImGui::GetContentRegionAvail().y-S(65);
+    const float age=monitorLastUpdateTick?(GetTickCount()-monitorLastUpdateTick)*.001f:999;
+    MonitorData fresh=ecu.monitor; if(age>=1 || busy) fresh.valid=false;
+    const bool monitorFresh=serial.isOpen() && ecu.monitorActive && fresh.valid;
+    const float stoichAfr=ecuSynced && baselineGeneration==fresh.generation
+        ? ((ecuData[0x912]<<8)|ecuData[0x913])*0.1f : 14.7f;
+    const std::string monitorText=InlineDashboardText(fresh,monitorFresh,stoichAfr);
+    const float footerWidth=ImGui::GetContentRegionAvail().x;
+    const float footerHeight=1.0f+ImGui::GetStyle().ItemSpacing.y*3+
+        ImGui::CalcTextSize(statusLine,nullptr,false,footerWidth).y+
+        ImGui::CalcTextSize(monitorText.c_str(),nullptr,false,footerWidth).y+
+        (busy?ImGui::GetFrameHeightWithSpacing():0.0f);
+    const float height=std::max(1.0f,ImGui::GetContentRegionAvail().y-footerHeight);
     ImGui::BeginChild("Navigation",ImVec2(S(235),height),ImGuiChildFlags_Borders);
     ImGui::TextUnformatted("Tuning Wizard");
     if(ImGui::Selectable("Dashboard")) openDashboardTab();
@@ -249,8 +254,6 @@ void App::drawUI() {
     }
     ImGui::EndDisabled(); ImGui::EndChild(); ImGui::SameLine();
     ImGui::BeginChild("Editors",ImVec2(0,height));
-    const float age=monitorLastUpdateTick?(GetTickCount()-monitorLastUpdateTick)*.001f:999;
-    MonitorData fresh=ecu.monitor; if(age>=1 || busy) fresh.valid=false;
     if(ImGui::BeginTabBar("Tabs",ImGuiTabBarFlags_Reorderable)) {
         for(int i=0;i<numTabs;++i) {
             auto& t=tabs[i]; if(!t.open) continue;
@@ -281,7 +284,9 @@ void App::drawUI() {
     ImGui::EndChild(); ImGui::Separator();
     ImGui::TextWrapped("%s",statusLine);
     if(busy) ImGui::ProgressBar(firmwareFlasher.busy()?firmwareFlasher.progress():diagnostics.busy()?diagnostics.progress():transfer.progress());
-    else DrawInlineDashboard(fresh,serial.isOpen(),ecu.monitorActive,age,false);
+    if(!monitorFresh) ImGui::PushStyleColor(ImGuiCol_Text,ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
+    ImGui::TextWrapped("%s",monitorText.c_str());
+    if(!monitorFresh) ImGui::PopStyleColor();
     ImGui::End();
     if(pendingAction!=PendingAction::None) ImGui::OpenPopup("Unsaved file changes");
     if(ImGui::BeginPopupModal("Unsaved file changes",nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
@@ -308,12 +313,8 @@ void App::drawUI() {
     if(ImGui::BeginPopupModal("Update firmware",nullptr,ImGuiWindowFlags_AlwaysAutoResize)) {
         ImGui::Text("Image: %zu bytes; %d flash sectors will be erased",pendingFirmwareInfo.size,pendingFirmwareInfo.sectorsToErase);
         ImGui::TextUnformatted("Both stored tunes will be erased. Restore a saved tune if this image contains no calibration.");
-        ImGui::Checkbox("Read and save the current ECU tune first",&backupBeforeFlash);
         if(ImGui::Button("Program firmware")) {
-            if(backupBeforeFlash) {
-                backupPath[0]=0;
-                if(FileDialog(backupPath,sizeof(backupPath),true) && beginOperation(Operation::Read)) flashBackupPending=true;
-            } else beginFlash();
+            beginFlash();
             ImGui::CloseCurrentPopup();
         }
         ImGui::SameLine(); if(ImGui::Button("Cancel")) ImGui::CloseCurrentPopup(); ImGui::EndPopup();

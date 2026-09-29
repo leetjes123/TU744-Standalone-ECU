@@ -1,5 +1,6 @@
 #include "dashboard.h"
 #include "logging.h"
+#include <cstdio>
 void DrawDashboard(const MonitorData& m,bool connected,bool monitoring,float age,DashboardLayout&,bool) {
     const bool fresh=connected && monitoring && m.valid && age<1.0f;
     if(!fresh) ImGui::TextDisabled("Live data unavailable or stale");
@@ -30,8 +31,29 @@ void DrawDashboard(const MonitorData& m,bool connected,bool monitoring,float age
         ImGui::EndTable();
     }
 }
-void DrawInlineDashboard(const MonitorData& m,bool connected,bool monitoring,float age,bool) {
-    if(!connected || !monitoring || !m.valid || age>=1) { ImGui::TextDisabled("Live data unavailable"); return; }
-    ImGui::Text("%u RPM | %.1f%% TPS | %u kPa | %d C | %.1f V | Sync %s | Losses %u",
-                m.rpm,m.tps,m.kpa,m.clt,m.battery,m.synced()?"OK":"lost",m.lossOfSyncCount);
+std::string InlineDashboardText(const MonitorData& m,bool fresh,float stoichAfr) {
+    if(!fresh)
+        return "RPM -- | TPS -- | MAP -- | CLT -- | Battery -- | AFR -- | Mixture -- | VE -- | Ign timing -- | STFT correction -- | Sync -- | Losses --";
+
+    char afr[24]="--";
+    const char* mixture="--";
+    if(m.measuredAfr>0) {
+        snprintf(afr,sizeof(afr),"%.1f",m.measuredAfr);
+        // Allow one telemetry step either side of stoichiometric AFR.
+        mixture=m.measuredAfr>stoichAfr+0.1001f?"Lean":
+                m.measuredAfr<stoichAfr-0.1001f?"Rich":"Stoich";
+    } else {
+        // Use the ECU's calibrated narrowband classification; do not invent AFR.
+        switch(m.narrowbandBand) {
+        case 1: mixture="Lean"; break;
+        case 2: mixture="Stoich"; break;
+        case 4: mixture="Rich"; break;
+        }
+    }
+    char text[512];
+    snprintf(text,sizeof(text),
+             "RPM %u | TPS %.1f%% | MAP %u kPa | CLT %d C | Battery %.1f V | AFR %s | Mixture %s | VE %u%% | Ign timing %.1f deg | STFT correction %+.1f%% | Sync %s | Losses %u%s",
+             m.rpm,m.tps,m.kpa,m.clt,m.battery,afr,mixture,m.ve,m.advance,m.trimPercent,
+             m.synced()?"OK":"lost",m.lossOfSyncCount,m.lossOfSyncCount==65535?"+":"");
+    return text;
 }

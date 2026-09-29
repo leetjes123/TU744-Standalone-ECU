@@ -45,7 +45,6 @@ private:
     bool writeRaw(const unsigned char* data, int len);
     bool validateHandler();
     bool rawExchange(const unsigned char* command,int length,unsigned char* response,int count,int timeout=3000);
-    bool verified_=false;
 
     EcuProtocol* ecu_ = nullptr;
     std::vector<unsigned char> image_;

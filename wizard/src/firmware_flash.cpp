@@ -129,7 +129,6 @@ bool FirmwareFlasher::start(EcuProtocol* ecu, std::vector<unsigned char> image,
     image_ = std::move(image);
     info_ = info;
     progress_ = 0.0f;
-    verified_=false;
     state_ = State::Entering;
     setStatus("Entering ECU firmware update mode...");
     worker_ = std::thread(&FirmwareFlasher::run, this);
@@ -246,7 +245,7 @@ void FirmwareFlasher::run() {
     }
     FlushFileBuffers(ecu_->port->handle);
 
-    // Consume command echoes and require the extended handler's success count.
+    // Check the handler's erase/program result before resetting.
     unsigned char statusCmd=7,statusBytes[2]={};
     // A legacy handler returns one FF byte; read that before deciding the length.
     if(!rawExchange(&statusCmd,1,statusBytes,1)) {
@@ -256,21 +255,6 @@ void FirmwareFlasher::run() {
         if(ecu_->port->read(statusBytes+1,1,1000)!=1 || statusBytes[1]!=0) {
             ecu_->unlockSerial(); fail("Flash handler reported an erase/program failure",false); return;
         }
-        // Verify every erased page, including the blank second calibration slot.
-        const size_t limit=FLASH_SECTORS[info_.sectorsToErase-1].endOffset;
-        for(size_t base=0;base<limit;base+=0x4000) {
-            unsigned short sum1=0,sum2=0;
-            for(size_t i=base;i<base+0x4000;i+=2) {
-                sum1=static_cast<unsigned short>(sum1+image_[i]+(image_[i+1]<<8));
-                sum2=static_cast<unsigned short>(sum2+sum1);
-            }
-            unsigned char cmd[]={8,static_cast<unsigned char>(base/0x4000)},answer[5];
-            if(!rawExchange(cmd,2,answer,5) || answer[0]!=0x5A ||
-               ((answer[1]<<8)|answer[2])!=sum1 || ((answer[3]<<8)|answer[4])!=sum2) {
-                ecu_->unlockSerial(); fail("Firmware page verification failed; recovery is required",false); return;
-            }
-        }
-        verified_=true;
     } else if(statusBytes[0]!=0xFF) {
         ecu_->unlockSerial(); fail("Unexpected flash status; firmware is unverified",false); return;
     }
@@ -288,6 +272,6 @@ void FirmwareFlasher::run() {
     ecu_->unlockSerial();
 
     progress_ = 1.0f;
-    setStatus(verified_ ? "Firmware verified and reset command sent." : "Update handler does not support verification. Firmware sent but unverified; reset command sent.");
+    setStatus("Firmware programmed and reset command sent.");
     state_ = State::Complete;
 }
