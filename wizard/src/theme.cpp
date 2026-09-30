@@ -80,6 +80,8 @@ void ApplyUiTheme(UiTheme theme, float dpiScale) {
     c[ImGuiCol_TableBorderLight] = ImVec4(c[ImGuiCol_Border].x, c[ImGuiCol_Border].y, c[ImGuiCol_Border].z, 0.55f);
     c[ImGuiCol_TextSelectedBg] = ImVec4(accent.x, accent.y, accent.z, 0.30f);
     c[ImGuiCol_NavCursor] = accent;
+    c[ImGuiCol_PlotHistogram] = accent;
+    c[ImGuiCol_PlotLines] = ImVec4(0.42f, 0.77f, 0.96f, 1.0f);
 
     style.WindowRounding = style.ChildRounding = style.FrameRounding = 2.0f;
     style.PopupRounding = style.GrabRounding = style.TabRounding = style.ScrollbarRounding = 2.0f;

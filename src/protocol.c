@@ -3,6 +3,7 @@
 #include "oem_runtime.h"
 #include "faults.h"
 #include "identity.h"
+#include "knock.h"
 #include <string.h>
 void protocol_receive(u8 byte) SHARED {
     Protocol *p = &ecu.protocol;
@@ -133,13 +134,14 @@ static void monitor(void) {
         else
             b[93] = 2; /* stoich / calibrated transition band */
     }
+    knock_monitor(b + 94, now);
     reply(b, 98);
 }
 /* Command 13: compact live frame, version 2 (40 bytes, big endian). The
    fields a tuner watches while driving, and the map cell the fuel plan
    used, for cell-accurate autotune. Command 10 stays for older loggers. */
 static void live_frame(void) {
-    u8 b[40];
+    u8 b[44];
     Controls *s = &ecu.control;
     Sensors *in = &ecu.sensors;
     const u8 *c = cal_active();
@@ -156,7 +158,7 @@ static void live_frame(void) {
     generation = ecu.cal.generation;
     hal_unlock(lock);
     memset(b, 0, sizeof(b));
-    b[0] = 2;
+    b[0] = 3;
     put16(b + 1, r.rpm);
     put16(b + 3, (u16)clamp32(in->map.value, 0, 65535L));
     put16(b + 5, (u16)clamp32(in->tps.value, 0, 1000));
@@ -199,7 +201,8 @@ static void live_frame(void) {
     put16(b + 34, inhibits);
     put16(b + 36, generation);
     put16(b + 38, (u16)(r.losses > 65535UL ? 65535U : r.losses));
-    reply(b, 40);
+    knock_monitor(b + 40, now);
+    reply(b, 44);
 }
 static void execute(void) {
     Protocol *p = &ecu.protocol;
@@ -222,6 +225,14 @@ static void execute(void) {
     }
     if (cmd == 0x13 && n == 1) {
         live_frame();
+        return;
+    }
+    if (cmd == 0x34 && n == 1) {
+        knock_details(out, now); reply(out, 64); return;
+    }
+    if (cmd == 0x35 && n == 2) {
+        if (b[1] == 3U) { knock_job_status(out, now); reply(out, 86); }
+        else status(knock_job(b[1], now));
         return;
     }
     if (cmd == 0x01 && n == 1) {

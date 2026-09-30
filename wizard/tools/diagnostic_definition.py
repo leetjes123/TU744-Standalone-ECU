@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT.parents[2] / 'engines/TU5JP/defs/dtc_events.csv'
+SOURCE = ROOT.parent / 'tunerpro/dtc_events.csv'
 rows = []
 for record in csv.DictReader(SOURCE.open(encoding='utf-8-sig')):
     for subtype in (1, 2, 4, 8):

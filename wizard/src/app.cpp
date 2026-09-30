@@ -1,9 +1,9 @@
 #include "app.h"
+#include "cal_navigation.h"
 #include <algorithm>
 #include <cmath>
 #include <cstdio>
 #include <cstring>
-#include <set>
 #include <commdlg.h>
 #include <io.h>
 App gApp;
@@ -27,14 +27,14 @@ void App::performPending() {
 void App::fileOpen() {
     char path[260]={};
     if(!FileDialog(path,sizeof(path),false)) return;
-    if(!cal.loadFromFile(path)) { snprintf(statusLine,sizeof(statusLine),"Expected a 3072-byte schema-4 calibration"); return; }
+    if(!cal.loadFromFile(path)) { snprintf(statusLine,sizeof(statusLine),"Expected a 3072-byte schema-5 calibration"); return; }
     undo.clear(); ecuSynced=false; liveTuning=false; addRecentFile(path);
     snprintf(statusLine,sizeof(statusLine),"Opened %s",path);
 }
 void App::fileCompare() {
     char path[260]={}; CalBuffer other;
     if(!FileDialog(path,sizeof(path),false)) return;
-    if(!other.loadFromFile(path)) { snprintf(statusLine,sizeof(statusLine),"Compare requires a schema-4 calibration"); return; }
+    if(!other.loadFromFile(path)) { snprintf(statusLine,sizeof(statusLine),"Compare requires a schema-5 calibration"); return; }
     memcpy(compareData,other.data,CAL_SIZE); compareActive=true;
 }
 void App::connect() {
@@ -142,7 +142,7 @@ void App::update(float dt) {
     if(cal.loaded && (!ecuSynced || memcmp(cal.data,ecuData,CAL_SIZE))) autotune.clear();
     MonitorData m;
     if(ecu.consumeMonitorUpdate(m)) {
-        ecu.monitor=m; monitorLastUpdateTick=GetTickCount(); logState.pushSample(m);
+        ecu.monitor=m; monitorLastUpdateTick=GetTickCount(); logState.pushSample(m,elapsed);
         autotune.sample(m,elapsed,cal.loaded && ecuSynced && !memcmp(cal.data,ecuData,CAL_SIZE) && cal.data[0x600]==1);
         if(ecuSynced && baselineGeneration!=m.generation) { ecuSynced=false; liveTuning=false; }
     }
@@ -223,42 +223,74 @@ void App::drawUI() {
     ImGui::BeginChild("Navigation",ImVec2(S(235),height),ImGuiChildFlags_Borders);
     ImGui::TextUnformatted("Tuning Wizard");
     if(ImGui::Selectable("Dashboard")) openDashboardTab();
-    if(ImGui::Selectable("Diagnostics")) openToolTab(OpenTab::DIAGNOSTICS);
+    if(ImGui::Selectable("Live Logging")) openLoggingTab();
     if(ImGui::Selectable("Autotune")) openToolTab(OpenTab::AUTOTUNE);
-    if(ImGui::Selectable("Live logging")) openLoggingTab();
-    ImGui::SeparatorText("Calibration"); ImGui::SetNextItemWidth(-1); ImGui::InputTextWithHint("##Search","Search calibration...",search,sizeof(search));
-    ImGui::BeginDisabled(!cal.loaded||busy);
-    std::set<std::string> categories;
-    for(int i=0;i<NUM_TABLES;++i) categories.insert(ALL_TABLES[i].category);
-    for(int i=0;i<NUM_SCALARS;++i) categories.insert(ALL_SCALARS[i].category);
-    for(int i=0;i<NUM_FLAGS;++i) categories.insert(ALL_FLAGS[i].category);
-    auto matches=[&](const char* name) {
-        if(!search[0]) return true;
-        std::string a=name,b=search;
-        std::transform(a.begin(),a.end(),a.begin(),[](unsigned char c){return char(tolower(c));});
-        std::transform(b.begin(),b.end(),b.begin(),[](unsigned char c){return char(tolower(c));});
-        return a.find(b)!=std::string::npos;
+    ImGui::SetNextItemWidth(-1);
+    ImGui::InputTextWithHint("##Search","Search calibration...",search,sizeof(search));
+    auto visible=[&](const auto& item,const CalibrationPage& page) {
+        return CalibrationPageMatches(page.id,item.category,item.name,item.offset) &&
+               CalibrationSearchMatches(search,item.category,item.name,item.offset);
     };
-    for(const auto& category:categories) {
-        if(search[0]) ImGui::SetNextItemOpen(true);
-        if(ImGui::TreeNode(category.c_str())) {
-            for(int i=0;i<NUM_TABLES;++i) if(category==ALL_TABLES[i].category && matches(ALL_TABLES[i].name))
-                if(ImGui::Selectable(ALL_TABLES[i].name)) openTable(i);
-            bool has=false;
-            for(int i=0;i<NUM_SCALARS;++i) has|=category==ALL_SCALARS[i].category && matches(ALL_SCALARS[i].name);
-            for(int i=0;i<NUM_FLAGS;++i) has|=category==ALL_FLAGS[i].category && matches(ALL_FLAGS[i].name);
-            for(int i=0;i<NUM_DROPDOWNS;++i) has|=category==ALL_DROPDOWNS[i].category && matches(ALL_DROPDOWNS[i].name);
-            if(has && ImGui::Selectable("Settings")) openScalars(category.c_str());
-            ImGui::TreePop();
+    auto hasSettings=[&](const CalibrationPage& page) {
+        for(int i=0;i<NUM_SCALARS;++i) if(visible(ALL_SCALARS[i],page)) return true;
+        for(int i=0;i<NUM_FLAGS;++i) if(visible(ALL_FLAGS[i],page)) return true;
+        for(int i=0;i<NUM_DROPDOWNS;++i) if(visible(ALL_DROPDOWNS[i],page)) return true;
+        return false;
+    };
+    auto pageVisible=[&](const CalibrationPage& page) {
+        if(hasSettings(page)) return true;
+        for(int i=0;i<NUM_TABLES;++i) if(visible(ALL_TABLES[i],page)) return true;
+        return false;
+    };
+    auto drawPage=[&](const CalibrationPage& page) {
+        ImGui::PushID(page.id);
+        for(int i=0;i<NUM_TABLES;++i) if(visible(ALL_TABLES[i],page)) {
+            const auto& table=ALL_TABLES[i];
+            if(ImGui::Selectable(CalibrationTableLabel(table.offset,table.name))) openTable(i);
+            if(ImGui::IsItemHovered()) ImGui::SetTooltip("%s\n%s",table.name,table.description);
         }
+        if(hasSettings(page) && ImGui::Selectable(page.settingsLabel)) openScalars(page.id);
+        ImGui::PopID();
+    };
+    const char* lastSection="";
+    for(int first=0;first<NUM_CALIBRATION_PAGES;) {
+        const auto& group=CALIBRATION_PAGES[first];
+        int last=first+1;
+        while(last<NUM_CALIBRATION_PAGES && !strcmp(CALIBRATION_PAGES[last].group,group.group)) ++last;
+        bool any=false;
+        for(int i=first;i<last;++i) any|=pageVisible(CALIBRATION_PAGES[i]);
+        const bool diagnostics=!strcmp(group.section,"Diagnostics");
+        if(any || (diagnostics && CalibrationSearchMatches(search,"DTC thresholds","Fault Viewer",0))) {
+            if(strcmp(lastSection,group.section)) { ImGui::SeparatorText(group.section); lastSection=group.section; }
+            if(search[0]) ImGui::SetNextItemOpen(true);
+            if(ImGui::TreeNodeEx(group.group,first==0?ImGuiTreeNodeFlags_DefaultOpen:0)) {
+                if(diagnostics && (!search[0] || CalibrationSearchMatches(search,"DTC thresholds","Fault Viewer",0))) {
+                    if(ImGui::Selectable("Fault Viewer")) openToolTab(OpenTab::DIAGNOSTICS);
+                }
+                ImGui::BeginDisabled(!cal.loaded || busy);
+                for(int i=first;i<last;++i) {
+                    const auto& page=CALIBRATION_PAGES[i];
+                    if(!pageVisible(page)) continue;
+                    if(!page.label[0]) drawPage(page);
+                    else {
+                        if(search[0]) ImGui::SetNextItemOpen(true);
+                        if(ImGui::TreeNode(page.label)) { drawPage(page); ImGui::TreePop(); }
+                    }
+                }
+                ImGui::EndDisabled();
+                ImGui::TreePop();
+            }
+        }
+        first=last;
     }
-    ImGui::EndDisabled(); ImGui::EndChild(); ImGui::SameLine();
+    ImGui::EndChild(); ImGui::SameLine();
     ImGui::BeginChild("Editors",ImVec2(0,height));
     if(ImGui::BeginTabBar("Tabs",ImGuiTabBarFlags_Reorderable)) {
         for(int i=0;i<numTabs;++i) {
             auto& t=tabs[i]; if(!t.open) continue;
-            std::string label=t.type==OpenTab::TABLE?ALL_TABLES[t.tableIndex].name:
-                t.type==OpenTab::SCALARS||t.type==OpenTab::FLAGS?t.categoryFilter:
+            const auto* page=FindCalibrationPage(t.categoryFilter);
+            std::string label=t.type==OpenTab::TABLE?CalibrationTableLabel(ALL_TABLES[t.tableIndex].offset,ALL_TABLES[t.tableIndex].name):
+                t.type==OpenTab::SCALARS||t.type==OpenTab::FLAGS?(page?std::string(page->group)+(page->label[0]?" / "+std::string(page->label):""):t.categoryFilter):
                 t.type==OpenTab::DASHBOARD?"Dashboard":t.type==OpenTab::LOGGING?"Logging":
                 t.type==OpenTab::DIAGNOSTICS?"Diagnostics":t.type==OpenTab::AUTOTUNE?"Autotune":logViewers[t.logViewerIndex].tabLabel;
             label+="###tab"+std::to_string(i);
@@ -271,7 +303,17 @@ void App::drawUI() {
                     DrawDropdownEditors(t.categoryFilter,cal,undo); DrawFlagEditors(t.categoryFilter,cal,undo);
                 }
                 ImGui::EndDisabled();
-                if(t.type==OpenTab::DASHBOARD) DrawDashboard(fresh,serial.isOpen(),ecu.monitorActive,age,dashboardLayout,false);
+                if(t.type==OpenTab::DASHBOARD) {
+                    const unsigned char* gaugeTune=ecuSynced && baselineGeneration==ecu.monitor.generation
+                        ? ecuData : cal.loaded ? cal.data : nullptr;
+                    int rpmGaugeMax=8000;
+                    if(gaugeTune) {
+                        const int revLimit=(gaugeTune[0x5DB]<<8)|gaugeTune[0x5DC];
+                        if(revLimit>=1500 && revLimit<=10000) rpmGaugeMax=revLimit+1000;
+                    }
+                    DrawDashboard(fresh,serial.isOpen(),ecu.monitorActive,age,dashboardLayout,
+                        ecuSynced && baselineGeneration==fresh.generation && !ecuData[0x600],&logState,rpmGaugeMax);
+                }
                 if(t.type==OpenTab::LOGGING) DrawLoggingTab(logState,fresh,serial.isOpen(),ecu.monitorActive,age);
                 if(t.type==OpenTab::LOG_VIEWER) DrawLogViewer(logViewers[t.logViewerIndex]);
                 if(t.type==OpenTab::DIAGNOSTICS) drawDiagnostics();

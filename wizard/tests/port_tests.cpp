@@ -74,7 +74,7 @@ int main() {
     CHECK(c.readAxisValue(AXIS_MAP_ADC,15)==1023); CHECK(c.readAxisValue(AXIS_VOLTAGE,0)==4);
     c.writeAxisValue(AXIS_LOAD,1,3); CHECK(c.readU16BE(0x442)==3); CHECK(c.readU16BE(0x422)==40);
     // Compare generated all-issues validator with the actual C parser.
-    const int targeted[]={0x100,0x200,0x300,0x400,0x460,0x490,0x5D4,0x5D8,0x5D9,0x5DB,0x600,0x605,0x630,0x730,0x740,0x750,0x758,0x7B0,0x7B4,0x8CF,0x900,0x910,0x918,0x926,0x93A,0x940,0x960,0x980};
+    const int targeted[]={0x100,0x200,0x300,0x400,0x460,0x490,0x5D4,0x5D8,0x5D9,0x5DB,0x600,0x605,0x630,0x730,0x740,0x750,0x758,0x7B0,0x7B4,0x8CF,0x900,0x910,0x918,0x926,0x93A,0x93E,0x93F,0x940,0x960,0x980};
     int checks=0;
     for(int at:targeted) for(unsigned char value:{(unsigned char)0,(unsigned char)127,(unsigned char)255}) {
         c=original; c.data[at]=value;
@@ -95,9 +95,15 @@ int main() {
     unsigned char frame[40]={}; frame[0]=2; frame[7]=190; frame[8]=0; frame[19]=0xff; frame[20]=0x9c;
     frame[5]=3; frame[6]=0xe7; frame[15]=3; frame[16]=0xe8; frame[38]=0x12; frame[39]=0x34;
     CHECK(DecodeMonitor(frame,40,m)); CHECK(m.clt==150 && m.iat==-40 && m.ve==1000);
+    CHECK(!m.knockAvailable);
     CHECK(std::abs(m.advance+10)<.001 && std::abs(m.tps-99.9f)<.001 && m.lossOfSyncCount==0x1234);
     CHECK(!DecodeMonitor(frame,39,m) && !m.valid); frame[0]=1; CHECK(!DecodeMonitor(frame,40,m)); frame[0]=3; CHECK(!DecodeMonitor(frame,40,m));
     frame[0]=2; frame[27]=15; CHECK(!DecodeMonitor(frame,40,m));
+    unsigned char knockFrame[44]={}; knockFrame[0]=3;
+    knockFrame[40]=0x08; knockFrame[41]=0xed; knockFrame[42]=0xc7; knockFrame[43]=4;
+    CHECK(DecodeMonitor(knockFrame,44,m) && m.knockAvailable);
+    CHECK(m.knockMv==2285 && m.knockFlags==0xc7 && std::abs(m.knockRetard-3)<.001);
+    CHECK(!DecodeMonitor(knockFrame,43,m));
     unsigned char out[128],cmd[]={0x13},packet[10]; CHECK(BuildRequestPacket(cmd,1,packet,10)==4);
     CHECK(packet[0]==0xaa && packet[3]==0x14);
     unsigned char response[]={0x55,1,0x12,0x13}; CHECK(ParseResponsePacket(response,4,out,128)==1); response[3]^=1; CHECK(ParseResponsePacket(response,4,out,128)==-1);
@@ -145,7 +151,7 @@ int main() {
     // A fresh running report blocks structural writes before a transaction.
     reset(); c=original; c.data[0x5D4]^=1;
     ecu.exchange=[](const unsigned char* p,int n,unsigned char* o,int cap,int timeout) {
-        int result=actual(p,n,o,cap,timeout); if(p[0]==0x13 && result==40) { o[1]=3; o[2]=0xe8; o[31]=5; } return result;
+        int result=actual(p,n,o,cap,timeout); if(p[0]==0x13 && result>=40) { o[1]=3; o[2]=0xe8; o[31]=5; } return result;
     };
     CHECK(!write.write(ecu,c,original.data,true)); ecu.exchange=actual;
     MonitorData duty; duty.rpm=6000; duty.pulseUs=5000; CHECK(duty.plannedDutyPercent()==50);

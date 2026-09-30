@@ -2,6 +2,7 @@
 #include "lifecycle.h"
 #include "oem_runtime.h"
 #include "faults.h"
+#include "knock.h"
 #include <string.h>
 Ecu ecu;
 TimingHealth timing_health;
@@ -12,6 +13,7 @@ void ecu_init(u8 released) {
     faults_init();
     ecu.board_released = released;
     lifecycle_init();
+    knock_init();
     ecu.authority.inhibits = INH_SYNC | INH_CAL | (released ? 0 : INH_BOARD);
     ecu.authority.epoch = 1;
     /* Each pair has its own cut budget; stagger the two schedules. */
@@ -75,8 +77,8 @@ void controls_update(u32 now, const Rotation *r) {
     p.generation = ecu.cal.generation;
     p.max_age_ms = get16(c + CAL_PLAN_AGE);
     fan_update(c);
-    idle_update(now, dt, r, c);
     limits_update(now, r, c, &p);
+    idle_update(now, dt, r, c);
     acceleration_update(now, dt, r->rpm, c);
     fuel_plan(now, r, c, &p);
     /* Recover conditions and publish the complete replacement atomically.
@@ -90,6 +92,7 @@ void controls_update(u32 now, const Rotation *r) {
     safety_publish(&p);
     hal_unlock(lock);
     auxiliary_update(now, r, c);
+    knock_update(now, r, c);
 }
 void ecu_poll(void) {
     u32 now, finished;

@@ -66,7 +66,7 @@ def generate():
         return '&' + axes[key]
     tables, scalars, flags = [], [], []
     deps = []
-    dropdown_offsets = {0x5D8, 0x600}
+    dropdown_offsets = {0x5D8, 0x600, 0xA00, 0xA01, 0xA06, 0xA10}
     for n in root:
         if n.tag not in ('XDFTABLE', 'XDFCONSTANT', 'XDFFLAG'): continue
         name, desc = n.findtext('title'), n.findtext('description', '')
@@ -107,12 +107,20 @@ def generate():
     lines += ['static const char* idle[] = {"Steps", "PI", "Ignition only"};',
               'static const char* oxygen[] = {"Narrowband", "Wideband"};',
               'static const char* cut[] = {"Fuel and spark", "Fuel", "Spark", "Fuel and spark"};',
+              'static const char* knockMode[] = {"Disabled", "Monitor only", "Global retard"};',
+              'static const char* knockBand[] = {"Band 0 (BF2 low)", "OEM band (BF2 high)"};',
+              'static const char* knockGain[] = {"x2", "x4", "x8", "x16", "x32 (OEM)", "x64", "x128"};',
+              'static const char* knockAuto[] = {"Automatic (OEM)", "Manual"};',
               'static const DropdownDef dropdownDefs[] = {',
+              '{"Knock mode", "Knock", 0xA00, 255, 0, knockMode, 3, "Stopped engine only."},',
+              '{"Knock filter band", "Knock", 0xA01, 16, 4, knockBand, 2, "Actual frequency depends on board straps and clock."},',
+              '{"Knock sensor gain", "Knock", 0xA06, 255, 0, knockGain, 7, "Starting gain in automatic mode; fixed gain in manual mode."},',
+              '{"Knock gain mode", "Knock", 0xA10, 255, 0, knockAuto, 2, "Stopped engine only."},',
               '{"Idle mode", "Idle", 0x5D8, 255, 0, idle, 3, "Idle control strategy."},',
               '{"Oxygen input", "Oxygen sensor and wideband", 0x600, 255, 0, oxygen, 2, "Sensor input mode."},',
               '{"Rev-limit cut", "Rev limit and fuel cut", 0x7B4, 6, 1, cut, 4, "Cut outputs selected by the limiter."},',
               '{"Launch cut", "Launch and anti-lag", 0x7B4, 48, 4, cut, 4, "Cut outputs selected by launch control."}};',
-              'const DropdownDef* ALL_DROPDOWNS = dropdownDefs;\nconst int NUM_DROPDOWNS = 4;',
+              'const DropdownDef* ALL_DROPDOWNS = dropdownDefs;\nconst int NUM_DROPDOWNS = sizeof(dropdownDefs)/sizeof(DropdownDef);',
               'const Dependency DEPENDENCIES[] = {\n' + ',\n'.join(sorted(set(deps))) + '\n};',
               'const int NUM_DEPENDENCIES = sizeof(DEPENDENCIES)/sizeof(Dependency);']
     return '\n'.join(lines) + '\n'
@@ -123,6 +131,10 @@ def validator():
     body = source.split('u8 cal_validate(const u8 *c, u16 *error) {', 1)[1].split('\nstatic void cal_touch', 1)[0]
     body = re.sub(r'return fail\(error, (.*?)\);', r'report(\1);', body)
     body = body.replace('    *error = (u16)sb;\n    return 1;', '    return issues;')
+    body = body.replace('if (!knock_validate(c, error)) return 0;',
+                        'u16 knock_error; if (!knock_validate(c, &knock_error)) report(knock_error);')
+    knock = (FW / 'src/knock.c').read_text().split('u8 knock_validate(', 1)[1].split('\nvoid knock_init', 1)[0]
+    knock = 'static u8 knock_validate(' + knock
     defines = []
     for p in sorted((FW / 'include').glob('*.h')):
         for line in p.read_text().splitlines():
@@ -136,7 +148,7 @@ def validator():
 using u8 = uint8_t; using s8 = int8_t; using u16 = uint16_t;
 using s16 = int16_t; using u32 = uint32_t;
 static u16 get16(const u8* p) { return (p[0]<<8)|p[1]; }
-''' + '\n'.join(defines) + '''
+''' + '\n'.join(defines) + '\n#define KNOCK_CONTROL 2U\n' + knock + '''
 std::vector<CalibrationIssue> ValidateCalibration(const CalBuffer& cal) {
     std::vector<CalibrationIssue> issues;
     if (!cal.loaded) { issues.push_back({IssueSeverity::Error, "Load a calibration first", "unloaded"}); return issues; }

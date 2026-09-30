@@ -9,7 +9,6 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
     AxisAt at_clt;
     maximum = get16(c + CAL_IAC_MAX);
     axis_at(c + 0x460, 16, ecu.sensors.clt.value, 1, &at_clt);
-    s->idle_target = table1_at(c, 0x4D0, &at_clt, 1);
     base = table1_at(c, 0x4F0, &at_clt, 0);
     start = table1_at(c, 0x500, &at_clt, 0);
     duration = (u16)c[0x5EE] * 100U;
@@ -21,9 +20,9 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
         mode = IDLE_UNAVAILABLE;
     else if (age < duration)
         mode = IDLE_CATCH;
-    else if (ecu.sensors.tps.value > (s16)c[0x5E6] * 10)
+    else if (!s->throttle_closed)
         mode = IDLE_OFF;
-    else if (s->dfco || r->rpm > s->idle_target + 500U)
+    else if (s->dfco)
         mode = IDLE_RETURN;
     else
         mode = IDLE_FEEDBACK;

@@ -2,6 +2,7 @@
 #include "lifecycle.h"
 #include "oem_timing.h"
 #include "oem_ignition.h"
+#include "knock.h"
 #include <string.h>
 /* Module state lives in on-chip RAM (SDATA, zero-initialized): it is used by
    every compare interrupt, and external RAM is an 8-bit bus with wait states. */
@@ -32,7 +33,8 @@ static u32 oem_boundary_stamp;
 static u16 oem_boundary_counter, oem_boundary_epoch, oem_state_epoch;
 static u8 oem_boundary_tooth, oem_boundary_seen, oem_state_seen;
 static u16 next_dwell[2];                    /* plan-derived pass inputs (oem_prepare) */
-static u8 next_advance, oem_prepared;
+static s16 next_advance;
+static u8 oem_prepared;
 static u16 SYSTEM_RAM dwell_base[2];
 volatile u8 coil_phase[2];
 volatile u16 coil_event_epoch[2];
@@ -429,9 +431,7 @@ static void oem_prepare(void) {
     position = (s16)(ecu.authority.plan.trigger10 - ecu.authority.plan.advance10); /* |x| < 8192 */
     position = (s16)((position * 4 + (position >= 0 ? 15 : -15)) / 30);
     position = (s16)(152 - position);
-    if (position > 127) position = 127;
-    if (position < -128) position = -128;
-    next_advance = (u8)(s8)position;
+    next_advance = position; /* Apply global retard before the final clamp. */
     oem_prepared = 1;
 }
 /* One ROM segment pass at a boundary capture (tooth 1 or 31), before the
@@ -479,7 +479,8 @@ void board_ignition_segment(u8 tooth, u32 stamp, u16 counter, u16 interval) {
     oem.p2 = (u16)(P2 & 3U);
     if (!oem_prepared) oem_prepare();
     oem.dwell[0] = next_dwell[0]; oem.dwell[1] = next_dwell[1];
-    for (i = 0; i < 4U; i++) oem.adv[i] = next_advance;
+    ch = (u8)(s8)knock_advance(next_advance);
+    for (i = 0; i < 4U; i++) oem.adv[i] = ch;
     lock = hal_lock();
     oem.ccm0 = oem.ccm1 = 0; oem.cc4ic = oem.cc6ic = 0;
     oem.cc0ic = (u16)(fire_pending[oem.f7fe & 1U] ? OEM_IGN_IE : 0U);

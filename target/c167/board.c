@@ -238,7 +238,7 @@ void board_init(void) {
        ADC_SCAN_MS. Continuous scanning raised one interrupt per ~42 us
        conversion (17-24k/s, ~1/3 of the CPU at the programmed bus timing)
        while control consumes one filtered sample per channel per 10 ms. */
-    ADCON = 0xF02F;
+    ADCON = 0xF62F; /* Preserve scan timing; ADWR + ADCIN permit AN15 injection. */
     ADCIC = IRQ(8, 0);
     ADCON |= 0x0080;
     /* SSCBR must not be written while SSCEN=1 (C167CR UM p.280); the OEM

@@ -61,7 +61,7 @@ bool EcuProtocol::command(unsigned char cmd) {
 }
 bool EcuProtocol::capabilities(Capabilities& out) {
     unsigned char cmd=0x20,b[10];
-    if(transact(&cmd,1,b,10)!=10 || b[0]!=3 || b[1]!=4 || word(b+2)!=3072 || b[6]!=32 || b[7]!=128) return false;
+    if(transact(&cmd,1,b,10)!=10 || b[0]!=3 || b[1]!=5 || word(b+2)!=3072 || b[6]!=32 || b[7]!=128) return false;
     out.generation=word(b+4); return true;
 }
 bool EcuProtocol::status(EcuStatus& out) {
@@ -96,7 +96,7 @@ int EcuProtocol::readTpsAdc() {
     return tpsSnapshot(s) && (s.flags&3)==3 && !(s.flags&16) && s.ageMs<=100 && s.raw<=1023 ? s.raw : -1;
 }
 bool DecodeMonitor(const unsigned char* d,int len,MonitorData& out) {
-    if(!d || len!=40 || d[0]!=2) { out.valid=false; return false; }
+    if(!d || !((len==40 && d[0]==2) || (len==44 && d[0]==3))) { out.valid=false; return false; }
     MonitorData m;
     m.rpm=word(d+1); m.kpa=word(d+3); m.tps=word(d+5)*0.1f;
     m.clt=int(d[7])-40; m.iat=int(d[8])-40; m.battery=d[9]*0.1f;
@@ -108,6 +108,10 @@ bool DecodeMonitor(const unsigned char* d,int len,MonitorData& out) {
     m.cellLoad=d[29]; m.loadFraction=d[30]/256.0f;
     m.state=d[31]; m.flags=d[32]; m.narrowbandBand=d[33]&15; m.gear=d[33]>>4;
     m.inhibits=word(d+34); m.generation=word(d+36); m.lossOfSyncCount=word(d+38);
+    if(len==44) {
+        m.knockAvailable=true; m.knockMv=word(d+40);
+        m.knockFlags=d[42]; m.knockRetard=d[43]*0.75f;
+    }
     if(m.cellRpm>14 || m.cellLoad>14 || m.tps>100) { out.valid=false; return false; }
     m.valid=true; out=m; return true;
 }
@@ -115,7 +119,7 @@ bool EcuProtocol::parseMonitorResponse(const unsigned char* d,int len) {
     return DecodeMonitor(d,len,monitorParseTarget ? *monitorParseTarget : monitor);
 }
 bool EcuProtocol::readMonitor(MonitorData& out) {
-    unsigned char cmd=CMD_MONITOR,b[40]; return DecodeMonitor(b,transact(&cmd,1,b,40),out);
+    unsigned char cmd=CMD_MONITOR,b[44]; return DecodeMonitor(b,transact(&cmd,1,b,44),out);
 }
 void EcuProtocol::pollMonitor() {
     if(readMonitor(monitor)) monitorFailCount=0; else ++monitorFailCount;

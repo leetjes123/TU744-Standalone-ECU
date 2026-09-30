@@ -58,6 +58,10 @@ sbit PIN_KNOCK_BF2 = P8 ^ 5;  /* band-pass select bit 2 */
 void board_init(void);
 void board_knock_ic_boot(u8 filter_khz);
 void board_knock_ic_release(u8 filter_khz);
+void board_knock_init(void);
+void board_knock_crank_seen(void);
+void board_knock_reference(u16 counter, u32 stamp);
+u8 hal_knock_sample(u16 *raw);
 u16 hal_hard_lock(void);
 void hal_hard_unlock(u16 old);
 void board_schedule(u32 captured);

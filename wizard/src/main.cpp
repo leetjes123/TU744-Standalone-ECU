@@ -8,6 +8,10 @@
 #include <d3d11.h>
 #include <windows.h>
 #include <tchar.h>
+#include <cmath>
+#ifdef TW_UI_PREVIEW
+#include <set>
+#endif
 
 #include "app.h"
 #include "theme.h"
@@ -100,6 +104,10 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     case WM_GETMINMAXINFO: {
         MINMAXINFO* info = reinterpret_cast<MINMAXINFO*>(lParam);
         info->ptMinTrackSize.x = static_cast<LONG>(900.0f * g_dpiScale);
+#ifdef TW_UI_PREVIEW
+        if(PreviewOption("--dashboard") && PreviewOption("--narrow"))
+            info->ptMinTrackSize.x=static_cast<LONG>(600.0f*g_dpiScale);
+#endif
         info->ptMinTrackSize.y = static_cast<LONG>(600.0f * g_dpiScale);
         return 0;
     }
@@ -186,6 +194,16 @@ static void SetupStyle(float dpiScale = 1.0f) {
 }
 
 static float GetDpiScale(HWND hwnd) {
+    // The window's DPI reflects its actual display, including initial placement.
+    HMODULE user32 = GetModuleHandleA("user32.dll");
+    if(user32) {
+        typedef UINT (WINAPI *GetWindowDpi)(HWND);
+        auto getWindowDpi = reinterpret_cast<GetWindowDpi>(GetProcAddress(user32,"GetDpiForWindow"));
+        if(getWindowDpi) {
+            const UINT dpi=getWindowDpi(hwnd);
+            if(dpi) return dpi/96.0f;
+        }
+    }
     // Try per-monitor DPI first (Windows 8.1+)
     HMODULE shcore = GetModuleHandleA("shcore.dll");
     if (shcore) {
@@ -222,6 +240,8 @@ static void RebuildFonts(float dpiScale) {
         ImFontConfig fallback; fallback.SizePixels = 14.0f * dpiScale;
         io.Fonts->AddFontDefault(&fallback);
     }
+    LoadDashboardFonts(dpiScale);
+    LoadLogViewerFonts(dpiScale);
 }
 
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
@@ -315,6 +335,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
         }
     }
 
+    LoadDashboardFonts(dpiScale);
+    LoadLogViewerFonts(dpiScale);
     SetupStyle(dpiScale);
 
     ImGui_ImplWin32_Init(hwnd);
@@ -325,7 +347,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
     gApp.init();
 #ifdef TW_UI_PREVIEW
     InitDiagnosticPreview();
-    if(strstr(GetCommandLineA(),"--narrow")) SetWindowPos(hwnd,nullptr,0,0,850,780,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+    InitScalingPreview();
+    if(strstr(GetCommandLineA(),"--dpi2")) g_PendingDpiScale=2.0f;
+    if(PreviewOption("--dashboard") && !PreviewOption("--narrow"))
+        SetWindowPos(hwnd,nullptr,0,0,2560,1800,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
+    if(PreviewOption("--narrow")) SetWindowPos(hwnd,nullptr,0,0,850,780,SWP_NOMOVE|SWP_NOZORDER|SWP_NOACTIVATE);
     int previewFrames=0;
 #endif
 
@@ -379,7 +405,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE, LPSTR, int nCmdShow) {
         DiagnosticPreviewInput(previewFrames);
 #endif
         ImGui::NewFrame();
+#ifdef TW_UI_PREVIEW
+        ScalingPreviewMenus();
+#endif
 
+#ifdef TW_UI_PREVIEW
+        if(strstr(GetCommandLineA(),"--dashboard")) DrawDashboardPreview();
+        else
+#endif
         gApp.drawUI();
 
         ImGui::Render();

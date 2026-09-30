@@ -26,7 +26,7 @@ static u16 get16(const u8* p) { return (p[0]<<8)|p[1]; }
 #define CAL_DTC_TEMP_SLEW 0x968U /* degrees C per second */
 #define CAL_DTC_BATTERY_SLEW 0x96AU /* mV per second */
 #define CAL_DTC_SUBTYPE_ENABLE 0x980U /* 107 low-nibble masks: 1/2/4/8. */
-#define CAL_SCHEMA 4U
+#define CAL_SCHEMA 5U
 #define CAL_MAGIC 0x900U
 #define CAL_RUN_RPM 0x904U
 #define CAL_CRANK_RPM 0x906U
@@ -46,6 +46,7 @@ static u16 get16(const u8* p) { return (p[0]<<8)|p[1]; }
 #define CAL_PLAN_AGE 0x922U
 #define CAL_IDLE_STEP_MS 0x924U
 #define CAL_IAC_HOME_STEPS 0x93CU
+#define CAL_DFCO_EXIT_RPM 0x93EU
 #define IAC_HOME_STEPS_DEFAULT 250U
 #define IAC_HOME_MS_PER_STEP 12U /* 10 ms step cadence plus scheduling margin */
 #define CFG_ALPHA_N 0x01U
@@ -56,6 +57,33 @@ static u16 get16(const u8* p) { return (p[0]<<8)|p[1]; }
 #define EQUIP_UPSTREAM_RELAY_HEATER 0x01U
 #define EQUIP_DOWNSTREAM_RELAY_HEATER 0x02U
 #define CAL_TRANSACTION_MS 5000UL
+#define CAL_KNOCK 0xA00U
+#define CAL_KNOCK_MODE 0xA00U
+#define CAL_KNOCK_FILTER 0xA01U
+#define CAL_KNOCK_MIN_RPM 0xA02U
+#define CAL_KNOCK_COOLANT 0xA04U
+#define CAL_KNOCK_DIVISOR 0xA05U
+#define CAL_KNOCK_GAIN 0xA06U
+#define CAL_KNOCK_REFERENCE 0xA07U
+#define CAL_KNOCK_LATCH_MS 0xA08U
+#define CAL_KNOCK_STALE_MS 0xA0AU
+#define CAL_KNOCK_DRIFT_LIMIT 0xA0CU
+#define CAL_KNOCK_NULL_TOLERANCE 0xA0DU
+#define CAL_KNOCK_TEST_SHIFT 0xA0EU
+#define CAL_KNOCK_DEBOUNCE 0xA0FU
+#define CAL_KNOCK_MANUAL_GAIN 0xA10U
+#define CAL_KNOCK_ATTACK_STEP 0xA11U
+#define CAL_KNOCK_RETARD_LIMIT 0xA12U
+#define CAL_KNOCK_RECOVERY_PERCENT 0xA13U
+#define CAL_KNOCK_RPM_AXIS 0xA20U
+#define CAL_KNOCK_START 0xA40U
+#define CAL_KNOCK_LENGTH 0xA50U
+#define CAL_KNOCK_THRESHOLD 0xA60U
+#define CAL_KNOCK_LOAD 0xA70U
+#define CAL_KNOCK_ATTACK 0xA80U
+#define CAL_KNOCK_MAXIMUM 0xA90U
+#define CAL_KNOCK_HOLD 0xAA0U
+#define CAL_KNOCK_GAIN_CODES 0xAB0U
 #define CAL_WB_POLICY 0x926U
 #define CAL_WB_WARM_MS 0x928U
 #define CAL_WB_GOOD_MS 0x92AU
@@ -68,6 +96,46 @@ static u16 get16(const u8* p) { return (p[0]<<8)|p[1]; }
 #define CAL_ANTILAG_CLT 0x938U
 #define CAL_ANTILAG_IAT 0x939U
 #define CAL_DWELL_FEEDBACK 0x93AU /* 0=fixed calibrated dwell, 1=qualified CC9 */
+#define KNOCK_CONTROL 2U
+static u8 knock_validate(const u8 *c, u16 *error) {
+    u16 i, rpm;
+    *error = CAL_KNOCK;
+    if (c[CAL_KNOCK_MODE] > KNOCK_CONTROL ||
+        (c[CAL_KNOCK_FILTER] != 0U && c[CAL_KNOCK_FILTER] != 16U) ||
+        get16(c + CAL_KNOCK_MIN_RPM) < 600U || get16(c + CAL_KNOCK_MIN_RPM) > 6000U ||
+        c[CAL_KNOCK_COOLANT] < 5U || !c[CAL_KNOCK_DIVISOR] ||
+        c[CAL_KNOCK_GAIN] > 6U || c[CAL_KNOCK_REFERENCE] < 13U ||
+        c[CAL_KNOCK_REFERENCE] > 51U || get16(c + CAL_KNOCK_LATCH_MS) > 5000U ||
+        !get16(c + CAL_KNOCK_LATCH_MS) || get16(c + CAL_KNOCK_STALE_MS) < 100U ||
+        get16(c + CAL_KNOCK_STALE_MS) > 1000U || c[CAL_KNOCK_DRIFT_LIMIT] > 21U ||
+        c[CAL_KNOCK_NULL_TOLERANCE] > 25U || !c[CAL_KNOCK_TEST_SHIFT] ||
+        !c[CAL_KNOCK_DEBOUNCE] || c[CAL_KNOCK_DEBOUNCE] > 10U) return 0;
+    *error = CAL_KNOCK_MANUAL_GAIN;
+    if (c[CAL_KNOCK_MANUAL_GAIN] > 1U || !c[CAL_KNOCK_ATTACK_STEP] ||
+        c[CAL_KNOCK_RETARD_LIMIT] > 16U ||
+        c[CAL_KNOCK_ATTACK_STEP] > c[CAL_KNOCK_RETARD_LIMIT] ||
+        get16(c + CAL_KNOCK_RECOVERY_PERCENT) < 25U ||
+        get16(c + CAL_KNOCK_RECOVERY_PERCENT) > 400U) return 0;
+    for (i = 0; i < 16U; i++) {
+        *error = (u16)(CAL_KNOCK_RPM_AXIS + i * 2U);
+        rpm = get16(c + *error);
+        if (rpm < 400U || rpm > 12000U || (i && rpm <= get16(c + *error - 2U))) return 0;
+        *error = (u16)(CAL_KNOCK_START + i);
+        if (c[*error] < 2U || c[*error] > 80U || c[CAL_KNOCK_LENGTH + i] < 13U ||
+            c[CAL_KNOCK_LENGTH + i] > 80U || c[*error] + c[CAL_KNOCK_LENGTH + i] > 160U ||
+            c[CAL_KNOCK_THRESHOLD + i] < 16U || c[CAL_KNOCK_THRESHOLD + i] > 80U ||
+            !c[CAL_KNOCK_ATTACK + i] || c[CAL_KNOCK_MAXIMUM + i] > 16U ||
+            c[CAL_KNOCK_ATTACK + i] > c[CAL_KNOCK_MAXIMUM + i] ||
+            !c[CAL_KNOCK_HOLD + i] || !c[CAL_KNOCK_LOAD + i]) return 0;
+    }
+    for (i = 0; i < 7U; i++) {
+        *error = (u16)(CAL_KNOCK_GAIN_CODES + i);
+        /* Code 4 duplicates x16; skip it to retain the doubling ladder. */
+        if (c[*error] != (u8)(i < 4U ? i : i + 1U)) return 0;
+    }
+    *error = 0;
+    return 1;
+}
 std::vector<CalibrationIssue> ValidateCalibration(const CalBuffer& cal) {
     std::vector<CalibrationIssue> issues;
     if (!cal.loaded) { issues.push_back({IssueSeverity::Error, "Load a calibration first", "unloaded"}); return issues; }
@@ -225,6 +293,8 @@ std::vector<CalibrationIssue> ValidateCalibration(const CalBuffer& cal) {
         report(0x5E7);
     if (get16(c + 0x5E9) > 10000 || !c[0x758] || c[0x758] > 50 || c[0x757])
         report(0x5E9);
+    if (get16(c + CAL_DFCO_EXIT_RPM) > 2000U)
+        report(CAL_DFCO_EXIT_RPM);
     if (c[0x5D9] != 5 || c[0x5DA] != 6)
         report(0x5D9); /* fixed development IAC waveform */
     if (get16(c + CAL_IDLE_STEP_MS) < 20 || get16(c + CAL_IDLE_STEP_MS) > 1000)
@@ -280,12 +350,14 @@ std::vector<CalibrationIssue> ValidateCalibration(const CalBuffer& cal) {
     if (get16(c + 0x7A1) < 10 || get16(c + 0x7A1) > 1000 || get16(c + 0x7AD) < 500 ||
         get16(c + 0x7AD) > 4000)
         report(0x7A1);
+    u16 knock_error; if (!knock_validate(c, &knock_error)) report(knock_error);
     sb = 0;
     return issues;
 }
 const CalibrationRange STRUCTURAL_RANGES[] = {
     {0x460, 0x480}, {0x550, 0x5B4}, {0x5D4, 0x5D5}, {0x5E4, 0x5E5},
-    {0x600, 0x603}, {0x605, 0x607}, {0x7A1, 0x7AF}, {0x7B0, 0x7B4}, {0x900, CAL_SIZE}};
+    {0x600, 0x603}, {0x605, 0x607}, {0x7A1, 0x7AF}, {0x7B0, 0x7B4},
+    {0x900, CAL_DFCO_EXIT_RPM}, {CAL_DFCO_EXIT_RPM + 2U, CAL_SIZE}};
 const int NUM_STRUCTURAL_RANGES = sizeof(STRUCTURAL_RANGES)/sizeof(CalibrationRange);
 bool IsStructuralOffset(int offset) {
     for (const auto& r : STRUCTURAL_RANGES) if (offset >= r.start && offset < r.end) return true;

@@ -214,7 +214,7 @@ bool CalBuffer::saveToFile(const char* path) {
 
 
 bool HasSchemaMarker(const unsigned char* data) {
-    return data && data[0x900]=='L' && data[0x901]=='R' && data[0x902]==0 && data[0x903]==4;
+    return data && data[0x900]=='L' && data[0x901]=='R' && data[0x902]==0 && data[0x903]==5;
 }
 const AxisDef& ResolveAxis(const AxisDef& axis, const unsigned char* data) {
     return axis.offset == -2 ? ((data[0x5D4] & 1) ? AXIS_TPS : AXIS_KPA) : axis;

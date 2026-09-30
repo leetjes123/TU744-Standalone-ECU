@@ -6,9 +6,9 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 FW = ROOT.parent
-name = 'TuningWizard-0.1.0-Windows-x64-experimental'
+name = 'TuningWizard-0.0.2-Windows-x64-experimental'
 files = {
-    'TuningWizard.exe': ROOT / 'build/bin/TuningWizard.exe',
+    'TuningWizard.exe': ROOT / 'build/updated/bin/TuningWizard.exe',
     'docs/OPERATOR_MANUAL.md': ROOT / 'OPERATOR_MANUAL.md',
     'docs/PORTING-PLAN.md': ROOT / 'PORTING-PLAN.md',
     'docs/VALIDATION.md': ROOT / 'VALIDATION.md',
@@ -16,12 +16,12 @@ files = {
     'firmware/build-manifest.json': FW / 'build/stock-95080/manifest.json',
 }
 manifest = {
-    'application': 'Tuning Wizard', 'version': '0.1.0',
-    'live_frame_version': 2, 'live_frame_bytes': 40,
+    'application': 'Tuning Wizard', 'version': '0.0.2',
+    'live_frame_version': 3, 'live_frame_bytes': 44,
     'sync_loss_counter': 'u16 saturated at 65535',
     'hardware_validated': False, 'engine_validated': False,
     'calibration_included': False,
-    'restore_tune': 'After flashing, open your saved schema-4 tune, Write active tune, Save tune to ECU flash, then key-cycle.',
+    'restore_tune': 'Migrate saved schema-4 tunes with tools/migrate_schema5.py first. After flashing, open the schema-5 tune, Write active tune, Save tune to ECU flash, then key-cycle.',
     'sha256': {n: hashlib.sha256(p.read_bytes()).hexdigest() for n, p in files.items()},
 }
 fw_manifest = json.loads(files['firmware/build-manifest.json'].read_text())

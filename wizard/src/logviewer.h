@@ -29,10 +29,15 @@ struct LVSignal {
     float  fullMin   = 0.0f;
     float  fullMax   = 1.0f;
     ImU32  color     = IM_COL32(200, 200, 200, 255);
+    int    scaleMode = 0; // full range, visible range, manual
+    float manualMin = 0, manualMax = 1;
+    bool rangeInitialized = false;
 };
 
 struct LVPlot {
-    char label[32];
+    char label[32] = {};
+    float height = 180;
+    int axisSignal = -1;
 };
 
 struct LogViewerState {
@@ -54,6 +59,14 @@ struct LogViewerState {
     float  cursorTime        = 0.0f;
     char   signalFilter[64]  = {};
     bool   showDiagnostics   = true;
+    bool liveMode = false, followLatest = true, cursorLocked = false;
+    bool fitPanels = true, showGrid = true, linkUnitScales = true;
+    bool playing = false, hasSelection = false, selecting = false;
+    bool dragToZoom = true, zoomOnRelease = false;
+    float playbackRate = 1, lineWidth = 2, liveWindow = 30;
+    float selectionStart = 0, selectionEnd = 0;
+    int selectionPlot = -1;
+    double timeOrigin = 0;
 
     bool         parseOk  = false;
     std::string  parseError;
@@ -65,3 +78,4 @@ bool ParseLogFile(const char* path, LogViewerState& lv);
 
 // Draw the log viewer tab contents.
 void DrawLogViewer(LogViewerState& lv);
+void LoadLogViewerFonts(float dpiScale);

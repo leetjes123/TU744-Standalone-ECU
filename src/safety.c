@@ -1,6 +1,7 @@
 #include "ecu.h"
 #include "diagnostic_monitors.h"
 #include "lifecycle.h"
+#include "knock.h"
 #include <string.h>
 u8 safety_aux_permitted(void) SHARED {
     u16 lock = hal_lock();
@@ -21,6 +22,7 @@ void safety_inhibit(u16 reason, u32 now) SHARED {
         }
     }
     a->inhibits |= reason;
+    knock_invalidate(0);
     hal_cancel_fuel();
     if (reason & (INH_OUTPUT | INH_BOARD)) {
         hal_cancel_spark();

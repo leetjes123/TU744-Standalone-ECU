@@ -18,6 +18,7 @@ static const float AXIS_FIXED_11_VALUES[] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f,
 const AxisDef AXIS_FIXED_11 = {"FIXED_11", -1, 8, CellType::U8, "point", 1, 0, AXIS_FIXED_11_VALUES};
 static const float AXIS_FIXED_12_VALUES[] = {1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f};
 const AxisDef AXIS_FIXED_12 = {"FIXED_12", -1, 6, CellType::U8, "point", 1, 0, AXIS_FIXED_12_VALUES};
+const AxisDef AXIS_FIXED_13 = {"FIXED_13", 2592, 16, CellType::U16BE, "RPM", 1, 0, nullptr};
 const AxisDef AXIS_LOAD = {"Load", -2, 16, CellType::U16BE, "kPa / TPS %", 1, 0};
 static const TableDef tableDefs[] = {
 {"Running VE", "Fuel", 0, 16, 16, CellType::U8, "VE %", 1.0f, 0.0f, &AXIS_RPM, &AXIS_LOAD, 0, 255, false, "Volumetric efficiency for the air-charge fuel calculation. Columns: RPM; rows: MAP. Offset 0x000."},
@@ -48,7 +49,11 @@ static const TableDef tableDefs[] = {
 {"AE TPS-rate axis", "Axis breakpoints", 1856, 1, 8, CellType::U16BE, "%/s", 1.0f, 0.0f, &AXIS_FIXED_11, nullptr, 0, 10000, false, "Strictly increasing. Used by: acceleration multiplier. Offset 0x740. ECU accepts 0..10000 %/s."},
 {"AE previous-TPS axis", "Axis breakpoints", 1872, 1, 6, CellType::U8, "%", 1.0f, 0.0f, &AXIS_FIXED_12, nullptr, 0, 100, false, "Strictly increasing. Used by: acceleration multiplier. Offset 0x750. ECU accepts 0..100 %."},
 {"AE RPM axis", "Axis breakpoints", 1929, 1, 8, CellType::U16BE, "RPM", 1.0f, 0.0f, &AXIS_FIXED_11, nullptr, 0, 12000, false, "Strictly increasing. Used by: acceleration RPM modifier. Offset 0x789. ECU accepts 0..12000 RPM."},
-{"Idle RPM-error axis", "Axis breakpoints", 1552, 1, 8, CellType::S16BE, "RPM", 1.0f, 0.0f, &AXIS_FIXED_11, nullptr, -3000, 3000, false, "Strictly increasing. Used by: idle spark correction. Offset 0x610. ECU accepts -3000..3000 RPM."}
+{"Idle RPM-error axis", "Axis breakpoints", 1552, 1, 8, CellType::S16BE, "RPM", 1.0f, 0.0f, &AXIS_FIXED_11, nullptr, -3000, 3000, false, "Strictly increasing. Used by: idle spark correction. Offset 0x610. ECU accepts -3000..3000 RPM."},
+{"Knock window start", "Knock", 2624, 1, 16, CellType::U8, "deg after reference", 0.75f, 0.0f, &AXIS_FIXED_13, nullptr, 1.5, 60, false, "Stopped engine only. See docs/KNOCK.md for standalone deviations and qualification. Offset 0xA40."},
+{"Knock window length", "Knock", 2640, 1, 16, CellType::U8, "deg", 0.75f, 0.0f, &AXIS_FIXED_13, nullptr, 9.75, 60, false, "Stopped engine only. See docs/KNOCK.md for standalone deviations and qualification. Offset 0xA50."},
+{"Knock detection threshold", "Knock", 2656, 1, 16, CellType::U8, "ratio", 0.0625f, 0.0f, &AXIS_FIXED_13, nullptr, 1, 5, false, "Stopped engine only. See docs/KNOCK.md for standalone deviations and qualification. Offset 0xA60."},
+{"Knock minimum filling", "Knock", 2672, 1, 16, CellType::U8, "%", 0.75f, 0.0f, &AXIS_FIXED_13, nullptr, 0.75, 191.25, false, "Stopped engine only. See docs/KNOCK.md for standalone deviations and qualification. Offset 0xA70."}
 };
 const TableDef* ALL_TABLES = tableDefs;
 const int NUM_TABLES = sizeof(tableDefs)/sizeof(TableDef);
@@ -67,8 +72,8 @@ static const ScalarDef scalarDefs[] = {
 {"Soft-cut start RPM", "Rev limit and fuel cut", 1973, CellType::U16BE, "RPM", 1.0f, 0.0f, 0, 9999, "Must be below the hard rev limit. Offset 0x7B5. ECU accepts 0..9999 RPM."},
 {"Soft-cut maximum", "Rev limit and fuel cut", 1975, CellType::U8, "%", 1.0f, 0.0f, 0, 100, "Cut fraction reached at the hard rev limit; rises linearly from 0 at the start RPM. Offset 0x7B7. ECU accepts 0..100 %."},
 {"Overrun entry RPM", "Rev limit and fuel cut", 1513, CellType::U16BE, "RPM", 1.0f, 0.0f, 0, 10000, "Offset 0x5E9. ECU accepts 0..10000 RPM."},
-{"Overrun maximum MAP", "Rev limit and fuel cut", 1515, CellType::U8, "kPa", 1.0f, 0.0f, 0, 255, "Offset 0x5EB. ECU accepts 0..255 kPa."},
-{"Overrun delay", "Rev limit and fuel cut", 1539, CellType::U8, "s", 0.1f, 0.0f, 0, 25.5, "Offset 0x603. ECU accepts 0..25.5 s."},
+{"Overrun exit margin", "Rev limit and fuel cut", 2366, CellType::U16BE, "RPM", 1.0f, 0.0f, 0, 2000, "Resume fuel at idle target plus this margin. 0 keeps the legacy 200 RPM margin. Firmware 0.0.2 or later; live tunable. Offset 0x93E. ECU accepts 0..2000 RPM."},
+{"Overrun delay", "Rev limit and fuel cut", 1539, CellType::U8, "s", 0.1f, 0.0f, 0, 25.5, "Continuous eligibility before fuel cut. New basemap default 0.1 s; 0 means immediate. Offset 0x603. ECU accepts 0..25.5 s."},
 {"Overboost cut MAP", "Rev limit and fuel cut", 2318, CellType::U16BE, "kPa", 1.0f, 0.0f, 100, 600, "Fuel and spark are cut above this MAP. Boost control also stops here. Offset 0x90E. ECU accepts 100..600 kPa."},
 {"Launch RPM limit", "Launch and anti-lag", 1511, CellType::U16BE, "RPM", 1.0f, 0.0f, 1500, 10000, "Hard launch limit. Must not exceed the hard rev limit. Offset 0x5E7. ECU accepts 1500..10000 RPM."},
 {"Launch maximum speed", "Launch and anti-lag", 1967, CellType::U8, "km/h", 1.0f, 0.0f, 1, 255, "Moving launch is only permitted below this speed. Offset 0x7AF. ECU accepts 1..255 km/h."},
@@ -82,7 +87,7 @@ static const ScalarDef scalarDefs[] = {
 {"Anti-lag ignition advance", "Launch and anti-lag", 1976, CellType::U8, "deg BTDC", 0.5f, -20.0f, -20, 50, "Offset 0x7B8. ECU accepts -20..50 deg BTDC."},
 {"Anti-lag VE", "Launch and anti-lag", 1977, CellType::U8, "VE %", 1.0f, 0.0f, 0, 255, "Replaces running VE during anti-lag. Offset 0x7B9. ECU accepts 1..255 % when Anti-lag is on."},
 {"Idle start duration", "Idle", 1518, CellType::U8, "s", 0.1f, 0.0f, 0, 25.5, "Offset 0x5EE. ECU accepts 0..25.5 s."},
-{"Idle TPS threshold", "Idle", 1510, CellType::U8, "%", 1.0f, 0.0f, 0, 20, "Idle control is active at or below this throttle. Offset 0x5E6. ECU accepts 0..20 %."},
+{"Closed throttle threshold", "Idle", 1510, CellType::U8, "%", 1.0f, 0.0f, 0, 20, "Shared idle and overrun threshold, inclusive and without debounce. Invalid TPS disables both. Offset 0x5E6. ECU accepts 0..20 %."},
 {"Idle RPM deadband", "Idle", 1540, CellType::U8, "RPM", 1.0f, 0.0f, 0, 255, "Offset 0x604. ECU accepts 0..255 RPM."},
 {"Idle proportional gain", "Idle", 1584, CellType::U16BE, "steps/RPM", 0.0001f, 0.0f, 0, 1, "Offset 0x630. ECU accepts 0..1 steps/RPM."},
 {"Idle integral gain", "Idle", 1586, CellType::U16BE, "steps/(RPM*s)", 1e-05f, 0.0f, 0, 0.1, "Offset 0x632. ECU accepts 0..0.1 steps/(RPM*s)."},
@@ -156,7 +161,12 @@ static const ScalarDef scalarDefs[] = {
 {"DEPHIA minimum delay", "DTC thresholds", 2396, CellType::U16BE, "T1 ticks", 1.0f, 0.0f, 0, 65535, "0 with maximum and delta also 0 = defaults 66/168/18. Offset 0x95C. ECU accepts 0..65535 T1 ticks."},
 {"DEPHIA maximum delay", "DTC thresholds", 2398, CellType::U16BE, "T1 ticks", 1.0f, 0.0f, 0, 65535, "Offset 0x95E. ECU accepts 0..65535 T1 ticks."},
 {"DEPHIA direction delta", "DTC thresholds", 2400, CellType::U16BE, "T1 ticks", 1.0f, 0.0f, 0, 65535, "Offset 0x960. ECU accepts 0..65535 T1 ticks."},
-{"Output feedback fail count", "DTC thresholds", 2394, CellType::U8, "samples", 1.0f, 0.0f, 0, 100, "Reserved until the P6.5/P6.6/P6.7 diagnostic transport is accepted. Offset 0x95A. ECU accepts 0..100 samples."}
+{"Output feedback fail count", "DTC thresholds", 2394, CellType::U8, "samples", 1.0f, 0.0f, 0, 100, "Reserved until the P6.5/P6.6/P6.7 diagnostic transport is accepted. Offset 0x95A. ECU accepts 0..100 samples."},
+{"Knock minimum RPM", "Knock", 2562, CellType::U16BE, "RPM", 1.0f, 0.0f, 600, 6000, "Offset 0xA02. ECU accepts 600..6000 RPM."},
+{"Knock minimum coolant code", "Knock", 2564, CellType::U8, "OEM code", 1.0f, 0.0f, 5, 255, "Native coolant code, with 5-code hysteresis. Temperature offset remains unresolved. Offset 0xA04. ECU accepts 5..255 OEM code."},
+{"Knock retard per event", "Knock", 2577, CellType::U8, "deg", 0.75f, 0.0f, 0.75, 12, "One global step for every eligible detected event. OEM starting value 3 degrees. Offset 0xA11. ECU accepts 0.75..12 deg."},
+{"Knock maximum retard", "Knock", 2578, CellType::U8, "deg", 0.75f, 0.0f, 0.75, 12, "Global retard ceiling. OEM starting value 12 degrees. Offset 0xA12. ECU accepts 0.75..12 deg."},
+{"Knock recovery speed", "Knock", 2579, CellType::U16BE, "%", 1.0f, 0.0f, 25, 400, "100% retains the OEM-derived quiet hold schedule. 200% halves the hold; recovery steps remain 0.75 degrees. Stopped engine only. Offset 0xA13. ECU accepts 25..400 %."}
 };
 const ScalarDef* ALL_SCALARS = scalarDefs;
 const int NUM_SCALARS = sizeof(scalarDefs)/sizeof(ScalarDef);
@@ -165,7 +175,7 @@ static const FlagDef flagDefs[] = {
 {"Alpha-N fueling (TPS load axis)", "Fuel", 1492, 1, "Off", "On", "On: TPS is the load axis and MAP is not used for fuel. Must match the XDF you opened. Stopped engine only. Offset 0x5D4. Bit mask 0x01."},
 {"Use CC9 dwell feedback", "Ignition", 2362, 1, "Off", "On", "Enable only with a qualified CC9 input. Missing or invalid feedback falls back to calibrated dwell. Stopped engine only. Offset 0x93A. Bit mask 0x01."},
 {"Soft rev cut", "Rev limit and fuel cut", 1972, 1, "Off", "On", "Progressive cut from the soft-cut start RPM up to the hard rev limit. Offset 0x7B4. Bit mask 0x01."},
-{"Overrun fuel cut", "Rev limit and fuel cut", 1492, 2, "Off", "On", "Cuts fuel on closed throttle above the entry RPM, with coolant at least 60 C. Resumes 200 RPM above idle target. Offset 0x5D4. Bit mask 0x02."},
+{"Overrun fuel cut", "Rev limit and fuel cut", 1492, 2, "Off", "On", "Cuts fuel on closed throttle above the entry RPM and idle target plus exit margin, with valid TPS and coolant at least 60 C. No MAP gate. Offset 0x5D4. Bit mask 0x02."},
 {"Launch control", "Launch and anti-lag", 1492, 4, "Off", "On", "Launch must still be armed from the tool each time. Stopped engine only. Offset 0x5D4. Bit mask 0x04."},
 {"Soft launch", "Launch and anti-lag", 1972, 8, "Off", "On", "Progressive cut from the soft-launch start RPM up to the launch RPM limit. Offset 0x7B4. Bit mask 0x08."},
 {"Anti-lag", "Launch and anti-lag", 1972, 64, "Off", "On", "One-shot per arm, while launch is active. Requires launch control and anti-lag settings below. Offset 0x7B4. Bit mask 0x40."},
@@ -245,13 +255,21 @@ const int NUM_FLAGS = sizeof(flagDefs)/sizeof(FlagDef);
 static const char* idle[] = {"Steps", "PI", "Ignition only"};
 static const char* oxygen[] = {"Narrowband", "Wideband"};
 static const char* cut[] = {"Fuel and spark", "Fuel", "Spark", "Fuel and spark"};
+static const char* knockMode[] = {"Disabled", "Monitor only", "Global retard"};
+static const char* knockBand[] = {"Band 0 (BF2 low)", "OEM band (BF2 high)"};
+static const char* knockGain[] = {"x2", "x4", "x8", "x16", "x32 (OEM)", "x64", "x128"};
+static const char* knockAuto[] = {"Automatic (OEM)", "Manual"};
 static const DropdownDef dropdownDefs[] = {
+{"Knock mode", "Knock", 0xA00, 255, 0, knockMode, 3, "Stopped engine only."},
+{"Knock filter band", "Knock", 0xA01, 16, 4, knockBand, 2, "Actual frequency depends on board straps and clock."},
+{"Knock sensor gain", "Knock", 0xA06, 255, 0, knockGain, 7, "Starting gain in automatic mode; fixed gain in manual mode."},
+{"Knock gain mode", "Knock", 0xA10, 255, 0, knockAuto, 2, "Stopped engine only."},
 {"Idle mode", "Idle", 0x5D8, 255, 0, idle, 3, "Idle control strategy."},
 {"Oxygen input", "Oxygen sensor and wideband", 0x600, 255, 0, oxygen, 2, "Sensor input mode."},
 {"Rev-limit cut", "Rev limit and fuel cut", 0x7B4, 6, 1, cut, 4, "Cut outputs selected by the limiter."},
 {"Launch cut", "Launch and anti-lag", 0x7B4, 48, 4, cut, 4, "Cut outputs selected by launch control."}};
 const DropdownDef* ALL_DROPDOWNS = dropdownDefs;
-const int NUM_DROPDOWNS = 4;
+const int NUM_DROPDOWNS = sizeof(dropdownDefs)/sizeof(DropdownDef);
 const Dependency DEPENDENCIES[] = {
 {1492, 1492, 32, 32, "Enable closed-loop fuel trim"},
 {1511, 1492, 4, 4, "Enable launch control"},

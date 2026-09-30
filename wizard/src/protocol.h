@@ -23,6 +23,10 @@ struct MonitorData {
     uint8_t state=0, flags=0;
     uint16_t inhibits=0, generation=0;
     bool valid=false;
+    bool knockAvailable=false;
+    uint16_t knockMv=65535;
+    uint8_t knockFlags=0;
+    float knockRetard=0;
     float plannedDutyPercent() const { return pulseUs * float(rpm) / 600000.0f; }
     bool synced() const { return (state&1)!=0; }
     bool unsaved() const { return (flags&16)!=0; }

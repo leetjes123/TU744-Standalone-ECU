@@ -2,6 +2,11 @@
 #include "lifecycle.h"
 void engine_state_update(u32 now, const Rotation *r, const u8 *c) {
     Controls *s = &ecu.control;
+    /* Shared, undebounced no-load decision, including invalid-TPS rejection. */
+    s->throttle_closed = (u8)(ecu.sensors.tps.quality == QUALITY_VALID &&
+                             ecu.sensors.tps.value <= (s16)c[0x5E6] * 10);
+    /* Both DFCO and idle use this cycle's coolant-dependent target. */
+    s->idle_target = table1(c, 0x4D0, ecu.sensors.clt.value, 1);
     if (!s->key_on || r->state != ROT_VALID) {
         s->mode = ENGINE_STOPPED;
         s->qualifying = 0;
@@ -81,12 +86,12 @@ void limits_update(u32 now, const Rotation *r, const u8 *c, EnginePlan *p) {
         if (method != 1U && pct > p->soft_spark)
             p->soft_spark = (u8)pct;
     }
-    exit_rpm = (u16)(s->idle_target + 200U);
+    exit_rpm = get16(c + CAL_DFCO_EXIT_RPM);
+    exit_rpm = (u16)(s->idle_target + (exit_rpm ? exit_rpm : DFCO_EXIT_RPM_DEFAULT));
     eligible =
         (u8)((c[0x5D4] & CFG_DFCO) && s->mode == ENGINE_RUNNING &&
-             in->tps.quality == QUALITY_VALID && in->map.quality == QUALITY_VALID &&
-             in->clt.quality == QUALITY_VALID && in->clt.value >= 60 && in->tps.value <= 20 &&
-             in->map.value <= c[0x5EB] && r->rpm > (s->dfco ? exit_rpm : get16(c + 0x5E9)));
+             s->throttle_closed && in->clt.quality == QUALITY_VALID && in->clt.value >= 60 &&
+             r->rpm > exit_rpm && (s->dfco || r->rpm > get16(c + 0x5E9)));
     if (!eligible) {
         s->dfco = 0;
         s->dfco_waiting = 0;

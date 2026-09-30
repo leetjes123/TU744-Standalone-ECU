@@ -1,8 +1,17 @@
 # Tuning Wizard operator manual
 
+Firmware 0.0.2 adds Engine Protection / Knock Control: operating mode,
+automatic/manual gain, sensor gain, two hardware filter bands, and RPM-based
+window/threshold/load curves. OEM values are starting values; mode defaults to
+disabled. Actual filter frequencies depend on board straps and clock. Retard per
+event, maximum retard and recovery speed are single settings. Knock changes
+require a stopped engine. Voltage, detection, freshness, fault and requested
+retard appear in the dashboard/logs; ignition timing remains the base command.
+See [firmware migration and verification notes](../docs/RELEASE-0.0.2.md).
+
 ## Files and connection
 
-Open a **3072-byte schema-4 calibration** or connect a 19200-baud K-line adapter
+Open a **3072-byte schema-5 calibration** or connect a 19200-baud K-line adapter
 and select **ECU > Read calibration**. Full firmware images are separate files.
 The wizard checks protocol and live-frame compatibility when connecting.
 An unsupported calibration protocol is rejected. An older standalone live-frame
@@ -12,9 +21,22 @@ new sync-loss layout. There is no ECU identity indicator.
 Use the sidebar to open maps or settings. Map rows are load; columns are RPM.
 The VE, target AFR and ignition load axes follow speed-density (MAP) or alpha-N
 (TPS). Boost always uses TPS. Hover over controls for definitions and ranges.
-Axis breakpoints are also available as tables under **Axis breakpoints**.
+Shared axis breakpoints are available under **Advanced > Shared Table Axes**.
 Table tools retain selection, paste, smoothing, interpolation and undo/redo.
-Compare tune highlights differences against another schema-4 file.
+Compare tune highlights differences against another schema-5 file.
+
+The sidebar follows tuning workflow rather than alphabetical order. **Tuning**
+contains Fuel, Ignition, Idle Control, Boost & Motorsport, and Engine Protection.
+Fuel opens first with the Fuel VE and AFR Target tables, followed by closed-loop
+control, acceleration enrichment and starting/warm-up. **Setup** contains the
+engine/fuel system, sensors/calibration, auxiliary outputs and advanced settings.
+**Diagnostics & DTCs** is last, including the Fault Viewer, thresholds, monitor
+enables and individual code enables. The Fault Viewer works without a loaded tune.
+
+Search matches current and previous table names, category names, and common
+abbreviations such as ECT/CLT, IAT, STFT, WUE and AE. Matching branches expand
+automatically. Boost, cooling fan, fuel pump and coolant gauge now have separate
+pages; injector setup and trigger reference are separate from everyday map tuning.
 
 **Save file** writes the local calibration to disk. It does not change the ECU.
 Opening a file does not silently migrate or normalize its calibration.
@@ -43,6 +65,29 @@ not a successful save. Local edits must be written to the active tune first.
 
 ## Live data and logs
 
+Monitor channels use consistent full names in lists and CSV headers, with compact
+labels on instruments and graph legends. Examples: Engine Speed (RPM), Manifold
+Absolute Pressure (MAP), Coolant Temperature (ECT), AFR Actual, AFR Target and
+Short Term Fuel Trim (STFT). Hover a channel for its meaning and legacy aliases.
+Search also recognizes old labels such as CLT, Measured AFR and Applied trim.
+Existing CSV files remain readable; recognized headers display the new names
+while retaining their original units and values. Commanded injection, calculated
+duty cycle, base ignition timing and requested knock retard retain their distinct
+meanings. Raw flags, table indices/weights and calibration generation are grouped
+under **Advanced / ECU Status**.
+
+The visual dashboard has an RPM gauge, MAP/TPS bars, and a mixture panel with
+measured AFR, target AFR and applied STFT. Standard layout adds temperatures,
+battery and fuel/ignition details; Compact keeps the primary instruments and
+engine status. Diagnostic adds the full signal table. Recent RPM/MAP trends are
+expandable and show up to 200 accepted samples, not a fixed time interval.
+Instruments reflow into fewer columns in narrow windows. Gauge shapes are vector
+drawings; instrument fonts are rendered at their display sizes and rebuilt when
+the window moves between displays with different DPI settings. Gauge ranges are
+display scales, not engine protection thresholds. The RPM gauge maximum is the
+hard rev limit plus 1000 RPM, using the verified ECU tune when available or the
+loaded calibration otherwise. Without a valid tune limit it uses 8000 RPM.
+
 The dashboard shows RPM, MAP, TPS, temperatures, battery, measured/target AFR,
 oxygen voltage, trim, VE, planned pulse width and advance, enrichment, idle,
 speed, gear, fuel-plan cells/weights, sync, sync losses, cuts and output inhibits.
@@ -65,7 +110,32 @@ Mixture uses the ECU's narrowband classification, or measured wideband AFR withi
 has been read). Ignition timing is planned advance, and STFT is applied trim.
 
 Logging records accepted monitor samples, including sync state, sync-loss count,
-status bitfields and map weights. Open a CSV log for plots, zoom and comparison.
+status bitfields and map weights. Both live logging and opened CSV files use
+stacked graphs with a shared time axis and cursor. Recorded times come from
+accepted packets, so pauses and irregular packet timing remain visible.
+
+Use **Channels** to search, enable traces, assign each trace to a graph, select
+full-log, visible-window or manual ranges, and change colors. **Graph configuration**
+controls graph names, adding/removing panels, grid lines, trace width and linked
+scales for matching units. Click a trace's legend to display its Y axis; hover
+the legend to inspect its range. Other traces retain their own scales.
+
+Wheel over a graph to zoom around the pointer. With **Drag to zoom** enabled,
+click and drag across a region, then release to zoom all graphs into that time
+interval. Dragging works in either direction; a click without dragging sets the
+cursor. Turn **Drag to zoom** off to pan with a drag. Double-click fits the complete
+log. Shift-drag selects an interval across all graphs without zooming automatically
+and shows each visible channel's minimum, maximum and average.
+Choose **Zoom selection** to inspect that interval. Right-click a graph for
+time/range fitting and cursor controls. **Fit graph heights** fills the available
+space; turn it off to adjust individual panel heights and scroll through panels.
+
+**Pause view** freezes a live snapshot while capture and CSV recording continue.
+**Follow live** resumes the latest window. CSV files offer playback from 0.1x to
+8x speed and a cursor/time slider. Short spikes remain visible when zoomed out;
+unavailable measured AFR and interruptions appear as gaps. Clearing live history
+preserves graph settings and does not interrupt an active CSV recording.
+
 Unavailable or stale live data is not shown as fresh. A lost connection requires
 reconnecting; live tuning does not resume automatically.
 
@@ -117,7 +187,8 @@ Choose **ECU > Update firmware** and a 512 KiB raw image with a valid reset vect
 Click **Program firmware** to start directly, without a tune-backup Save As dialog.
 Both calibration slots are erased. An embedded tune is used only if the image contains one.
 The bare stock-profile build contains no tune: after flashing, reconnect, open your
-saved schema-4 tune, Write active tune, Save tune to ECU flash, and key-cycle.
+saved schema-5 tune, Write active tune, Save tune to ECU flash, and key-cycle.
+Migrate older schema-4 tunes with `tools/migrate_schema5.py` before opening them.
 The wizard waits for each erase and checks handler failure status where supported.
 Firmware page checksum checking is disabled.
 

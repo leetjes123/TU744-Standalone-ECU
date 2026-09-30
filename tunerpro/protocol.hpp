@@ -16,7 +16,7 @@ using Progress = std::function<void(unsigned,unsigned)>;
 inline unsigned word(const Bytes& b, size_t at) { return unsigned(b.at(at))*256 + b.at(at+1); }
 inline void validate_monitor(const Bytes& b) {
     if (b.size()!=98 || b[80]!=TU744_MONITOR_EXTENSION)
-        throw std::runtime_error("TU744 logging requires monitor extension 3; update firmware, plugin and ADX together");
+        throw std::runtime_error("TU744 logging requires monitor extension 4; update firmware, plugin and ADX together");
 }
 inline Bytes frame(const Bytes& payload, uint8_t lead=0xaa) {
     if (payload.empty() || payload.size()>128) throw std::runtime_error("Invalid packet length");
@@ -112,12 +112,12 @@ public:
         write(0x7b0,{uint8_t(closed>>8),uint8_t(closed),uint8_t(open>>8),uint8_t(open)},cancelled);
     }
     static void bounds(unsigned at,unsigned count) {
-        if (at>3072 || count>3072-at) throw std::runtime_error("Use a 3072-byte schema-4 calibration BIN");
+        if (at>3072 || count>3072-at) throw std::runtime_error("Use a 3072-byte schema-5 calibration BIN");
     }
     unsigned capabilities() {
         auto b=exchange({0x20});
-        if (b.size()!=10 || b[0]!=3 || b[1]!=4 || word(b,2)!=3072 || b[6]!=32 || b[7]!=128)
-            throw std::runtime_error("This plugin requires TU744 protocol 3 / calibration schema 4");
+        if (b.size()!=10 || b[0]!=3 || b[1]!=5 || word(b,2)!=3072 || b[6]!=32 || b[7]!=128)
+            throw std::runtime_error("This plugin requires TU744 protocol 3 / calibration schema 5");
         return word(b,4);
     }
     void identify() {
@@ -139,7 +139,7 @@ public:
         bounds(at,unsigned(data.size()));
         if (data.empty()) return;
         if (at==0 && data.size()==3072 &&
-            !std::equal(data.begin()+0x900,data.begin()+0x904,Bytes{'L','R',0,4}.begin()))
+            !std::equal(data.begin()+0x900,data.begin()+0x904,Bytes{'L','R',0,5}.begin()))
             throw std::runtime_error("Calibration BIN has the wrong schema marker");
         const unsigned size=unsigned(data.size()),total=2*size+1;
         if(progress)progress(0,total);
