@@ -86,6 +86,7 @@ void capture_isr(void) IRQ_HANDLER(0x1F) {
     u8 slot = capture_head, next = (u8)(slot + 1U), attempt, pending;
     u16 count = block_count[slot], captured, current, high, counter, distance, tooth;
     u32 stamp;
+    board_knock_crank_seen();
     if (next == 3U) next = 0;
     counter = (u16)(previous_counter + count);
     current = T0;
@@ -206,11 +207,13 @@ void engine_work_isr(void) IRQ_HANDLER(0x41) {
     /* OEM order: the segment ignition pass runs on the boundary capture
        before the block is decoded. Decoding (up to ~1 ms for 30 teeth)
        would otherwise delay every charge start near the boundary. */
-    if ((block_tooth[slot] == 1U || block_tooth[slot] == 31U) && ecu.rotation.state == ROT_VALID)
+    if ((block_tooth[slot] == 1U || block_tooth[slot] == 31U) && ecu.rotation.state == ROT_VALID) {
+        board_knock_reference(block_counter[slot], block_stamp[slot]);
         board_ignition_segment(block_tooth[slot], block_stamp[slot], block_counter[slot],
                                count > 1U ? (u16)(capture_buffer[slot][count - 1U] -
                                                   capture_buffer[slot][count - 2U]) :
                                             (u16)ecu.rotation.normal);
+    }
     /* The whole block is decoded at one instant: one misfire-window
        eligibility, one rotation-state write-back for regular teeth. */
     accepted = rotation_block(capture_buffer[slot], (u8)count, block_stamp[slot],

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(TuningWizard VERSION 0.1.0 LANGUAGES CXX RC)
+project(TuningWizard VERSION 0.0.2 LANGUAGES CXX RC)
 
 include(CTest)
 if(MSVC)
@@ -71,7 +71,10 @@ add_executable(TuningWizard WIN32
     src/theme.cpp
     src/dashboard.cpp
     src/logging.cpp
+    src/monitor_channels.cpp
+    src/cal_navigation.cpp
     src/logviewer.cpp
+    src/log_graphs.cpp
     src/editor.cpp
     src/grid_paste.cpp
     src/help.cpp
@@ -104,12 +107,18 @@ if(MSVC)
 endif()
 
 if(BUILD_TESTING)
+    add_executable(TuningWizardGraphTests tests/graph_tests.cpp src/logging.cpp src/logviewer.cpp src/monitor_channels.cpp src/cal_navigation.cpp src/cal_defs.cpp)
+    target_include_directories(TuningWizardGraphTests PRIVATE src)
+    target_compile_definitions(TuningWizardGraphTests PRIVATE NOMINMAX)
+    target_link_libraries(TuningWizardGraphTests PRIVATE imgui_lib)
+    set_target_properties(TuningWizardGraphTests PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    add_test(NAME logging_and_graphs COMMAND TuningWizardGraphTests)
     option(TW_BUILD_UI_PREVIEW "Build isolated diagnostic visual test fixture" OFF)
     if(TW_BUILD_UI_PREVIEW)
         get_target_property(TW_APP_SOURCES TuningWizard SOURCES)
         add_executable(TuningWizardPreview WIN32 ${TW_APP_SOURCES})
         target_include_directories(TuningWizardPreview PRIVATE src)
-        target_compile_definitions(TuningWizardPreview PRIVATE NOMINMAX TW_UI_PREVIEW TW_VERSION="visual-test" TW_VERSION_MAJOR=0 TW_VERSION_MINOR=1 TW_VERSION_PATCH=0)
+        target_compile_definitions(TuningWizardPreview PRIVATE NOMINMAX TW_UI_PREVIEW TW_VERSION="visual-test" TW_VERSION_MAJOR=${PROJECT_VERSION_MAJOR} TW_VERSION_MINOR=${PROJECT_VERSION_MINOR} TW_VERSION_PATCH=${PROJECT_VERSION_PATCH})
         target_link_libraries(TuningWizardPreview PRIVATE imgui_lib)
         set_target_properties(TuningWizardPreview PROPERTIES MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
     endif()
@@ -132,7 +141,7 @@ if(BUILD_TESTING)
         src/undo.cpp
     )
     target_include_directories(TuningWizardTests PRIVATE src)
-    target_compile_definitions(TuningWizardTests PRIVATE NOMINMAX TEST_TUNE_PATH="${CMAKE_SOURCE_DIR}/../build/oem/example-schema4.bin" TEST_DLL_PATH="${CMAKE_SOURCE_DIR}/../build/oem/oem.dll")
+    target_compile_definitions(TuningWizardTests PRIVATE NOMINMAX TEST_TUNE_PATH="${CMAKE_SOURCE_DIR}/../build/oem/example-schema5.bin" TEST_DLL_PATH="${CMAKE_SOURCE_DIR}/../build/oem/oem.dll")
     add_test(NAME calibration_and_protocol_safety COMMAND TuningWizardTests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)
     add_test(NAME generated_definitions COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/tools/wizard_definition.py --check)

@@ -1,10 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+<?xml version='1.0' encoding='utf-8'?>
 <Project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="project_proj.xsd">
-
   <SchemaVersion>1.1</SchemaVersion>
-
   <Header>### uVision Project, (C) Keil Software</Header>
-
   <Targets>
     <Target>
       <TargetName>TU5JP Development (outputs inhibited)</TargetName>
@@ -16,28 +13,28 @@
           <Device>C167SR-LM</Device>
           <Vendor>Infineon</Vendor>
           <Cpu>IRAM(0xF600-0xFDFF) XRAM(0xE000-0xE7FF) CLOCK(20000000) MOD167</Cpu>
-          <FlashUtilSpec></FlashUtilSpec>
+          <FlashUtilSpec />
           <StartupFile>"LIB\START167.A66" ("C16x/ST10 Startup Code")</StartupFile>
-          <FlashDriverDll></FlashDriverDll>
+          <FlashDriverDll />
           <DeviceId>2911</DeviceId>
           <RegisterFile>REG167.H</RegisterFile>
-          <MemoryEnv></MemoryEnv>
-          <Cmp></Cmp>
-          <Asm></Asm>
-          <Linker></Linker>
-          <OHString></OHString>
-          <InfinionOptionDll></InfinionOptionDll>
-          <SLE66CMisc></SLE66CMisc>
-          <SLE66AMisc></SLE66AMisc>
-          <SLE66LinkerMisc></SLE66LinkerMisc>
-          <SFDFile></SFDFile>
+          <MemoryEnv />
+          <Cmp />
+          <Asm />
+          <Linker />
+          <OHString />
+          <InfinionOptionDll />
+          <SLE66CMisc />
+          <SLE66AMisc />
+          <SLE66LinkerMisc />
+          <SFDFile />
           <bCustSvd>0</bCustSvd>
           <UseEnv>0</UseEnv>
-          <BinPath></BinPath>
-          <IncludePath></IncludePath>
-          <LibPath></LibPath>
-          <RegisterFilePath></RegisterFilePath>
-          <DBRegisterFilePath></DBRegisterFilePath>
+          <BinPath />
+          <IncludePath />
+          <LibPath />
+          <RegisterFilePath />
+          <DBRegisterFilePath />
           <TargetStatus>
             <Error>0</Error>
             <ExitCodeStop>0</ExitCodeStop>
@@ -59,8 +56,8 @@
           <BeforeCompile>
             <RunUserProg1>0</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
-            <UserProg2Name></UserProg2Name>
+            <UserProg1Name />
+            <UserProg2Name />
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopU1X>0</nStopU1X>
@@ -69,8 +66,8 @@
           <BeforeMake>
             <RunUserProg1>0</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
-            <UserProg2Name></UserProg2Name>
+            <UserProg1Name />
+            <UserProg2Name />
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopB1X>0</nStopB1X>
@@ -79,15 +76,15 @@
           <AfterMake>
             <RunUserProg1>0</RunUserProg1>
             <RunUserProg2>0</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
-            <UserProg2Name></UserProg2Name>
+            <UserProg1Name />
+            <UserProg2Name />
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
             <nStopA1X>0</nStopA1X>
             <nStopA2X>0</nStopA2X>
           </AfterMake>
           <SelectedForBatchBuild>0</SelectedForBatchBuild>
-          <SVCSIdString></SVCSIdString>
+          <SVCSIdString />
         </TargetCommonOption>
         <CommonProperty>
           <UseCPPCompiler>0</UseCPPCompiler>
@@ -101,17 +98,17 @@
           <AssembleAssemblyFile>0</AssembleAssemblyFile>
           <PublicsOnly>0</PublicsOnly>
           <StopOnExitCode>3</StopOnExitCode>
-          <CustomArgument></CustomArgument>
-          <IncludeLibraryModules></IncludeLibraryModules>
+          <CustomArgument />
+          <IncludeLibraryModules />
           <ComprImg>1</ComprImg>
         </CommonProperty>
         <DllOption>
           <SimDllName>S166.DLL</SimDllName>
-          <SimDllArguments></SimDllArguments>
+          <SimDllArguments />
           <SimDlgDll>D167.DLL</SimDlgDll>
           <SimDlgDllArguments>-p167SR</SimDlgDllArguments>
           <TargetDllName>S166.DLL</TargetDllName>
-          <TargetDllArguments></TargetDllArguments>
+          <TargetDllArguments />
           <TargetDlgDll>T167.DLL</TargetDlgDll>
           <TargetDlgDllArguments>-p167SR</TargetDlgDllArguments>
         </DllOption>
@@ -150,19 +147,19 @@
           <RunDebugAfterBuild>0</RunDebugAfterBuild>
           <TargetSelection>-1</TargetSelection>
           <SimDlls>
-            <CpuDll></CpuDll>
-            <CpuDllArguments></CpuDllArguments>
-            <PeripheralDll></PeripheralDll>
-            <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile></InitializationFile>
+            <CpuDll />
+            <CpuDllArguments />
+            <PeripheralDll />
+            <PeripheralDllArguments />
+            <InitializationFile />
           </SimDlls>
           <TargetDlls>
-            <CpuDll></CpuDll>
-            <CpuDllArguments></CpuDllArguments>
-            <PeripheralDll></PeripheralDll>
-            <PeripheralDllArguments></PeripheralDllArguments>
-            <InitializationFile></InitializationFile>
-            <Driver></Driver>
+            <CpuDll />
+            <CpuDllArguments />
+            <PeripheralDll />
+            <PeripheralDllArguments />
+            <InitializationFile />
+            <Driver />
           </TargetDlls>
         </DebugOption>
         <Utilities>
@@ -175,12 +172,12 @@
             <DriverSelection>-1</DriverSelection>
           </Flash1>
           <bUseTDR>0</bUseTDR>
-          <Flash2></Flash2>
-          <Flash3></Flash3>
-          <Flash4></Flash4>
-          <pFcarmOut></pFcarmOut>
-          <pFcarmGrp></pFcarmGrp>
-          <pFcArmRoot></pFcArmRoot>
+          <Flash2 />
+          <Flash3 />
+          <Flash4 />
+          <pFcarmOut />
+          <pFcarmGrp />
+          <pFcArmRoot />
           <FcArmLst>0</FcArmLst>
         </Utilities>
         <Target166>
@@ -249,8 +246,8 @@
             <ReorderInstruction>0</ReorderInstruction>
             <VariousControls>
               <MiscControls>MOD167</MiscControls>
-              <Define></Define>
-              <Undefine></Undefine>
+              <Define />
+              <Undefine />
               <IncludePath>.\include;.\target\c167</IncludePath>
             </VariousControls>
           </C166>
@@ -258,10 +255,10 @@
             <WarningLevel>2</WarningLevel>
             <UnsignedChar>0</UnsignedChar>
             <VariousControls>
-              <MiscControls></MiscControls>
-              <Define></Define>
-              <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <MiscControls />
+              <Define />
+              <Undefine />
+              <IncludePath />
             </VariousControls>
           </Ec166>
           <A166>
@@ -269,9 +266,9 @@
             <CaseSensitiveSymbols>0</CaseSensitiveSymbols>
             <VariousControls>
               <MiscControls>MOD167</MiscControls>
-              <Define></Define>
-              <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <Define />
+              <Undefine />
+              <IncludePath />
             </VariousControls>
           </A166>
           <L166>
@@ -282,18 +279,18 @@
             <DppUsage>0</DppUsage>
             <nDataSelection>2</nDataSelection>
             <nConstSelection>1</nConstSelection>
-            <NearDataString></NearDataString>
-            <NearConstString></NearConstString>
+            <NearDataString />
+            <NearConstString />
             <iStartStopString>0x010000 - 0x06FFFF</iStartStopString>
-            <InterruptVectorAddress></InterruptVectorAddress>
+            <InterruptVectorAddress />
             <WarningLevel>2</WarningLevel>
-            <DisableWarningNumbers></DisableWarningNumbers>
-            <Assign></Assign>
-            <Registerbank></Registerbank>
-            <Reserve></Reserve>
-            <MiscControls></MiscControls>
+            <DisableWarningNumbers />
+            <Assign />
+            <Registerbank />
+            <Reserve />
+            <MiscControls />
             <UserClasses>FCODE (0x0-0xDFFF,0x10000-0x6FFFF), FCONST (0x0-0xDFFF,0x10000-0x6FFFF), HCONST (0x0-0xDFFF,0x10000-0x6FFFF), XCONST (0x0-0xDFFF,0x10000-0x6FFFF), ICODE (0x0-0xDFFF), NCONST (0x4000-0x7FFF), NDATA (0x380000-0x383FFF), NDATA0 (0x380000-0x383FFF), FDATA (0x380000-0x383FFF), FDATA0 (0x380000-0x383FFF), HDATA (0x380000-0x383FFF), HDATA0 (0x380000-0x383FFF), XDATA (0x380000-0x383FFF), XDATA0 (0x380000-0x383FFF), SDATA (0xF600-0xF7FF), SDATA0 (0xF600-0xF7FF), IDATA (0xF600-0xFDFF), IDATA0 (0xF600-0xFDFF)</UserClasses>
-            <UserSection></UserSection>
+            <UserSection />
           </L166>
         </Target166>
       </TargetOption>
@@ -350,6 +347,11 @@
               <FileName>idle.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\idle.c</FilePath>
+            </File>
+            <File>
+              <FileName>knock.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\knock.c</FilePath>
             </File>
             <File>
               <FileName>lambda.c</FileName>
@@ -417,6 +419,11 @@
               <FilePath>.\src\oem_history_owner.c</FilePath>
             </File>
             <File>
+              <FileName>oem_ignition.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\src\oem_ignition.c</FilePath>
+            </File>
+            <File>
               <FileName>oem_inputs.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\oem_inputs.c</FilePath>
@@ -445,11 +452,6 @@
               <FileName>oem_timing.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\src\oem_timing.c</FilePath>
-            </File>
-            <File>
-              <FileName>oem_ignition.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\src\oem_ignition.c</FilePath>
             </File>
             <File>
               <FileName>oem_voltage.c</FileName>
@@ -537,6 +539,16 @@
               <FilePath>.\target\c167\flash_cal.c</FilePath>
             </File>
             <File>
+              <FileName>fw_update.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\target\c167\fw_update.c</FilePath>
+            </File>
+            <File>
+              <FileName>knock_hw.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\target\c167\knock_hw.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\target\c167\main.c</FilePath>
@@ -550,6 +562,11 @@
               <FileName>FLASHWORKER.A66</FileName>
               <FileType>2</FileType>
               <FilePath>.\target\c167\FLASHWORKER.A66</FilePath>
+            </File>
+            <File>
+              <FileName>FWUPDATE.A66</FileName>
+              <FileType>2</FileType>
+              <FilePath>.\target\c167\FWUPDATE.A66</FilePath>
             </File>
             <File>
               <FileName>START167.A66</FileName>
@@ -566,5 +583,4 @@
       </Groups>
     </Target>
   </Targets>
-
 </Project>

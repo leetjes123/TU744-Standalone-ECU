@@ -1,0 +1,74 @@
+event,subtype_1_code,subtype_1_description,subtype_2_code,subtype_2_description,subtype_4_code,subtype_4_description,subtype_8_code,subtype_8_description
+03,P0300,Random/multiple cylinder misfire,P0300,Random/multiple cylinder misfire,P0300,Random/multiple cylinder misfire,P0300,Random/multiple cylinder misfire
+04,P0301,Cylinder 1 misfire,P0301,Cylinder 1 misfire,P0301,Cylinder 1 misfire,P0301,Cylinder 1 misfire
+05,P0303,Cylinder 3 misfire,P0303,Cylinder 3 misfire,P0303,Cylinder 3 misfire,P0303,Cylinder 3 misfire
+06,P0304,Cylinder 4 misfire,P0304,Cylinder 4 misfire,P0304,Cylinder 4 misfire,P0304,Cylinder 4 misfire
+07,P0302,Cylinder 2 misfire,P0302,Cylinder 2 misfire,P0302,Cylinder 2 misfire,P0302,Cylinder 2 misfire
+08,P0300,Random/multiple cylinder misfire,P0300,Random/multiple cylinder misfire,P0300,Random/multiple cylinder misfire,P0300,Random/multiple cylinder misfire
+09,P0301,Cylinder 1 misfire,P0301,Cylinder 1 misfire,P0301,Cylinder 1 misfire,P0301,Cylinder 1 misfire
+0A,P0303,Cylinder 3 misfire,P0303,Cylinder 3 misfire,P0303,Cylinder 3 misfire,P0303,Cylinder 3 misfire
+0B,P0304,Cylinder 4 misfire,P0304,Cylinder 4 misfire,P0304,Cylinder 4 misfire,P0304,Cylinder 4 misfire
+0C,P0302,Cylinder 2 misfire,P0302,Cylinder 2 misfire,P0302,Cylinder 2 misfire,P0302,Cylinder 2 misfire
+0D,P0338,Crankshaft position circuit high,P0337,Crankshaft position circuit low,P0335,Crankshaft position sensor circuit,P0336,Crankshaft position range/performance
+0E,U1109,Network communication - no response,U1109,Network communication - no response,U1109,Network communication - no response,U1109,Network communication - no response
+10,U1000,Network communication,U1000,Network communication,U1000,Network communication,U1000,Network communication
+11,U1118,Network communication - bus fault,U1118,Network communication - bus fault,U1118,Network communication - bus fault,U1118,Network communication - bus fault
+12,U1109,Network communication - no response,U1109,Network communication - no response,U1109,Network communication - no response,U1109,Network communication - no response
+13,U1113,Network communication - bus fault,U1113,Network communication - bus fault,U1113,Network communication - bus fault,U1113,Network communication - bus fault
+16,U1109,Network communication - no response,U1109,Network communication - no response,U1109,Network communication - no response,U1109,Network communication - no response
+1A,P1327,Cylinder phase detection (DEPHIA),P1327,Cylinder phase detection (DEPHIA),P1327,Cylinder phase detection (DEPHIA),P1327,Cylinder phase detection (DEPHIA)
+1B,P0123,Throttle position circuit high,P0122,Throttle position circuit low,P0120,Throttle position sensor circuit,P0121,Throttle position range/performance
+1D,P0533,A/C refrigerant pressure circuit high,P0532,A/C refrigerant pressure circuit low,P0530,A/C refrigerant pressure sensor circuit,P0531,A/C refrigerant pressure range/performance
+20,P0201,Injector 1 circuit,P0201,Injector 1 circuit,P0201,Injector 1 circuit,P0201,Injector 1 circuit
+21,P0203,Injector 3 circuit,P0203,Injector 3 circuit,P0203,Injector 3 circuit,P0203,Injector 3 circuit
+22,P0204,Injector 4 circuit,P0204,Injector 4 circuit,P0204,Injector 4 circuit,P0204,Injector 4 circuit
+23,P0202,Injector 2 circuit,P0202,Injector 2 circuit,P0202,Injector 2 circuit,P0202,Injector 2 circuit
+25,P0171,System too lean,P0172,System too rich,P0170,Fuel trim malfunction,P0170,Fuel trim malfunction
+26,P0171,System too lean,P0172,System too rich,P0170,Fuel trim malfunction,P0170,Fuel trim malfunction
+27,P0171,System too lean,P0172,System too rich,P0170,Fuel trim malfunction,P0170,Fuel trim malfunction
+28,P1520,Manufacturer specific - downstream O2 heater state machine,P1520,Manufacturer specific - downstream O2 heater state machine,P1520,Manufacturer specific - downstream O2 heater state machine,P1520,Manufacturer specific - downstream O2 heater state machine
+29,P0480,Cooling fan 1 control circuit,P0480,Cooling fan 1 control circuit,P0480,Cooling fan 1 control circuit,P0480,Cooling fan 1 control circuit
+2A,P0481,Cooling fan 2 control circuit,P0481,Cooling fan 2 control circuit,P0481,Cooling fan 2 control circuit,P0481,Cooling fan 2 control circuit
+2B,P0141,Downstream O2 sensor heater circuit,P0141,Downstream O2 sensor heater circuit,P0141,Downstream O2 sensor heater circuit,P0141,Downstream O2 sensor heater circuit
+2C,P0141,Downstream O2 sensor heater circuit,P0141,Downstream O2 sensor heater circuit,P0141,Downstream O2 sensor heater circuit,P0141,Downstream O2 sensor heater circuit
+2D,P0130,Upstream O2 sensor circuit,P0130,Upstream O2 sensor circuit,P0130,Upstream O2 sensor circuit,P0130,Upstream O2 sensor circuit
+2E,P0135,Upstream O2 sensor heater circuit,P0135,Upstream O2 sensor heater circuit,P0135,Upstream O2 sensor heater circuit,P0135,Upstream O2 sensor heater circuit
+2F,P0420,Catalyst efficiency below threshold,P0420,Catalyst efficiency below threshold,P0420,Catalyst efficiency below threshold,P0420,Catalyst efficiency below threshold
+30,P1110,Manufacturer specific - second lamp output circuit,P1110,Manufacturer specific - second lamp output circuit,P1110,Manufacturer specific - second lamp output circuit,P1110,Manufacturer specific - second lamp output circuit
+31,P0232,Fuel pump secondary circuit high,P0231,Fuel pump secondary circuit low,P0230,Fuel pump primary circuit,P0230,Fuel pump primary circuit
+32,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group
+33,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group
+34,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group
+35,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group
+36,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group
+37,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group
+38,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group,P1303,Manufacturer specific - misfire/emission group
+39,P0328,Knock sensor circuit high,P0327,Knock sensor circuit low,P0329,Knock sensor circuit intermittent,P0326,Knock sensor range/performance
+3F,P0133,Upstream O2 sensor slow response,P0133,Upstream O2 sensor slow response,P0133,Upstream O2 sensor slow response,P0133,Upstream O2 sensor slow response
+40,P0133,Upstream O2 sensor slow response,P0133,Upstream O2 sensor slow response,P0133,Upstream O2 sensor slow response,P0133,Upstream O2 sensor slow response
+43,P0108,MAP sensor circuit high,P0107,MAP sensor circuit low,P0109,MAP sensor circuit intermittent,P0106,MAP sensor range/performance
+44,P0138,Downstream O2 sensor circuit high,P0137,Downstream O2 sensor circuit low,P0140,Downstream O2 sensor no activity,P0136,Downstream O2 sensor circuit
+45,P0132,Upstream O2 sensor circuit high,P0131,Upstream O2 sensor circuit low,P0134,Upstream O2 sensor no activity,P0130,Upstream O2 sensor circuit
+47,P0650,MIL control circuit,P0650,MIL control circuit,P0650,MIL control circuit,P0650,MIL control circuit
+48,P0485,Cooling fan power/ground circuit,P0485,Cooling fan power/ground circuit,P0485,Cooling fan power/ground circuit,P0485,Cooling fan power/ground circuit
+49,P0485,Cooling fan power/ground circuit,P0485,Cooling fan power/ground circuit,P0485,Cooling fan power/ground circuit,P0485,Cooling fan power/ground circuit
+4A,P0338,Crankshaft position circuit high,P0337,Crankshaft position circuit low,P0335,Crankshaft position sensor circuit,P0336,Crankshaft position range/performance
+4B,P1327,Cylinder phase detection (DEPHIA),P1327,Cylinder phase detection (DEPHIA),P1327,Cylinder phase detection (DEPHIA),P1327,Cylinder phase detection (DEPHIA)
+4D,P1528,Manufacturer specific - idle actuator circuit high,P1527,Manufacturer specific - idle actuator circuit low,P1529,Manufacturer specific - idle actuator range/performance,P1526,Manufacturer specific - idle actuator circuit
+4E,P0171,System too lean,P0172,System too rich,P0170,Fuel trim malfunction,P0170,Fuel trim malfunction
+4F,P0171,System too lean,P0172,System too rich,P0170,Fuel trim malfunction,P0170,Fuel trim malfunction
+50,P0606,Internal control module processor fault,P0606,Internal control module processor fault,P0606,Internal control module processor fault,P0606,Internal control module processor fault
+51,P0350,Ignition coil primary/secondary circuit,P0350,Ignition coil primary/secondary circuit,P0350,Ignition coil primary/secondary circuit,P0350,Ignition coil primary/secondary circuit
+53,P0410,Secondary air injection system,P0410,Secondary air injection system,P0410,Secondary air injection system,P0410,Secondary air injection system
+56,P1525,Manufacturer specific - idle actuator group,P1525,Manufacturer specific - idle actuator group,P1524,Manufacturer specific - idle actuator group,P1523,Manufacturer specific - idle actuator group
+57,P0351,Ignition coil A primary/secondary,P0351,Ignition coil A primary/secondary,P0351,Ignition coil A primary/secondary,P0351,Ignition coil A primary/secondary
+58,P0352,Ignition coil B primary/secondary,P0352,Ignition coil B primary/secondary,P0352,Ignition coil B primary/secondary,P0352,Ignition coil B primary/secondary
+5B,P0113,Intake air temperature circuit high,P0112,Intake air temperature circuit low,P0110,Intake air temperature circuit,P0111,Intake air temperature range/performance
+60,P0445,EVAP purge valve circuit shorted,P0444,EVAP purge valve circuit open,P0443,EVAP purge valve circuit,P0443,EVAP purge valve circuit
+61,P0118,Coolant temperature circuit high,P0117,Coolant temperature circuit low,P0115,Coolant temperature circuit,P0116,Coolant temperature range/performance
+62,P1608,Manufacturer specific - internal control module,P1608,Manufacturer specific - internal control module,P1608,Manufacturer specific - internal control module,P1608,Manufacturer specific - internal control module
+65,P0563,System voltage high,P0562,System voltage low,P0560,System voltage malfunction,P0561,System voltage unstable
+66,P0605,Internal control module ROM error,P0605,Internal control module ROM error,P0605,Internal control module ROM error,P0605,Internal control module ROM error
+67,P1613,Manufacturer specific - immobilizer,P1613,Manufacturer specific - immobilizer,P1613,Manufacturer specific - immobilizer,P1613,Manufacturer specific - immobilizer
+68,P0503,Vehicle speed sensor intermittent/high,P0502,Vehicle speed sensor circuit low,P0500,Vehicle speed sensor,P0501,Vehicle speed sensor range/performance
+69,P1615,Manufacturer specific - immobilizer/security,P1615,Manufacturer specific - immobilizer/security,P1615,Manufacturer specific - immobilizer/security,P1615,Manufacturer specific - immobilizer/security

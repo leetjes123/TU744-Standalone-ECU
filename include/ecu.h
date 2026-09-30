@@ -26,7 +26,7 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
 #include "storage_layout.h"
 
 #define CAL_SIZE 3072U
-#define CAL_SCHEMA 4U
+#define CAL_SCHEMA 5U
 #define CAL_MAGIC 0x900U
 #define CAL_RUN_RPM 0x904U
 #define CAL_CRANK_RPM 0x906U
@@ -47,6 +47,9 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
 #define CAL_IDLE_STEP_MS 0x924U
 /* IAC closing steps driven during homing; zero keeps the original 250. */
 #define CAL_IAC_HOME_STEPS 0x93CU
+/* Zero preserves the 200 RPM restart margin of existing schema-4 tunes. */
+#define CAL_DFCO_EXIT_RPM 0x93EU
+#define DFCO_EXIT_RPM_DEFAULT 200U
 #define IAC_HOME_STEPS_DEFAULT 250U
 #define IAC_HOME_MS_PER_STEP 12U /* 10 ms step cadence plus scheduling margin */
 /* Geometry, units and sensor/equipment changes require a stopped engine. */
@@ -147,7 +150,7 @@ typedef struct {
 } Calibration;
 typedef struct {
     u8 mode, rev_limited, dfco, launch, fan, pump, gauge, boost;
-    u8 fan_request, fan_waiting;
+    u8 fan_request, fan_waiting, throttle_closed;
     u16 fan_target, idle_fan_steps;
     u32 fan_at;
     u8 warmup, afterstart, target_afr, idle_mode;

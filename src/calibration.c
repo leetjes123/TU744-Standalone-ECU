@@ -2,6 +2,7 @@
 #include "lifecycle.h"
 #include "faults.h"
 #include "diagnostic_monitors.h"
+#include "knock.h"
 #include <string.h>
 const u8 *cal_active(void) {
     return ecu.cal.bytes[ecu.cal.active];
@@ -155,6 +156,8 @@ u8 cal_validate(const u8 *c, u16 *error) {
         return fail(error, 0x5E7);
     if (get16(c + 0x5E9) > 10000 || !c[0x758] || c[0x758] > 50 || c[0x757])
         return fail(error, 0x5E9);
+    if (get16(c + CAL_DFCO_EXIT_RPM) > 2000U)
+        return fail(error, CAL_DFCO_EXIT_RPM);
     if (c[0x5D9] != 5 || c[0x5DA] != 6)
         return fail(error, 0x5D9); /* fixed development IAC waveform */
     if (get16(c + CAL_IDLE_STEP_MS) < 20 || get16(c + CAL_IDLE_STEP_MS) > 1000)
@@ -210,6 +213,7 @@ u8 cal_validate(const u8 *c, u16 *error) {
     if (get16(c + 0x7A1) < 10 || get16(c + 0x7A1) > 1000 || get16(c + 0x7AD) < 500 ||
         get16(c + 0x7AD) > 4000)
         return fail(error, 0x7A1);
+    if (!knock_validate(c, error)) return 0;
     sb = 0;
     *error = (u16)sb;
     return 1;
@@ -238,7 +242,8 @@ u8 cal_write(u16 at, const u8 *p, u8 n) {
    calling a range predicate for every byte during a running tuning write. */
 static const u16 structural_ranges[][2] = {
     {0x460, 0x480}, {0x550, 0x5B4}, {0x5D4, 0x5D5}, {0x5E4, 0x5E5},
-    {0x600, 0x603}, {0x605, 0x607}, {0x7A1, 0x7AF}, {0x7B0, 0x7B4}, {0x900, CAL_SIZE}};
+    {0x600, 0x603}, {0x605, 0x607}, {0x7A1, 0x7AF}, {0x7B0, 0x7B4},
+    {0x900, CAL_DFCO_EXIT_RPM}, {CAL_DFCO_EXIT_RPM + 2U, CAL_SIZE}};
 /* A commit is two steps so a running tuning write can place each between
    control releases (each is several ms; together they exceeded the plan age).
    Only the foreground protocol writes staging, and it waits between steps. */
@@ -369,7 +374,7 @@ void cal_example(u8 *c) {
         put16(c + 0x530 + 2 * i, 3000);
         put16(c + 0x540 + 2 * i, 850);
         put16(c + 0x610 + 2 * i, (u16)(-700 + (s16)i * 200));
-        c[0x620 + i] = (u8)(54 - i * 4);
+        c[0x620 + i] = (u8)(26 + i * 4); /* Negative error must retard spark. */
         put16(c + 0x740 + 2 * i, (u16)(50 + i * 200));
         put16(c + 0x789 + 2 * i, (u16)(500 + i * 1000));
         c[0x799 + i] = 50;
@@ -394,8 +399,8 @@ void cal_example(u8 *c) {
     c[0x5EE] = 50;
     put16(c + 0x5E7, 3500);
     put16(c + 0x5E9, 1800);
-    c[0x5EB] = 35;
-    c[0x603] = 10;
+    /* 0x5EB is reserved; DFCO no longer depends on MAP. */
+    c[0x603] = 1; /* 100 ms; preserve the existing 0.1 s tuning resolution. */
     c[0x604] = 30;
     c[0x601] = 100;
     c[0x602] = 200;
@@ -444,6 +449,7 @@ void cal_example(u8 *c) {
     put16(c + CAL_SENSOR_AGE, 50);
     put16(c + CAL_PLAN_AGE, 30);
     put16(c + CAL_IDLE_STEP_MS, 60);
+    put16(c + CAL_DFCO_EXIT_RPM, DFCO_EXIT_RPM_DEFAULT);
     for (i = 0; i < sizeof(dtc_events); i++) {
         c[CAL_DTC_ENABLE + dtc_events[i] / 8U] |= (u8)(1U << (dtc_events[i] & 7U));
         c[CAL_DTC_SUBTYPE_ENABLE + dtc_events[i]] = 0x0FU;
@@ -466,4 +472,5 @@ void cal_example(u8 *c) {
     put16(c + CAL_DTC_MAP_SLEW, 3000);
     put16(c + CAL_DTC_TEMP_SLEW, 100);
     put16(c + CAL_DTC_BATTERY_SLEW, 50000);
+    knock_defaults(c);
 }

@@ -1,14 +1,14 @@
 # TU744 / TunerPro RT
 
 Current delivery: **TU744 firmware 0.0.1**, **plugin 0.5.0**, **ADX 7.1**.
-Targets stock-M95080, protocol 3 and calibration schema 4. Monitor extension 3
+Targets stock-M95080, protocol 3 and calibration schema 5. Monitor extension 4
 retains the narrowband lean/stoich/rich indicators without sensor-quality data.
 
 ## Wideband display
 
 ADX 7.1 adds **Wideband lambda (14.7 reference)**, **Target lambda (14.7
 reference)** and **Oxygen input voltage** to the **Engine** data list, alongside
-**Wideband measured AFR**. Reload `TU744_schema4.adx` after replacing the file.
+**Wideband measured AFR**. Reload `TU744_schema5.adx` after replacing the file.
 
 Lambda is the transmitted AFR divided by 14.7 (packet bytes 15/16 contain AFR
 times ten, so the ADX equations are `X/147`). This matches the supplied basemaps.
@@ -59,19 +59,19 @@ throttle learning procedure.
 
 1. Copy `TU744.dll` (from `release/TU744-v0.0.1/tunerpro/`) into your TunerPro plugin
    directory (normally `Documents/TunerPro Files/Plugins`), then restart TunerPro RT.
-2. Select **TU744 schema-4 RAM tuning** as emulation hardware and
-   **TU744 schema-4 logging** as the acquisition interface. Configure the adapter's
+2. Select **TU744 schema-5 RAM tuning** as emulation hardware and
+   **TU744 schema-5 logging** as the acquisition interface. Configure the adapter's
    COM port in the plugin. It uses 19200 baud, 8N1; close other applications using
    that port. The plugin does not scan ports.
-3. Open a **3072-byte schema-4 calibration BIN**, and select
-   `TU744_schema4_speed_density.xdf` or `TU744_schema4_alpha_n.xdf` to match its
+3. Open a **3072-byte schema-5 calibration BIN**, and select
+   `TU744_schema5_speed_density.xdf` or `TU744_schema5_alpha_n.xdf` to match its
    fueling mode. Selecting an XDF does not change the ECU mode. A 512 KiB firmware
    image or an OEM map is not a calibration BIN for these definitions.
 4. Select **Initialize Emulation Hardware**. If the ECU already has a tune, use
    **Download BIN from Emulator** and save a local copy before editing. Then select
    **Enable Emulation** for live edits. Uploads and live edits activate validated RAM transactions.
    Invalid updates leave the previous active tune intact.
-5. Load `TU744_schema4.adx` for engine values, status flags and DTC counts.
+5. Load `TU744_schema5.adx` for engine values, status flags and DTC counts.
    Select **Acquisition > Start/Stop Data Scan**, then
    **Acquisition > Show Data Lists > Engine** or **Status and blocks**. Logging and emulation
    share the plugin connection; logging does not require Enable Emulation.
@@ -104,7 +104,7 @@ calibration remains separate.
 Generic builds do not bundle or substitute a base map. The dated stock-M95080
 delivery package includes the user's explicitly supplied, converted LRE-B4 tune;
 see its README and conversion report. Missing/unreadable calibration still
-prevents start. A valid schema-4 tune can be uploaded and saved while stopped.
+prevents start. A valid schema-5 tune can be uploaded and saved while stopped.
 
 Cranking cells are VE percent. After-start and acceleration use multiplication
 percentages with 100% neutral. Required fuel and injector dead time remain time
@@ -142,7 +142,7 @@ bitmap at `0x940`. Events without a standalone monitor are not listed,
 because their bits have no effect. **DTC switches - individual codes** writes
 the subtype masks at `0x980`. Use it only for events that raise several codes.
 Do not clear every code of one event: the ECU treats an all-zero mask as all
-codes on (schema-4 compatibility). Turn the event off in **DTC switches** instead.
+codes on (schema-5 compatibility). Turn the event off in **DTC switches** instead.
 
 ## Plugin 0.3.0 / ADX 5.0 (24 September 2026)
 
@@ -166,3 +166,7 @@ state and fuel trim. Reading works with any firmware that has the diagnostic
 history. **Clear DTCs** asks for confirmation, needs the engine stopped with the
 key on, and requires firmware from 24 September 2026. It then reads the list
 back. A fault that is still present is stored again.
+
+## Firmware 0.0.2 knock control
+
+Use plugin 0.6.0 with schema-5 XDF/ADX files. Gain (automatic or manual), the two hardware filter bands, window curves, thresholds and global retard controls start from OEM settings. Knock defaults to disabled. AN15 voltage, detection, requested retard, freshness and sensing faults are logged. See [knock controls and limitations](../docs/KNOCK.md).

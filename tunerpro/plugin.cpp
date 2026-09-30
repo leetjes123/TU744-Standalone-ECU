@@ -268,9 +268,9 @@ static HRESULT configure(TPP_CONFIGINFO* info) {
 static BOOL component_info(TPP_COMPONENTINFO* info,bool emulation) {
     if(!info || info->cbSize<sizeof(*info)) return FALSE;
     info->ID=emulation?emu_id:daq_id;
-    strcpy_s(info->strName,emulation?"TU744 schema-4 RAM tuning":"TU744 schema-4 logging");
+    strcpy_s(info->strName,emulation?"TU744 schema-5 RAM tuning":"TU744 schema-5 logging");
     strcpy_s(info->strDesc,"Shared K-line connection, stock 95080 / flash calibration");
-    strcpy_s(info->strVersion,"0.5.0");
+    strcpy_s(info->strVersion,"0.6.0");
     info->bConfigurable=TRUE; info->wVersionMajor=0; info->wVersionMinor=5;
     return TRUE;
 }
@@ -306,8 +306,8 @@ public:
     const CHAR* GetLastErrorText(BOOL& p) override {return last(p);}
     HRESULT GetHardwareInfo(TPEMUCAPS* p) override {
         if(!p || p->cbSize<sizeof(*p)) return E_INVALIDARG;
-        strcpy_s(p->strName,"TU744"); strcpy_s(p->strDescription,"3072-byte schema-4 RAM calibration");
-        strcpy_s(p->strVersion,"0.5.0");
+        strcpy_s(p->strName,"TU744"); strcpy_s(p->strDescription,"3072-byte schema-5 RAM calibration");
+        strcpy_s(p->strVersion,"0.6.0");
         // TunerPro gates its entire emulation toolbar on CHIPEMULATION.
         // Our chip-sized buffer is the ECU's RAM calibration; REALTIME alone
         // detects successfully but leaves download and enable disabled.
@@ -379,7 +379,7 @@ public:
     HRESULT GetHardwareInfo(TPDATAACQIOCAPS* p) override {
         if(!p||p->cbSize<sizeof(*p))return E_INVALIDARG;
         strcpy_s(p->strName,"TU744 shared K-line"); strcpy_s(p->strDescription,"Validated frames; physical adapter echo removed");
-        strcpy_s(p->strVersion,"0.5.0");p->dwCapFlags=0;return S_OK;
+        strcpy_s(p->strVersion,"0.6.0");p->dwCapFlags=0;return S_OK;
     }
     HRESULT InitializeHardware(TPDATAACQHWINIT* p) override {
         if(!p||p->cbSize<sizeof(*p)||p->dwBaud!=19200||p->btParity||p->btBitsPerByte!=8||p->btStopBits)return E_INVALIDARG;
@@ -394,7 +394,7 @@ public:
             uint8_t command=p->pData[2];
             if((command!=0x10&&command!=0x25&&command!=0x2b) ||
                Bytes(p->pData,p->pData+4)!=tu5jp::frame({command}))
-                throw std::runtime_error("Use the TU744 schema-4 ADX; logging cannot write calibration");
+                throw std::runtime_error("Use the TU744 schema-5 ADX; logging cannot write calibration");
             auto response=session.command({command});
             if(command==0x10)tu5jp::validate_monitor(response);
             queued=tu5jp::frame(response,0x55);
@@ -421,9 +421,9 @@ public:
     BOOL GetPluginInfo(TPP_PLUGININFO* p) override {
         if(!p||p->cbSize<sizeof(*p))return FALSE;
         p->dwContractVersion=TPPLUGIN_CONTRACT_VERSION;p->ID=plugin_id;
-        strcpy_s(p->strName,"TU744 schema 4");
+        strcpy_s(p->strName,"TU744 schema 5");
         strcpy_s(p->strDesc,"RAM tuning, shared K-line logging and explicit flash save for stock 95080 firmware");
-        strcpy_s(p->strVersion,"0.5.0");strcpy_s(p->strAuthor,"TU744 project");
+        strcpy_s(p->strVersion,"0.6.0");strcpy_s(p->strAuthor,"TU744 project");
         p->dwComponentCount=2;p->bConfigurable=TRUE;p->wVersionMajor=0;p->wVersionMinor=5;return TRUE;
     }
     HRESULT Configure(TPP_CONFIGINFO* p) override {return configure(p);}

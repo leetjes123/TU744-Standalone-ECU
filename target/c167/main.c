@@ -10,6 +10,7 @@ void main(void) {
     /* Knock IC: the OEM pin timeline from reset (port init, hold, release).
        Before EEPROM traffic, so the storage load cannot delay it. */
     board_knock_ic_boot(KNOCK_FILTER_KHZ_DEFAULT);
+    board_knock_init();
     if (!ecu.iac.off_pending) {
         faults_load();
         storage_load();

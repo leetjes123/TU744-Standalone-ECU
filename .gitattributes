@@ -1,0 +1,2 @@
+# Preserve the exact release bytes covered by SHA256SUMS.txt.
+/release/TU744-v0.0.2/** -text whitespace=blank-at-eol,blank-at-eof,space-before-tab,cr-at-eol

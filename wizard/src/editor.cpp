@@ -1,4 +1,5 @@
 #include "editor.h"
+#include "cal_navigation.h"
 #include "app.h"
 #include "grid_paste.h"
 #include "tooltips.h"
@@ -682,7 +683,7 @@ bool DrawTableEditor(const TableDef& table, CalBuffer& cal, UndoStack& undo,
     }
 
     // Stable context bar: identity, axes, dimensions, compare, and live state.
-    ImGui::Text("%s  |  %s", table.name, table.units);
+    ImGui::Text("%s  |  %s", CalibrationTableLabel(table.offset,table.name), table.units);
     { const char* tip = GetTooltip(table.name);
       if (tip && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tip); }
     if (is1D) {
@@ -732,9 +733,6 @@ bool DrawTableEditor(const TableDef& table, CalBuffer& cal, UndoStack& undo,
     ImGuiTableFlags tblFlags = ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit |
                                ImGuiTableFlags_NoHostExtendX;
 
-    const float minCellW = (table.cellType == CellType::U16BE || table.cellType == CellType::S16BE)
-                         ? S(62) : S(48);
-
     // Legend, live-cell readout and compare summary sit under the grid.
     const float footerReserve = ImGui::GetTextLineHeightWithSpacing() * 4.0f + S(10);
     const ImVec2 availableGridSpace = ImGui::GetContentRegionAvail();
@@ -747,30 +745,30 @@ bool DrawTableEditor(const TableDef& table, CalBuffer& cal, UndoStack& undo,
     else if (visualXAxis)
         snprintf(cornerLabel, sizeof(cornerLabel), "%s", visualXAxis->name);
 
-    // Fill three quarters of the panel: big enough to work in, small enough to
-    // leave the surrounding context visible. The axis header row and column are
-    // sized exactly like the data cells, so the grid reads as one even mesh.
-    const float widthFraction = 0.75f, heightFraction = 0.75f;
+    // Size the mesh around its numbers, rather than inflating small tables to
+    // a fraction of the window. Include allowed values so editing is stable.
     const float cellPadX = ImGui::GetStyle().CellPadding.x * 2.0f;
-    // Reserve covers cell padding, one border line per column and the host
-    // window's scrollbar: overshooting by a pixel scrolls the whole panel.
-    const float widthReserve = cellPadX * totalCols + (float)(totalCols + 1) +
-                               ImGui::GetStyle().ScrollbarSize + S(6);
-    const float widthForCells = availableGridSpace.x * widthFraction - widthReserve;
-    float cellW = minCellW;
-    if (totalCols > 0 && widthForCells > 0.0f)
-        cellW = std::clamp(widthForCells / totalCols, minCellW, S(120));
-    const float headerW = cellW;
-
-    const float textRowHeight = ImGui::GetTextLineHeight() + ImGui::GetStyle().CellPadding.y * 2.0f;
-    const float maxGridHeight = std::max(S(80), availableGridSpace.y - footerReserve);
-    float rowHeight = textRowHeight;
-    {
-        // rows + 1 because the axis header row is now the same height as the rest.
-        const float heightForRows = maxGridHeight * heightFraction - (float)(rows + 2) - S(6);
-        if (heightForRows > 0.0f)
-            rowHeight = std::clamp(heightForRows / (rows + 1), textRowHeight, textRowHeight * 2.0f);
+    float cellW = S(36);
+    auto measure = [&](float value, bool axis) {
+        char text[48];
+        if(axis) snprintf(text,sizeof(text),"%g",value);
+        else if(table.scale==1.0f && table.translate==0.0f) snprintf(text,sizeof(text),"%.0f",value);
+        else if(fabsf(table.scale)>=.1f) snprintf(text,sizeof(text),"%.1f",value);
+        else snprintf(text,sizeof(text),"%.2f",value);
+        cellW=std::max(cellW,ImGui::CalcTextSize(text).x+S(8));
+    };
+    measure(table.minVal,false); measure(table.maxVal,false);
+    for(int c=0;c<cols;++c) measure(GetAxisValue(visualXAxis,cal,c),true);
+    for(int r=0;r<rows;++r) {
+        if(visualYAxis) measure(GetAxisValue(visualYAxis,cal,r),true);
+        for(int c=0;c<cols;++c) measure(cal.readTableCell(table,r,c),false);
     }
+    const float headerW = cellW;
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,ImVec2(S(3),S(1)));
+    const float cellPadY = ImGui::GetStyle().CellPadding.y * 2.0f;
+    const float rowHeight = ImGui::GetFrameHeight() + cellPadY;
+    const float selectableHeight = rowHeight-cellPadY;
+    const float maxGridHeight = std::max(S(80), availableGridSpace.y - footerReserve);
     const float populatedRowHeight = rowHeight;
     const float populatedHeight = rowHeight * (rows + 1) + (float)(rows + 2) + S(3);
     const float populatedWidth = cellW * totalCols + cellPadX * totalCols +
@@ -880,7 +878,7 @@ bool DrawTableEditor(const TableDef& table, CalBuffer& cal, UndoStack& undo,
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.5f, 1.0f));
                 char axSelLabel[32];
                 snprintf(axSelLabel, sizeof(axSelLabel), "%s##ahX%d", axTxt, c);
-                if (ImGui::Selectable(axSelLabel, false, ImGuiSelectableFlags_None, ImVec2(cellW - S(4), rowHeight))) {
+                if (ImGui::Selectable(axSelLabel, false, ImGuiSelectableFlags_None, ImVec2(cellW - S(4), selectableHeight))) {
                     if (IsAxisEditable(visualXAxis)) {
                         state.editingAxis = true;
                         state.editingXAxis = true;
@@ -957,7 +955,7 @@ bool DrawTableEditor(const TableDef& table, CalBuffer& cal, UndoStack& undo,
                     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.8f, 0.8f, 0.5f, 1.0f));
                     char ySelLabel[32];
                     snprintf(ySelLabel, sizeof(ySelLabel), "%s##ahY%d", yTxt, r);
-                    if (ImGui::Selectable(ySelLabel, false, ImGuiSelectableFlags_None, ImVec2(headerW - S(4), rowHeight))) {
+                    if (ImGui::Selectable(ySelLabel, false, ImGuiSelectableFlags_None, ImVec2(headerW - S(4), selectableHeight))) {
                         if (IsAxisEditable(visualYAxis)) {
                             state.editingAxis = true;
                             state.editingXAxis = false;
@@ -1085,7 +1083,7 @@ bool DrawTableEditor(const TableDef& table, CalBuffer& cal, UndoStack& undo,
                     snprintf(cellLabel, sizeof(cellLabel), "%s###c%d_%d", txt, r, c);
                     if (ImGui::Selectable(cellLabel, false,
                                           ImGuiSelectableFlags_None,
-                                          ImVec2(cellW - 4, rowHeight))) {
+                                          ImVec2(cellW - S(4), selectableHeight))) {
                         if (ImGui::GetIO().KeyShift) {
                             state.sel.extendTo(r, c);
                         } else {
@@ -1177,6 +1175,7 @@ bool DrawTableEditor(const TableDef& table, CalBuffer& cal, UndoStack& undo,
     }
 
     // Release drag
+    ImGui::PopStyleVar();
     if (!ImGui::IsMouseDown(0)) state.sel.dragging = false;
 
     // Persistent marker and heatmap legend.
@@ -1280,6 +1279,18 @@ bool DrawTableEditor(const TableDef& table, CalBuffer& cal, UndoStack& undo,
 
 static const char* GetDisabledReason(int offset, const CalBuffer& cal) { return DisabledReason(offset, cal.data); }
 static bool IsSettingEnabled(int offset, const CalBuffer& cal) { return !DisabledReason(offset, cal.data); }
+static void CompactSettingHelp(const char* text) {
+    std::string preview(text);
+    const size_t newline=preview.find('\n');
+    if(newline!=std::string::npos) preview.resize(newline);
+    ImGui::TextUnformatted(preview.c_str());
+    if(ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) {
+        ImGui::BeginTooltip();
+        ImGui::PushTextWrapPos(ImGui::GetFontSize()*36);
+        ImGui::TextUnformatted(text);
+        ImGui::PopTextWrapPos(); ImGui::EndTooltip();
+    }
+}
 // ============================================================
 //  Scalar Editor
 // ============================================================
@@ -1287,7 +1298,7 @@ static bool IsSettingEnabled(int offset, const CalBuffer& cal) { return !Disable
 void DrawScalarEditors(const char* category, CalBuffer& cal, UndoStack& undo, EcuProtocol* ecu) {
     bool hasEntries = false;
     for (int i = 0; i < NUM_SCALARS; ++i)
-        if (strcmp(ALL_SCALARS[i].category, category) == 0) { hasEntries = true; break; }
+        if (CalibrationPageMatches(category,ALL_SCALARS[i].category,ALL_SCALARS[i].name,ALL_SCALARS[i].offset)) { hasEntries = true; break; }
     if (!hasEntries) return;
     static int invalidScalar = -1;
     static std::vector<float> pendingValues;
@@ -1302,16 +1313,17 @@ void DrawScalarEditors(const char* category, CalBuffer& cal, UndoStack& undo, Ec
     }
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg |
                                   ImGuiTableFlags_SizingStretchProp;
-    if (!ImGui::BeginTable("scalar_form", 4, flags)) return;
-    ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch, 1.15f);
-    ImGui::TableSetupColumn("Editor", ImGuiTableColumnFlags_WidthFixed, S(205));
-    ImGui::TableSetupColumn("Unit", ImGuiTableColumnFlags_WidthFixed, S(65));
-    ImGui::TableSetupColumn("Status / help", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,ImVec2(S(4),S(2)));
+    if (!ImGui::BeginTable("scalar_form", 4, flags)) { ImGui::PopStyleVar(); return; }
+    ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+    ImGui::TableSetupColumn("Editor", ImGuiTableColumnFlags_WidthFixed, S(160));
+    ImGui::TableSetupColumn("Unit", ImGuiTableColumnFlags_WidthFixed, S(60));
+    ImGui::TableSetupColumn("Status / help", ImGuiTableColumnFlags_WidthStretch, 1.15f);
     ImGui::TableHeadersRow();
 
     for (int i = 0; i < NUM_SCALARS; i++) {
         const ScalarDef& s = ALL_SCALARS[i];
-        if (strcmp(s.category, category) != 0) continue;
+        if (!CalibrationPageMatches(category,s.category,s.name,s.offset)) continue;
 
         bool enabled = IsSettingEnabled(s.offset, cal);
         const char* disabledReason = enabled ? nullptr : GetDisabledReason(s.offset, cal);
@@ -1438,24 +1450,26 @@ void DrawScalarEditors(const char* category, CalBuffer& cal, UndoStack& undo, Ec
         if (help && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal)) ImGui::SetTooltip("%s", help);
     }
     ImGui::EndTable();
+    ImGui::PopStyleVar();
 }
 
 void DrawFlagEditors(const char* category, CalBuffer& cal, UndoStack& undo) {
     bool hasEntries = false;
     for (int i = 0; i < NUM_FLAGS; ++i)
-        if (strcmp(ALL_FLAGS[i].category, category) == 0) { hasEntries = true; break; }
+        if (CalibrationPageMatches(category,ALL_FLAGS[i].category,ALL_FLAGS[i].name,ALL_FLAGS[i].offset)) { hasEntries = true; break; }
     if (!hasEntries) return;
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg |
                                   ImGuiTableFlags_SizingStretchProp;
-    if (!ImGui::BeginTable("flag_form", 4, flags)) return;
-    ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch, 1.15f);
-    ImGui::TableSetupColumn("Editor", ImGuiTableColumnFlags_WidthFixed, S(205));
-    ImGui::TableSetupColumn("Unit", ImGuiTableColumnFlags_WidthFixed, S(65));
-    ImGui::TableSetupColumn("Status / help", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,ImVec2(S(4),S(2)));
+    if (!ImGui::BeginTable("flag_form", 4, flags)) { ImGui::PopStyleVar(); return; }
+    ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+    ImGui::TableSetupColumn("Editor", ImGuiTableColumnFlags_WidthFixed, S(160));
+    ImGui::TableSetupColumn("Unit", ImGuiTableColumnFlags_WidthFixed, S(60));
+    ImGui::TableSetupColumn("Status / help", ImGuiTableColumnFlags_WidthStretch, 1.15f);
     ImGui::TableHeadersRow();
     for (int i = 0; i < NUM_FLAGS; i++) {
         const FlagDef& f = ALL_FLAGS[i];
-        if (strcmp(f.category, category) != 0) continue;
+        if (!CalibrationPageMatches(category,f.category,f.name,f.offset)) continue;
 
         bool enabled = IsSettingEnabled(f.offset, cal);
         const char* disabledReason = enabled ? nullptr : GetDisabledReason(f.offset, cal);
@@ -1502,9 +1516,10 @@ void DrawFlagEditors(const char* category, CalBuffer& cal, UndoStack& undo) {
         const char* help = GetTooltip(f.name);
         if (!enabled && disabledReason)
             ImGui::TextColored(ImVec4(0.78f, 0.58f, 0.30f, 1.0f), "%s", disabledReason);
-        else if (help) ImGui::TextWrapped("%s", help);
+        else if (help) CompactSettingHelp(help);
     }
     ImGui::EndTable();
+    ImGui::PopStyleVar();
 }
 
 // ============================================================
@@ -1514,19 +1529,20 @@ void DrawFlagEditors(const char* category, CalBuffer& cal, UndoStack& undo) {
 void DrawDropdownEditors(const char* category, CalBuffer& cal, UndoStack& undo) {
     bool hasEntries = false;
     for (int i = 0; i < NUM_DROPDOWNS; ++i)
-        if (strcmp(ALL_DROPDOWNS[i].category, category) == 0) { hasEntries = true; break; }
+        if (CalibrationPageMatches(category,ALL_DROPDOWNS[i].category,ALL_DROPDOWNS[i].name,ALL_DROPDOWNS[i].offset)) { hasEntries = true; break; }
     if (!hasEntries) return;
     const ImGuiTableFlags flags = ImGuiTableFlags_BordersInnerH | ImGuiTableFlags_RowBg |
                                   ImGuiTableFlags_SizingStretchProp;
-    if (!ImGui::BeginTable("dropdown_form", 4, flags)) return;
-    ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch, 1.15f);
-    ImGui::TableSetupColumn("Editor", ImGuiTableColumnFlags_WidthFixed, S(205));
-    ImGui::TableSetupColumn("Unit", ImGuiTableColumnFlags_WidthFixed, S(65));
-    ImGui::TableSetupColumn("Status / help", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,ImVec2(S(4),S(2)));
+    if (!ImGui::BeginTable("dropdown_form", 4, flags)) { ImGui::PopStyleVar(); return; }
+    ImGui::TableSetupColumn("Setting", ImGuiTableColumnFlags_WidthStretch, 1.5f);
+    ImGui::TableSetupColumn("Editor", ImGuiTableColumnFlags_WidthFixed, S(160));
+    ImGui::TableSetupColumn("Unit", ImGuiTableColumnFlags_WidthFixed, S(60));
+    ImGui::TableSetupColumn("Status / help", ImGuiTableColumnFlags_WidthStretch, 1.15f);
     ImGui::TableHeadersRow();
     for (int i = 0; i < NUM_DROPDOWNS; i++) {
         const DropdownDef& d = ALL_DROPDOWNS[i];
-        if (strcmp(d.category, category) != 0) continue;
+        if (!CalibrationPageMatches(category,d.category,d.name,d.offset)) continue;
 
         bool enabled = IsSettingEnabled(d.offset, cal);
         const char* disabledReason = enabled ? nullptr : GetDisabledReason(d.offset, cal);
@@ -1543,7 +1559,7 @@ void DrawDropdownEditors(const char* category, CalBuffer& cal, UndoStack& undo) 
         int oldVal = val;
 
         ImGui::PushID(2000 + i);
-        ImGui::SetNextItemWidth(S(180));
+        ImGui::SetNextItemWidth(-1);
         if (ImGui::Combo("##mode", &val, d.options, d.numOptions)) {
             if (val != oldVal) {
                 undo.record(cal.data, 0, TOTAL_SIZE, d.name);
@@ -1573,9 +1589,10 @@ void DrawDropdownEditors(const char* category, CalBuffer& cal, UndoStack& undo) 
         const char* help = GetTooltip(d.name);
         if (!enabled && disabledReason)
             ImGui::TextColored(ImVec4(0.78f, 0.58f, 0.30f, 1.0f), "%s", disabledReason);
-        else if (help) ImGui::TextWrapped("%s", help);
+        else if (help) CompactSettingHelp(help);
     }
     ImGui::EndTable();
+    ImGui::PopStyleVar();
 }
 
 // ============================================================
