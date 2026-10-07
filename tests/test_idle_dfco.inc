@@ -121,3 +121,30 @@ static void test_idle_dfco(void) {
     CHECK(cal_commit(0));
     CHECK(get16(cal_active() + CAL_DFCO_EXIT_RPM) == 600);
 }
+/* Steps mode (0x5D8 = 0) walks one step per interval. A P gain left in the
+   map (hidden by the Wizard in this mode) must not move the valve: on
+   2026-10-07 it slewed the IAC 25<->75 steps at idle and stalled the engine. */
+static void test_idle_step_mode(void) {
+    u16 target, start, i;
+    u8 *c;
+    idle_dfco_setup(); c = ecu.cal.bytes[0];
+    c[0x5D4] = 0;
+    c[0x5D8] = 0;
+    put16(c + 0x630, 5000); /* 0.5 steps/RPM, as in the 2026-10-07 basemap */
+    put16(c + CAL_IDLE_STEP_MS, 100);
+    idle_dfco_pass(1000, 950);
+    target = ecu.control.idle_target;
+    idle_dfco_pass(1010, target);
+    CHECK(ecu.control.idle_mode == IDLE_FEEDBACK);
+    start = ecu.control.idle_position;
+    CHECK(start >= 20);
+    /* 400 RPM over target for ~1 s: ten steps closed, no proportional jump. */
+    for (i = 0; i < 100; i++)
+        idle_dfco_pass(1100 + i * 10UL, (u16)(target + 400));
+    CHECK(start - ecu.control.idle_position == 10);
+    /* 400 RPM under target for 0.4 s: five steps open. */
+    start = ecu.control.idle_position;
+    for (i = 0; i < 41; i++)
+        idle_dfco_pass(2100 + i * 10UL, (u16)(target - 400));
+    CHECK(ecu.control.idle_position - start == 5);
+}

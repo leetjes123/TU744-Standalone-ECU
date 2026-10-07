@@ -1,0 +1,14 @@
+PASS windows 600 RPM mode=1 samples=11 retard=0.0
+PASS windows 600 RPM mode=2 samples=11 retard=12.0
+PASS windows 1000 RPM mode=1 samples=11 retard=0.0
+PASS windows 1000 RPM mode=2 samples=11 retard=12.0
+PASS windows 2000 RPM mode=1 samples=9 retard=0.0
+PASS windows 2000 RPM mode=2 samples=9 retard=12.0
+PASS windows 4000 RPM mode=1 samples=9 retard=0.0
+PASS windows 4000 RPM mode=2 samples=9 retard=12.0
+PASS windows 6400 RPM mode=1 samples=9 retard=0.0
+PASS windows 6400 RPM mode=2 samples=9 retard=12.0
+PASS windows 10000 RPM mode=1 samples=9 retard=0.0
+PASS windows 10000 RPM mode=2 samples=9 retard=12.0
+PASS windows 12000 RPM mode=1 samples=9 retard=0.0
+PASS windows 12000 RPM mode=2 samples=9 retard=12.0

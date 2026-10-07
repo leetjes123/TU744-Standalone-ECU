@@ -53,6 +53,21 @@ float LogState::getSignalValue(LogSignal sig,const MonitorData& mon) {
     case SIG_KNOCK_RETARD: return mon.knockAvailable ? mon.knockRetard : NAN;
     case SIG_KNOCK_VALID: return mon.knockAvailable ? float((mon.knockFlags&2)!=0) : NAN;
     case SIG_KNOCK_FAULT: return mon.knockAvailable ? float((mon.knockFlags&16)!=0) : NAN;
+    case SIG_IAC_TARGET: return mon.detailAvailable ? float(mon.iacTarget) : NAN;
+    case SIG_IAC_STATE: return mon.detailAvailable ? float(mon.iacState) : NAN;
+    case SIG_IAC_FAULT: return mon.detailAvailable ? float(mon.iacFault) : NAN;
+    case SIG_IAC_LAST_FAULT: return mon.detailAvailable ? float(mon.iacLastFault) : NAN;
+    case SIG_IAC_RECOVERIES: return mon.detailAvailable ? float(mon.iacRetries) : NAN;
+    case SIG_IAC_FAULT_COUNT: return mon.detailAvailable ? float(mon.iacFaultCount) : NAN;
+    case SIG_IAC_RESPONSE: return mon.detailAvailable ? float(mon.iacResponse) : NAN;
+    case SIG_IDLE_MODE: return mon.detailAvailable ? float(mon.idleMode) : NAN;
+    case SIG_IDLE_INTEGRAL: return mon.detailAvailable ? mon.idleIntegral : NAN;
+    case SIG_IDLE_SPARK: return mon.detailAvailable ? mon.idleSpark : NAN;
+    case SIG_SYNC_LOSS_REASON: return mon.detailAvailable ? float(mon.syncLossReason) : NAN;
+    case SIG_SYNC_LOSS_TOOTH: return mon.detailAvailable ? float(mon.syncLossTooth) : NAN;
+    case SIG_FIRST_INHIBIT: return mon.detailAvailable ? float(mon.firstInhibit) : NAN;
+    case SIG_CAPTURE_RESYNCS: return mon.detailAvailable ? float(mon.captureResyncs) : NAN;
+    case SIG_CAPTURE_OVERRUNS: return mon.detailAvailable ? float(mon.captureOverruns) : NAN;
     default: return 0;
     }
 }

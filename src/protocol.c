@@ -29,9 +29,18 @@ static void reply(const u8 *bytes, u8 length) {
     p->tx_position = 0;
     p->tx_length = (u16)(length + 3U);
 }
+#define LIVE_FRAME_V4_BYTES 64
 static void status(u8 ok) {
     u8 value = ok ? 0 : 1;
     reply(&value, 1);
+}
+static u8 monitor_trim_enabled(void) {
+    return (u8)(ecu.cal.valid && (cal_active()[0x5D4] & CFG_STFT) && ecu.control.trim_enabled);
+}
+static u16 monitor_applied_trim(void) {
+    /* A config commit can precede the next controller pass. Do not expose a
+       cached correction after closed-loop fueling has been switched off. */
+    return monitor_trim_enabled() ? ecu.control.applied_trim : 1024U;
 }
 static void monitor(void) {
     u8 b[98];
@@ -62,8 +71,8 @@ static void monitor(void) {
     b[16] = s->target_afr;
     b[17] = s->warmup;
     b[18] = s->afterstart;
-    b[19] = (u8)(s->applied_trim / 8);
-    b[20] = (u8)((s32)s->applied_trim * 100L / 1024L - 100L);
+    b[19] = (u8)(monitor_applied_trim() / 8);
+    b[20] = (u8)((s32)monitor_applied_trim() * 100L / 1024L - 100L);
     b[22] = s->rich;
     put16(b + 25, (u16)s->tps_rate);
     b[29] = (u8)(s->ae_percent > 100U);
@@ -86,7 +95,7 @@ static void monitor(void) {
     b[48] = 0;
     b[49] = (u8)((r.state == ROT_VALID ? 1 : 0) | (s->mode == ENGINE_CRANKING ? 2 : 0) |
                  (s->afterstart > 100U ? 4 : 0) | (s->warmup > 100 ? 8 : 0) | (s->dfco ? 16 : 0) |
-                 (s->trim_enabled ? 32 : 0) | (s->fan ? 64 : 0) | (s->pump ? 128 : 0));
+                 (monitor_trim_enabled() ? 32 : 0) | (s->fan ? 64 : 0) | (s->pump ? 128 : 0));
     b[50] =
         (u8)((s->rev_limited ? 1 : 0) | (s->launch ? 4 : 0) | (vehicle.antilag ? 8 : 0) | (plan.spark_cut ? 16 : 0) |
              (plan.fuel_cut ? 32 : 0) | (ecu.cal.dirty ? 64 : 0) | (ecu.storage.phase ? 128 : 0));
@@ -137,11 +146,16 @@ static void monitor(void) {
     knock_monitor(b + 94, now);
     reply(b, 98);
 }
-/* Command 13: compact live frame, version 2 (40 bytes, big endian). The
-   fields a tuner watches while driving, and the map cell the fuel plan
-   used, for cell-accurate autotune. Command 10 stays for older loggers. */
-static void live_frame(void) {
-    u8 b[44];
+/* Command 13: compact live frame (big endian). The fields a tuner watches
+   while driving, and the map cell the fuel plan used, for cell-accurate
+   autotune. Command 10 stays for older loggers. A bare request returns the
+   44-byte version 3 frame unchanged for existing loggers; [13, 4] returns
+   the 64-byte version 4 frame, which appends idle-actuator and
+   synchronization-loss detail. */
+static void live_frame(u8 version) {
+    u8 b[LIVE_FRAME_V4_BYTES];
+    const Iac *iac = &ecu.iac; /* foreground-owned, like this handler */
+    u16 first_reason, resyncs, overruns;
     Controls *s = &ecu.control;
     Sensors *in = &ecu.sensors;
     const u8 *c = cal_active();
@@ -156,9 +170,12 @@ static void live_frame(void) {
     now = ecu.milliseconds;
     inhibits = ecu.authority.inhibits;
     generation = ecu.cal.generation;
+    first_reason = ecu.authority.first_reason;
+    resyncs = timing_health.capture_resyncs;
+    overruns = timing_health.capture_overruns;
     hal_unlock(lock);
     memset(b, 0, sizeof(b));
-    b[0] = 3;
+    b[0] = version;
     put16(b + 1, r.rpm);
     put16(b + 3, (u16)clamp32(in->map.value, 0, 65535L));
     put16(b + 5, (u16)clamp32(in->tps.value, 0, 1000));
@@ -170,7 +187,7 @@ static void live_frame(void) {
     v = (s32)(in->oxygen_mv / 5U);
     b[11] = (u8)(v > 255 ? 255 : v);
     b[12] = s->target_afr;
-    put16(b + 13, s->applied_trim);
+    put16(b + 13, monitor_applied_trim());
     put16(b + 15, s->ve);
     put16(b + 17, plan.pulse_us);
     put16(b + 19, (u16)plan.advance10);
@@ -186,7 +203,7 @@ static void live_frame(void) {
     b[30] = (u8)(s->cell_load_fraction > 255U ? 255U : s->cell_load_fraction);
     b[31] = (u8)((r.state == ROT_VALID ? 1 : 0) | (s->mode == ENGINE_CRANKING ? 2 : 0) |
                  (s->mode == ENGINE_RUNNING ? 4 : 0) | (s->dfco ? 8 : 0) |
-                 (s->trim_enabled ? 16 : 0) | (s->fan ? 32 : 0) | (s->pump ? 64 : 0) |
+                 (monitor_trim_enabled() ? 16 : 0) | (s->fan ? 32 : 0) | (s->pump ? 64 : 0) |
                  (s->launch ? 128 : 0));
     b[32] = (u8)((s->rev_limited ? 1 : 0) | (plan.fuel_cut ? 2 : 0) | (plan.spark_cut ? 4 : 0) |
                  (vehicle.antilag ? 8 : 0) | (ecu.cal.dirty ? 16 : 0) |
@@ -202,7 +219,26 @@ static void live_frame(void) {
     put16(b + 36, generation);
     put16(b + 38, (u16)(r.losses > 65535UL ? 65535U : r.losses));
     knock_monitor(b + 40, now);
-    reply(b, 44);
+    if (version < 4) {
+        reply(b, 44);
+        return;
+    }
+    b[44] = (u8)(iac->target > 255U ? 255U : iac->target);
+    b[45] = iac->state;
+    b[46] = iac->fault;
+    b[47] = iac->last_fault;
+    b[48] = iac->retries;
+    b[49] = (u8)(iac->fault_count > 255UL ? 255U : iac->fault_count);
+    b[50] = iac->response;
+    b[51] = s->idle_mode;
+    put16(b + 52, (u16)(s16)clamp32(s->idle_integral / 100L, -32768L, 32767L));
+    put16(b + 54, (u16)s->idle_spark10);
+    b[56] = r.loss_reason;
+    b[57] = r.loss_tooth;
+    put16(b + 58, first_reason);
+    put16(b + 60, resyncs);
+    put16(b + 62, overruns);
+    reply(b, LIVE_FRAME_V4_BYTES);
 }
 static void execute(void) {
     Protocol *p = &ecu.protocol;
@@ -224,7 +260,11 @@ static void execute(void) {
         return;
     }
     if (cmd == 0x13 && n == 1) {
-        live_frame();
+        live_frame(3);
+        return;
+    }
+    if (cmd == 0x13 && n == 2 && b[1] == 4) {
+        live_frame(4);
         return;
     }
     if (cmd == 0x34 && n == 1) {
@@ -415,7 +455,7 @@ static void execute(void) {
         put16(out + 18, ecu.authority.plan.pulse_us);
         /* Retired quality telemetry; reserve its offsets for framing stability. */
         memset(out + 20, 0, 6);
-        out[26] = ecu.control.trim_enabled;
+        out[26] = monitor_trim_enabled();
         out[27] = ecu.control.idle_mode;
         put32(out + 28, ecu.authority.faults);
         out[32] = ecu.diagnostics.mil_steady;

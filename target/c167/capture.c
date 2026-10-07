@@ -175,9 +175,13 @@ static void capture_timeout(void) {
 /* Angle is lost: no later edge may extend the old tooth relation. Without
    this a latched capture left the last rpm and ROT_VALID in place, so a
    stopped engine stayed RUNNING and its monitors kept evaluating it. */
-static void capture_rotation_lost(void) {
+static void capture_rotation_lost(u8 reason) {
     u16 lock = hal_hard_lock();
-    if (ecu.rotation.state == ROT_VALID) ecu.rotation.losses++;
+    if (ecu.rotation.state == ROT_VALID) {
+        ecu.rotation.losses++;
+        ecu.rotation.loss_reason = reason;
+        ecu.rotation.loss_tooth = ecu.rotation.tooth;
+    }
     ecu.rotation.state = ROT_UNSYNCED; ecu.rotation.rpm = 0;
     ecu.rotation.normal = 0; ecu.rotation.have_gap = ecu.rotation.seen = 0;
     ecu.rotation.epoch++; batch_enabled = 0; phase_valid = 0;
@@ -189,7 +193,7 @@ static void capture_resynchronize(void) {
     capture_resync = 0;
     capture_tail = capture_head; /* queued blocks straddle the lost edge */
     hal_hard_unlock(lock);
-    capture_rotation_lost();
+    capture_rotation_lost(ROT_LOSS_CAPTURE);
 }
 void engine_work_isr(void) IRQ_HANDLER(0x41) {
     u8 slot, accepted;
@@ -198,7 +202,7 @@ void engine_work_isr(void) IRQ_HANDLER(0x41) {
     if (capture_failed) {
         /* Raised by capture_isr at level 15, which never touches authority. */
         safety_inhibit(INH_DEADLINE, ecu.milliseconds);
-        if (ecu.rotation.state != ROT_UNSYNCED || ecu.rotation.seen) capture_rotation_lost();
+        if (ecu.rotation.state != ROT_UNSYNCED || ecu.rotation.seen) capture_rotation_lost(ROT_LOSS_CAPTURE_FAULT);
         return;
     }
     if (capture_resync) capture_resynchronize();

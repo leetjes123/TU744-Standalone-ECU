@@ -20,6 +20,7 @@ using SetLoss=void(*)(uint32_t);
 static Reset reset;
 static Bridge bridge;
 static SetLoss loss;
+static Reset iacDetail;
 static int actual(const unsigned char* data,int n,unsigned char* out,int cap,int) {
     unsigned char packet[256],reply[256];
     const int size=BuildRequestPacket(data,n,packet,256); CHECK(size>0);
@@ -41,6 +42,7 @@ int main() {
     HMODULE lib=LoadLibraryA(TEST_DLL_PATH); CHECK(lib);
     reset=(Reset)GetProcAddress(lib,"bridge_reset"); bridge=(Bridge)GetProcAddress(lib,"bridge_exchange");
     loss=(SetLoss)GetProcAddress(lib,"bridge_sync_losses"); CHECK(reset&&bridge&&loss);
+    iacDetail=(Reset)GetProcAddress(lib,"bridge_iac_detail"); CHECK(iacDetail);
     EcuProtocol ecu; ecu.exchange=actual; reset();
     // Actual firmware rejects unavailable history instead of reporting zero faults.
     Diagnostics unavailable; unavailable.start(false,0); unavailable.step(ecu,0);
@@ -50,6 +52,17 @@ int main() {
     CalBuffer original; memcpy(original.data,read.image.data(),CAL_SIZE); original.loaded=true; original.markClean();
     CHECK(ValidateCalibration(original).empty()); CHECK(HasSchemaMarker(original.data));
     CHECK(original.loadFromFile(TEST_TUNE_PATH));
+    // Feature enable switches share this byte and must remain editable when STFT is off.
+    CalBuffer closedLoop=original;
+    closedLoop.data[0x5D4]&=~0x20;
+    CHECK(!DisabledReason(0x5D4,closedLoop.data));
+    CHECK(DisabledReason(0x730,closedLoop.data));
+    for(int i=0;i<NUM_FLAGS;++i) if(ALL_FLAGS[i].offset==0x5D4 && ALL_FLAGS[i].mask==0x20) {
+        closedLoop.writeFlag(ALL_FLAGS[i],true);
+        CHECK(closedLoop.readFlag(ALL_FLAGS[i]) && !DisabledReason(0x730,closedLoop.data));
+        closedLoop.writeFlag(ALL_FLAGS[i],false);
+        CHECK(!closedLoop.readFlag(ALL_FLAGS[i]) && !DisabledReason(0x5D4,closedLoop.data));
+    }
     // Generated registry ranges and overlapping editable definitions.
     unsigned char used[CAL_SIZE]={};
     auto occupy=[&](int at,int size,int mask) {
@@ -104,6 +117,28 @@ int main() {
     CHECK(DecodeMonitor(knockFrame,44,m) && m.knockAvailable);
     CHECK(m.knockMv==2285 && m.knockFlags==0xc7 && std::abs(m.knockRetard-3)<.001);
     CHECK(!DecodeMonitor(knockFrame,43,m));
+    CHECK(!m.detailAvailable);
+    // Firmware 0.0.3 version 4 frame: idle-actuator and sync-loss detail.
+    reset(); iacDetail(); CHECK(ecu.readMonitor(m) && m.detailAvailable && m.knockAvailable && !ecu.liveV4Unsupported);
+    CHECK(m.iacTarget==255 && m.iacState==2 && m.iacFault==0 && m.iacLastFault==7 && m.iacRetries==2);
+    CHECK(m.iacFaultCount==255 && m.iacResponse==0xC0 && m.idleMode==3);
+    CHECK(std::abs(m.idleIntegral+12.3f)<.001 && std::abs(m.idleSpark+3.5f)<.001);
+    CHECK(m.syncLossReason==4 && m.syncLossTooth==11 && m.firstInhibit==1);
+    CHECK(m.captureResyncs==0x1234 && m.captureOverruns==3);
+    CHECK(!strcmp(SyncLossReasonName(m.syncLossReason),"Noise edge") && !strcmp(IacFaultName(7),"Hold timing"));
+    unsigned char v4Frame[64]={}; v4Frame[0]=4; CHECK(DecodeMonitor(v4Frame,64,m) && m.detailAvailable);
+    CHECK(!DecodeMonitor(v4Frame,44,m)); v4Frame[0]=3; CHECK(!DecodeMonitor(v4Frame,64,m));
+    // Firmware 0.0.2 rejects [13,4] with a status byte; the Wizard falls back to version 3 once.
+    {
+        int v4Requests=0,v3Requests=0;
+        EcuProtocol old; old.exchange=[&](const unsigned char* data,int n,unsigned char* out,int cap,int timeout) {
+            if(n==2 && data[0]==0x13) { ++v4Requests; out[0]=1; return 1; }
+            if(n==1 && data[0]==0x13) ++v3Requests;
+            return actual(data,n,out,cap,timeout);
+        };
+        CHECK(old.readMonitor(m) && m.valid && m.knockAvailable && !m.detailAvailable && old.liveV4Unsupported);
+        CHECK(old.readMonitor(m) && v4Requests==1 && v3Requests==2);
+    }
     unsigned char out[128],cmd[]={0x13},packet[10]; CHECK(BuildRequestPacket(cmd,1,packet,10)==4);
     CHECK(packet[0]==0xaa && packet[3]==0x14);
     unsigned char response[]={0x55,1,0x12,0x13}; CHECK(ParseResponsePacket(response,4,out,128)==1); response[3]^=1; CHECK(ParseResponsePacket(response,4,out,128)==-1);

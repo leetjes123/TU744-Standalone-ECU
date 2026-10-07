@@ -96,7 +96,7 @@ int EcuProtocol::readTpsAdc() {
     return tpsSnapshot(s) && (s.flags&3)==3 && !(s.flags&16) && s.ageMs<=100 && s.raw<=1023 ? s.raw : -1;
 }
 bool DecodeMonitor(const unsigned char* d,int len,MonitorData& out) {
-    if(!d || !((len==40 && d[0]==2) || (len==44 && d[0]==3))) { out.valid=false; return false; }
+    if(!d || !((len==40 && d[0]==2) || (len==44 && d[0]==3) || (len==64 && d[0]==4))) { out.valid=false; return false; }
     MonitorData m;
     m.rpm=word(d+1); m.kpa=word(d+3); m.tps=word(d+5)*0.1f;
     m.clt=int(d[7])-40; m.iat=int(d[8])-40; m.battery=d[9]*0.1f;
@@ -108,9 +108,16 @@ bool DecodeMonitor(const unsigned char* d,int len,MonitorData& out) {
     m.cellLoad=d[29]; m.loadFraction=d[30]/256.0f;
     m.state=d[31]; m.flags=d[32]; m.narrowbandBand=d[33]&15; m.gear=d[33]>>4;
     m.inhibits=word(d+34); m.generation=word(d+36); m.lossOfSyncCount=word(d+38);
-    if(len==44) {
+    if(len>=44) {
         m.knockAvailable=true; m.knockMv=word(d+40);
         m.knockFlags=d[42]; m.knockRetard=d[43]*0.75f;
+    }
+    if(len==64) {
+        m.detailAvailable=true; m.iacTarget=d[44]; m.iacState=d[45]; m.iacFault=d[46];
+        m.iacLastFault=d[47]; m.iacRetries=d[48]; m.iacFaultCount=d[49]; m.iacResponse=d[50];
+        m.idleMode=d[51]; m.idleIntegral=int16_t(word(d+52))*0.1f; m.idleSpark=int16_t(word(d+54))*0.1f;
+        m.syncLossReason=d[56]; m.syncLossTooth=d[57]; m.firstInhibit=word(d+58);
+        m.captureResyncs=word(d+60); m.captureOverruns=word(d+62);
     }
     if(m.cellRpm>14 || m.cellLoad>14 || m.tps>100) { out.valid=false; return false; }
     m.valid=true; out=m; return true;
@@ -119,7 +126,44 @@ bool EcuProtocol::parseMonitorResponse(const unsigned char* d,int len) {
     return DecodeMonitor(d,len,monitorParseTarget ? *monitorParseTarget : monitor);
 }
 bool EcuProtocol::readMonitor(MonitorData& out) {
-    unsigned char cmd=CMD_MONITOR,b[44]; return DecodeMonitor(b,transact(&cmd,1,b,44),out);
+    unsigned char b[64];
+    if(!liveV4Unsupported) {
+        const unsigned char request[]={CMD_MONITOR,4};
+        const int n=transact(request,2,b,sizeof(b));
+        if(n==64) return DecodeMonitor(b,n,out);
+        // Firmware 0.0.2 and older answer an unknown request with one status byte.
+        if(n!=1) { out.valid=false; return false; }
+        liveV4Unsupported=true;
+    }
+    const unsigned char cmd=CMD_MONITOR; return DecodeMonitor(b,transact(&cmd,1,b,44),out);
+}
+const char* IacStateName(int state) {
+    switch(state) {
+    case 0: return "Not referenced"; case 1: return "Homing"; case 2: return "Ready"; case 3: return "Fault";
+    default: return "Unknown";
+    }
+}
+const char* IacFaultName(int fault) {
+    switch(fault) {
+    case 0: return "None"; case 1: return "SPI transfer"; case 2: return "Open load";
+    case 3: return "Driver diagnosis 10b"; case 4: return "Driver diagnosis 00b"; case 5: return "Homing timeout";
+    case 6: return "Bridges not switched off"; case 7: return "Hold timing";
+    default: return "Unknown";
+    }
+}
+const char* IdleModeName(int mode) {
+    switch(mode) {
+    case 0: return "Unavailable"; case 1: return "Cranking"; case 2: return "Start catch"; case 3: return "Feedback";
+    case 4: return "Overrun return"; case 5: return "Throttle open";
+    default: return "Unknown";
+    }
+}
+const char* SyncLossReasonName(int reason) {
+    switch(reason) {
+    case 0: return "None"; case 1: return "Gap too early"; case 2: return "Gap missing"; case 3: return "Irregular tooth";
+    case 4: return "Noise edge"; case 5: return "Capture missed edge"; case 6: return "Capture fault";
+    default: return "Unknown";
+    }
 }
 void EcuProtocol::pollMonitor() {
     if(readMonitor(monitor)) monitorFailCount=0; else ++monitorFailCount;

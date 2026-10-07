@@ -35,7 +35,8 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
     error = (s32)s->idle_target - r->rpm;
     if (error > -(s32)c[0x604] && error < (s32)c[0x604])
         error = 0;
-    p = error * get16(c + 0x630) / 10000L;
+    /* Steps mode moves only by the interval step; the hidden PI gains stay inert. */
+    p = c[0x5D8] == 0U ? 0L : error * get16(c + 0x630) / 10000L;
     if (s->idle_mode != mode || s->previous_generation != ecu.cal.generation) {
         /* Track the realizable output on entry and on live gain/map changes. */
         s->idle_integral =

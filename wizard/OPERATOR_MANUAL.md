@@ -25,6 +25,11 @@ Shared axis breakpoints are available under **Advanced > Shared Table Axes**.
 Table tools retain selection, paste, smoothing, interpolation and undo/redo.
 Compare tune highlights differences against another schema-5 file.
 
+The closed-loop fuel-trim enable switch remains editable when trim is off;
+its dependent controller settings are disabled. Switching it changes the local
+tune; choose **Write active tune** to apply it to the ECU. Until the write is
+verified, live monitor values still describe the ECU's active tune.
+
 The sidebar follows tuning workflow rather than alphabetical order. **Tuning**
 contains Fuel, Ignition, Idle Control, Boost & Motorsport, and Engine Protection.
 Fuel opens first with the Fuel VE and AFR Target tables, followed by closed-loop
@@ -108,6 +113,24 @@ and signed STFT correction. Unavailable or stale readings show labeled dashes.
 Mixture uses the ECU's narrowband classification, or measured wideband AFR within
 0.1 of the active tune's stoichiometric AFR for Stoich (14.7 until the active tune
 has been read). Ignition timing is planned advance, and STFT is applied trim.
+
+With firmware 0.0.3 the Wizard requests the 64-byte version 4 frame. The engine
+status panel then shows the idle valve state, position and target, the idle
+control mode, any active or last idle valve fault with the fault and recovery
+counts, and the cause and tooth of the last sync loss. The ECU retries a faulted
+idle valve driver automatically (after 0.2 s, then at most every 10 s), so
+**automatic recovery pending** is normally brief. A rising recovery count or a
+sync-loss cause of **Noise edge** or **Capture missed edge** points to electrical
+interference on the crank or stepper wiring. With older firmware the Wizard
+falls back to the 44-byte frame and these values show as unavailable.
+
+CSV logs from 0.0.3 add these columns: Idle Valve Target, Idle Valve State,
+Idle Valve Fault, Idle Valve Last Fault, Idle Valve Recoveries, Idle Valve Fault
+Count, Idle Driver Response, Idle Control Mode, Idle Integral, Idle Spark
+Correction, Sync Loss Reason, Sync Loss Tooth, First Inhibit Reason, Crank
+Capture Resyncs and Crank Capture Overruns. They are `nan` when the ECU runs
+older firmware. Codes are explained in each signal's tooltip and in
+`docs/LIVE-MONITOR.md`.
 
 Logging records accepted monitor samples, including sync state, sync-loss count,
 status bitfields and map weights. Both live logging and opened CSV files use

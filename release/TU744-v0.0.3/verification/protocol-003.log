@@ -1,0 +1,4 @@
+PASS C-parser/client transactions, 1040 reset observations, malformed-status rejection and legacy packet regression
+PASS live frame, live map-cell writes and firmware-update entry
+PASS compact full-width sync losses and unchanged legacy layout
+PASS compact live frame version 4 idle/sync detail and version 3 compatibility

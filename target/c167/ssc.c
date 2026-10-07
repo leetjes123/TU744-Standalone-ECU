@@ -154,6 +154,20 @@ u8 hal_iac_hold_fault(void) {
 u8 hal_iac_hold_response(void) {
     return hold.fault_response;
 }
+/* Foreground IAC recovery: the hold session must have finished its off
+   transaction and released the bus before its first cause can be dropped. */
+u8 hal_iac_hold_reset(void) {
+    u8 ok = 0;
+    u16 lock = hal_lock();
+    if (owned == SSC_FREE && hold.state == HOLD_IDLE && !hold.off_needed) {
+        hold.fault = 0;
+        hold.fault_response = 0;
+        hold.enabled = 0;
+        ok = 1;
+    }
+    hal_unlock(lock);
+    return ok;
+}
 u8 hal_iac_hold_start(u8 high_command) {
     u8 ok = 0;
     u16 lock = hal_lock();

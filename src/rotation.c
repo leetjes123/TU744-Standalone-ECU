@@ -53,8 +53,11 @@ u8 rotation_edge(u32 stamp) SHARED {
             ecu.rotation.rpm = (u16)(75000000UL / ecu.rotation.revolution);
             ecu.rotation.state = ROT_VALID;
         } else {
-            if (ecu.rotation.state == ROT_VALID)
+            if (ecu.rotation.state == ROT_VALID) {
                 ecu.rotation.losses++;
+                ecu.rotation.loss_reason = ROT_LOSS_GAP_EARLY;
+                ecu.rotation.loss_tooth = ecu.rotation.tooth;
+            }
             ecu.rotation.epoch++;
             ecu.rotation.state = ROT_ACQUIRING;
             ecu.rotation.rpm = 0;
@@ -67,6 +70,8 @@ u8 rotation_edge(u32 stamp) SHARED {
         if (ecu.rotation.state != ROT_UNSYNCED &&
             (ecu.rotation.tooth >= 57 || irregular)) {
             ecu.rotation.losses++;
+            ecu.rotation.loss_reason = irregular ? ROT_LOSS_IRREGULAR : ROT_LOSS_GAP_MISSING;
+            ecu.rotation.loss_tooth = ecu.rotation.tooth;
             ecu.rotation.epoch++;
             ecu.rotation.state = ROT_UNSYNCED;
             ecu.rotation.have_gap = 0;
@@ -190,6 +195,8 @@ u8 rotation_block(volatile u16 SYSTEM_RAM *cap, u8 count, u32 last_stamp, u8 eli
                 ecu.rotation.have_gap = 0;
                 ecu.rotation.epoch++;
                 ecu.rotation.losses++;
+                ecu.rotation.loss_reason = ROT_LOSS_NOISE;
+                ecu.rotation.loss_tooth = ecu.rotation.tooth;
                 safety_inhibit(INH_SYNC, ecu.milliseconds);
             }
         }

@@ -91,6 +91,18 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
 #define IAC_HOMING 1U
 #define IAC_READY 2U
 #define IAC_FAULT 3U
+/* A latched driver fault is retried after IAC_RETRY_MS, then at most once per
+   IAC_RETRY_SPACING_MS, so one disturbance cannot freeze idle control. */
+#define IAC_RETRY_MS 200UL
+#define IAC_RETRY_SPACING_MS 10000UL
+/* Cause of the most recent counted synchronization loss (Rotation.loss_reason). */
+#define ROT_LOSS_NONE 0U
+#define ROT_LOSS_GAP_EARLY 1U     /* gap before tooth 57 */
+#define ROT_LOSS_GAP_MISSING 2U   /* tooth 58 without a gap */
+#define ROT_LOSS_IRREGULAR 3U     /* tooth interval outside 0.6..1.8 of the previous */
+#define ROT_LOSS_NOISE 4U         /* rejected short edge: < 100 ticks or < half a tooth */
+#define ROT_LOSS_CAPTURE 5U       /* counted edge without a capture (two edges in one latency) */
+#define ROT_LOSS_CAPTURE_FAULT 6U /* capture hardware fault */
 #define IDLE_UNAVAILABLE 0U
 #define IDLE_CRANK 1U
 #define IDLE_CATCH 2U
@@ -120,6 +132,7 @@ typedef struct {
     volatile u32 last, normal, revolution, gap_stamp, losses;
     volatile u16 rpm, epoch, cycle;
     volatile u8 state, tooth, seen, have_gap;
+    volatile u8 loss_reason, loss_tooth; /* last counted loss: ROT_LOSS_*, tooth at loss */
 } Rotation;
 typedef struct {
     volatile u16 generation, epoch, fuel_cut, spark_cut;
@@ -172,6 +185,9 @@ typedef struct {
     u8 off_pending, holding;
     u16 position, target, remaining;
     u32 deadline, next_step, fault_count;
+    /* Recovery telemetry: last_fault survives recovery until reset. */
+    u8 last_fault, retry_armed, retries;
+    u32 retry_at, retried_at;
 } Iac;
 typedef struct {
     volatile u8 ring[128], head, tail, overflow;
@@ -254,6 +270,7 @@ u8 hal_iac_transfer(u8 command, u8 *response);
 u8 hal_iac_hold_start(u8 high_command);
 u8 hal_iac_hold_fault(void);
 u8 hal_iac_hold_response(void);
+u8 hal_iac_hold_reset(void);
 u8 hal_eeprom_read(u16 address, u8 *bytes, u8 length);
 u8 hal_eeprom_write(u16 address, const u8 *bytes, u8 length);
 u8 hal_eeprom_busy(void); /* 0=ready, 1=busy, 2=bus failure */

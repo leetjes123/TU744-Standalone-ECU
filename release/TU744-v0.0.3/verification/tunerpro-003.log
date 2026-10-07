@@ -1,0 +1,57 @@
+plugin.cpp
+   Creating library TU744.lib and object TU744.exp
+acceleration.c
+auxiliary.c
+calibration.c
+diagnostic_monitors.c
+engine_state.c
+faults.c
+fuel.c
+iac.c
+iac_hold.c
+idle.c
+knock.c
+lambda.c
+math.c
+oem_adc.c
+oem_cadence.c
+oem_coolant.c
+oem_diagnostics.c
+oem_digital.c
+oem_dtc.c
+oem_dtc_config.c
+Generating Code...
+Compiling...
+oem_dtc_records.c
+oem_history.c
+oem_history_codec.c
+oem_history_owner.c
+oem_ignition.c
+oem_inputs.c
+oem_mil.c
+oem_readiness.c
+oem_rotation.c
+oem_runtime.c
+oem_timing.c
+oem_voltage.c
+oem_vss.c
+oem_vss_input.c
+power.c
+protocol.c
+rotation.c
+runtime.c
+safety.c
+sensors.c
+Generating Code...
+Compiling...
+storage.c
+vehicle.c
+wideband.c
+hal_fake.c
+protocol_bridge.c
+Generating Code...
+test_plugin.cpp
+PASS 636 C++/actual-C-parser and Win32 SDK DLL assertions; no physical serial I/O
+'vswhere.exe' is not recognized as an internal or external command,
+operable program or batch file.
+

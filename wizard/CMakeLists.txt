@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(TuningWizard VERSION 0.0.2 LANGUAGES CXX RC)
+project(TuningWizard VERSION 0.0.3 LANGUAGES CXX RC)
 
 include(CTest)
 if(MSVC)

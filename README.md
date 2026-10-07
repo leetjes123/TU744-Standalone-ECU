@@ -9,8 +9,9 @@ It is a port of [WillItBoost/M744-Stand-Alone-ECU](https://github.com/WillItBoos
 reworked specifically for the PSA TU engine family (crank pattern, sensors,
 injectors, coils and idle stepper as fitted to the TU).
 
-> **Current release: TU744 v0.0.1** – see [`release/TU744-v0.0.1`](release/TU744-v0.0.1).
-> When you connect, the ECU introduces itself as `TU744 0.0.1`.
+> **Current release: TU744 v0.0.3** – see [`release/TU744-v0.0.3`](release/TU744-v0.0.3)
+> and its [release notes](docs/RELEASE-0.0.3.md).
+> When you connect, the ECU introduces itself as `TU744 0.0.3`.
 
 > ⚠️ **Use at your own risk.** This is hobby software for off-road/motorsport use.
 > It has been tested in simulation, not proven on every car. Keep a backup of
@@ -23,7 +24,7 @@ injectors, coils and idle stepper as fitted to the TU).
 
 | Folder | What it is |
 | --- | --- |
-| [`release/TU744-v0.0.1`](release/TU744-v0.0.1) | **Ready-to-use files. Start here if you just want to flash your ECU.** |
+| [`release/TU744-v0.0.3`](release/TU744-v0.0.3) | **Ready-to-use files. Start here if you just want to flash your ECU.** |
 | [`basemaps/`](basemaps) | Starting tune for a stock **TU5JP 1.6 8v** (speed-density) |
 | [`flashing/`](flashing) | Flashing tools: `UploadViaDebug.exe` (+ `STAGE1/2/3` files), `FlashUpdate.exe`, `Hex2Bin.exe` |
 | [`tunerpro/`](tunerpro) | TunerPro RT plugin source, XDF map definitions and ADX logging definition |
@@ -33,27 +34,30 @@ injectors, coils and idle stepper as fitted to the TU).
 ### The release folder
 
 ```
-release/TU744-v0.0.1/
-├── firmware/  TU744_0.0.1_M95080.bin   ← the file you flash (basemap already inside)
-│              TU744_0.0.1_M95080.hex   ← same firmware as HEX
-├── flashing/  UploadViaDebug.exe, STAGE1.BIN, STAGE2.BIN, stage3.bin,
-│              FlashUpdate.exe, Hex2Bin.exe
-├── tunerpro/  TU744.dll, TU744_schema4.adx,
-│              TU744_schema4_speed_density.xdf, TU744_schema4_alpha_n.xdf
-├── basemaps/  TU5JP_1.6_8v_speed_density.bin
-└── wizard/    TuningWizard.exe
+release/TU744-v0.0.3/
+├── firmware/      TU744_0.0.3_M95080.bin   ← the file you flash (basemap already inside)
+│                  TU744_0.0.3_M95080.hex   ← same firmware as HEX
+├── tunerpro/      TU744.dll, TU744_schema5.adx,
+│                  TU744_schema5_speed_density.xdf, TU744_schema5_alpha_n.xdf
+├── basemaps/      TU5JP_1.6_8v_speed_density_v0.0.3.bin
+├── wizard/        TuningWizard.exe, OPERATOR_MANUAL.md
+├── docs/          protocol, live-monitor and knock references
+├── tools/         migrate_schema5.py (schema-4 tunes from 0.0.1)
+└── verification/  build manifests and test logs
 ```
+
+The flashing tools are in the repository's [`flashing/`](flashing) folder.
 
 ## The basemap
 
 The firmware comes with a **basemap for the TU5JP 1.6 8v** already built in, so a
 stock TU5JP can start straight after flashing. The same map is in
-[`basemaps/TU5JP_1.6_8v_speed_density.bin`](basemaps/TU5JP_1.6_8v_speed_density.bin),
+[`basemaps/TU5JP_1.6_8v_speed_density_v0.0.3.bin`](basemaps/TU5JP_1.6_8v_speed_density_v0.0.3.bin),
 so you can always go back to it.
 
 It is a **speed-density** tune: fuel is worked out from engine speed and intake
 manifold pressure (MAP sensor). Open it in TunerPro with
-`TU744_schema4_speed_density.xdf`.
+`TU744_schema5_speed_density.xdf`.
 
 A basemap is a *starting point*, not a finished tune. Every engine is a bit
 different, so check your air/fuel ratio and fine-tune from there.
@@ -102,11 +106,11 @@ it in its **debug (boot) mode** and load a small helper program into it.
    loader, so the ECU can then receive firmware over the cable.
 4. **Switch off, remove the debug-mode connection, and switch on again.**
 5. **Run `FlashUpdate.exe`**, pick your cable's COM port and the file
-   **`firmware/TU744_0.0.1_M95080.bin`**, and let it finish. Don't disconnect
+   **`firmware/TU744_0.0.3_M95080.bin`**, and let it finish. Don't disconnect
    anything while it's writing.
    (Tuning Wizard can do the same: **ECU → Update firmware**.)
 6. Switch off and on again, then connect with TunerPro or the Wizard. The ECU
-   should report **`TU744 0.0.1`**.
+   should report **`TU744 0.0.3`**.
 
 `Hex2Bin.exe` converts a `.hex` file into a `.bin`. You only need it if you
 build the firmware yourself.
@@ -124,13 +128,13 @@ open the ECU or use debug mode again.
 
 ### 4. Set up TunerPro RT
 
-1. Copy **`release/TU744-v0.0.1/tunerpro/TU744.dll`** into TunerPro's plugin folder
+1. Copy **`release/TU744-v0.0.3/tunerpro/TU744.dll`** into TunerPro's plugin folder
    (normally `Documents\TunerPro Files\Plugins`) and restart TunerPro.
-2. For emulation hardware choose **TU744 schema-4 RAM tuning**. For data
-   acquisition choose **TU744 schema-4 logging**. Set your COM port (19200 baud, 8N1).
-3. Open the basemap **`basemaps/TU5JP_1.6_8v_speed_density.bin`** with the
-   definition **`tunerpro/TU744_schema4_speed_density.xdf`**.
-4. Load **`tunerpro/TU744_schema4.adx`** for live data (rpm, temperatures,
+2. For emulation hardware choose **TU744 schema-5 RAM tuning**. For data
+   acquisition choose **TU744 schema-5 logging**. Set your COM port (19200 baud, 8N1).
+3. Open the basemap **`basemaps/TU5JP_1.6_8v_speed_density_v0.0.3.bin`** with the
+   definition **`tunerpro/TU744_schema5_speed_density.xdf`**.
+4. Load **`tunerpro/TU744_schema5.adx`** for live data (rpm, temperatures,
    AFR, faults and so on).
 5. Click **Initialize Emulation Hardware**, then **Download BIN from Emulator**,
    and **save a copy on your PC** before changing anything.

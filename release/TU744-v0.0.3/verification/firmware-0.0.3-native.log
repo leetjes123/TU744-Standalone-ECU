@@ -1,0 +1,75 @@
+acceleration.c
+auxiliary.c
+calibration.c
+diagnostic_monitors.c
+engine_state.c
+faults.c
+fuel.c
+iac.c
+iac_hold.c
+idle.c
+knock.c
+lambda.c
+math.c
+oem_adc.c
+oem_cadence.c
+oem_coolant.c
+oem_diagnostics.c
+oem_digital.c
+oem_dtc.c
+oem_dtc_config.c
+Generating Code...
+Compiling...
+oem_dtc_records.c
+oem_history.c
+oem_history_codec.c
+oem_history_owner.c
+oem_ignition.c
+oem_inputs.c
+oem_mil.c
+oem_readiness.c
+oem_rotation.c
+oem_runtime.c
+oem_timing.c
+oem_voltage.c
+oem_vss.c
+oem_vss_input.c
+power.c
+protocol.c
+rotation.c
+runtime.c
+safety.c
+sensors.c
+Generating Code...
+Compiling...
+storage.c
+vehicle.c
+wideband.c
+hal_fake.c
+test_core.c
+test_lifecycle.c
+test_faults.c
+test_audit_regressions.c
+Generating Code...
+'vswhere.exe' is not recognized as an internal or external command,
+operable program or batch file.
+PASS 901 non-blocking sensor/fault journal assertions
+PASS 467 audit-fix regression assertions
+PASS 2369026 assertions
+test_ssc.c
+iac_hold.c
+Generating Code...
+'vswhere.exe' is not recognized as an internal or external command,
+operable program or batch file.
+PASS 9807 SSC owner/register assertions
+test_engine_outputs.c
+safety.c
+rotation.c
+math.c
+oem_timing.c
+oem_ignition.c
+Generating Code...
+'vswhere.exe' is not recognized as an internal or external command,
+operable program or batch file.
+PASS 3146683 staged-output/decoder assertions
+

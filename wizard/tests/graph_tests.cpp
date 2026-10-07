@@ -122,7 +122,24 @@ int main() {
     CHECK(parsed.log.columnNames[SIG_RPM+1]==MonitorColumnName(SIG_RPM));
     CHECK(parsed.log.columns[SIG_RPM+1][0]==1234 && parsed.log.columns[SIG_RPM+1][1]==2345);
     CHECK(!std::isfinite(parsed.log.columns[SIG_KNOCK_MV+1][0]));
+    CHECK(!std::isfinite(parsed.log.columns[SIG_IAC_STATE+1][0])); // 0.0.2 firmware: no detail
     CHECK(parsed.signals[SIG_STFT].visible);
+    // Firmware 0.0.3 idle/sync detail is logged in its own columns.
+    csv=fopen(path,"w"); CHECK(csv);
+    log->clear(); log->csvFile=csv; log->recording=true; log->recordingBaseTime=-1; log->writeCsvHeader();
+    mon.detailAvailable=true; mon.iacTarget=43; mon.iacState=3; mon.iacFault=7; mon.iacLastFault=7;
+    mon.iacRetries=2; mon.idleMode=3; mon.idleIntegral=-12.3f; mon.idleSpark=-3.5f;
+    mon.syncLossReason=4; mon.syncLossTooth=11; mon.captureResyncs=5;
+    log->pushSample(mon,2000); mon.iacState=2; mon.iacFault=0; log->pushSample(mon,2000.2);
+    log->stopRecording();
+    CHECK(ParseLogFile(path,parsed) && parsed.log.sampleCount==2 && parsed.log.skippedRows==0);
+    CHECK(parsed.log.columnNames[SIG_SYNC_LOSS_REASON+1]=="Sync Loss Reason");
+    CHECK(parsed.log.columns[SIG_IAC_STATE+1][0]==3 && parsed.log.columns[SIG_IAC_STATE+1][1]==2);
+    CHECK(parsed.log.columns[SIG_IAC_FAULT+1][0]==7 && parsed.log.columns[SIG_IAC_LAST_FAULT+1][1]==7);
+    CHECK(parsed.log.columns[SIG_IAC_TARGET+1][0]==43 && parsed.log.columns[SIG_IAC_RECOVERIES+1][0]==2);
+    CHECK(close(parsed.log.columns[SIG_IDLE_INTEGRAL+1][0],-12.3f) && close(parsed.log.columns[SIG_IDLE_SPARK+1][0],-3.5f));
+    CHECK(parsed.log.columns[SIG_SYNC_LOSS_REASON+1][0]==4 && parsed.log.columns[SIG_SYNC_LOSS_TOOTH+1][0]==11);
+    CHECK(parsed.log.columns[SIG_CAPTURE_RESYNCS+1][0]==5 && parsed.log.columns[SIG_IDLE_MODE+1][0]==3);
     csv=fopen(path,"w"); CHECK(csv); fputs("Time,RPM\n0,1000\n0,2000\n",csv); fclose(csv);
     CHECK(!ParseLogFile(path,parsed) && !parsed.parseError.empty());
     remove(path);

@@ -20,3 +20,20 @@ u16 bridge_exchange(const u8 *request, u16 count, u8 *response) {
 }
 
 void bridge_sync_losses(u32 losses) { ecu.rotation.losses = losses; }
+/* Command 13 version 4 detail: a recovered IAC fault and a noise loss. */
+void bridge_iac_detail(void) {
+    ecu.iac.state = IAC_READY;
+    ecu.iac.target = 300;
+    ecu.iac.last_fault = 7;
+    ecu.iac.retries = 2;
+    ecu.iac.fault_count = 1000;
+    ecu.iac.response = 0xC0;
+    ecu.control.idle_mode = IDLE_FEEDBACK;
+    ecu.control.idle_integral = -12345L;
+    ecu.control.idle_spark10 = -35;
+    ecu.rotation.loss_reason = ROT_LOSS_NOISE;
+    ecu.rotation.loss_tooth = 11;
+    ecu.authority.first_reason = INH_SYNC;
+    timing_health.capture_resyncs = 0x1234;
+    timing_health.capture_overruns = 3;
+}

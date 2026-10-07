@@ -6,6 +6,15 @@ void lambda_update(u32 now, const u8 *c, const EnginePlan *p) {
     s32 delta, low, high, error, step;
     u32 elapsed;
     u8 eligible;
+    if (!(c[0x5D4] & CFG_STFT)) {
+        /* Explicit disable clears the integrator as well as its application.
+           Re-enabling starts neutral, without restoring an old correction. */
+        s->trim_q16 = 65536L;
+        s->applied_trim = 1024;
+        s->trim_enabled = 0;
+        s->last_trim = now;
+        return;
+    }
     low = (s32)c[0x732] * 512L;
     high = (s32)c[0x731] * 512L;
     if (s->lambda_type != c[0x600]) {

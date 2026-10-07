@@ -104,7 +104,7 @@ def make():
     text(header,'flags','0x10000')
     count=ET.SubElement(header,'objectcount')
     text(header,'userversion','7.1');text(header,'author','TU744 project')
-    text(header,'desc','TU744 0.0.2, schema 5, monitor extension 4. Requires TU744.dll 0.6 or later '
+    text(header,'desc','TU744 0.0.3, schema 5, monitor extension 4. Requires TU744.dll 0.6 or later '
          'and matching firmware; the plugin validates framing and checksums. '
          'Lambda displays use a fixed 14.7 AFR reference; wideband readings require '
          'a configured, warmed-up wideband controller.')

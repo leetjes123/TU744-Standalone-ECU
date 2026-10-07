@@ -1,0 +1,2 @@
+PASS 1095 Keil-machine-code arithmetic/calibration checks
+PASS XDF/ADX bounds, fuel units, framed logging and packed-tune C167 boot/CRC rejection

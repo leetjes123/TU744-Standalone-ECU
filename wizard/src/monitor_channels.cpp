@@ -40,6 +40,21 @@ const SignalDef SIGNAL_DEFS[SIG_COUNT] = {
     {"Knock Retard - Requested","deg",IM_COL32(230,150,90,255),0,12, "knock_retard", "Knock Retard", "Requested knock retard", "Requested ignition retard; does not confirm delivered spark timing.", false},
     {"Knock Signal Valid","",IM_COL32(90,200,140,255),0,1, "knock_signal_valid", "Knock Valid", "Knock voltage fresh", "Knock held-integrator reading is fresh.", false},
     {"Knock Sensor Fault","",IM_COL32(255,80,100,255),0,1, "knock_sensor_fault", "Knock Fault", "Knock sensing fault", "Knock sensing fault status.", false},
+    {"Idle Valve Target","steps",IM_COL32(250,150,170,255),0,220, "idle_valve_target", "Idle Valve Target", "IAC target", "Idle valve position the idle controller requests. Differs from the position while the valve moves or is not ready.", false},
+    {"Idle Valve State","",IM_COL32(235,120,90,255),0,3, "idle_valve_state", "IAC State", "IAC state", "0 not referenced, 1 homing, 2 ready, 3 fault. Idle feedback only moves the valve when ready.", false},
+    {"Idle Valve Fault","",IM_COL32(255,70,70,255),0,7, "idle_valve_fault", "IAC Fault", "IAC fault", "Current stepper-driver fault: 0 none, 1 SPI transfer, 2 open load, 3 driver diagnosis 10b, 4 driver diagnosis 00b, 5 homing timeout, 6 bridges not off, 7 hold timing.", false},
+    {"Idle Valve Last Fault","",IM_COL32(220,90,90,255),0,7, "idle_valve_last_fault", "IAC Last Fault", "IAC last fault", "Most recent stepper-driver fault since ECU reset, kept after recovery. Codes as Idle Valve Fault.", false},
+    {"Idle Valve Recoveries","count",IM_COL32(240,170,110,255),0,255, "idle_valve_recoveries", "IAC Recoveries", "IAC retries", "Automatic driver recoveries since ECU reset; saturates at 255.", false},
+    {"Idle Valve Fault Count","count",IM_COL32(200,110,130,255),0,255, "idle_valve_fault_count", "IAC Faults", "IAC fault count", "Stepper-driver faults since ECU reset; saturates at 255.", true},
+    {"Idle Driver Response","",IM_COL32(160,140,200,255),0,255, "idle_driver_response", "IAC Response", "L9935 response", "Last raw stepper-driver (L9935) SPI response byte; 192 is the normal no-fault reply.", true},
+    {"Idle Control Mode","",IM_COL32(130,200,230,255),0,5, "idle_control_mode", "Idle Mode", "Idle mode", "0 unavailable, 1 cranking, 2 start catch, 3 feedback, 4 overrun return, 5 throttle open.", false},
+    {"Idle Integral","steps",IM_COL32(110,180,250,255),-220,220, "idle_integral", "Idle Integral", "Idle integrator", "Idle feedback correction added to the base valve position.", false},
+    {"Idle Spark Correction","deg",IM_COL32(190,160,250,255),-20,20, "idle_spark_correction", "Idle Spark", "Idle spark", "Idle speed ignition correction added to base timing; negative retards.", false},
+    {"Sync Loss Reason","",IM_COL32(255,120,60,255),0,6, "sync_loss_reason", "Sync Loss Reason", "Loss reason", "Cause of the most recent counted sync loss: 0 none, 1 gap too early, 2 gap missing, 3 irregular tooth, 4 noise edge, 5 capture missed edge, 6 capture fault. 4 and 5 point to electrical interference.", false},
+    {"Sync Loss Tooth","",IM_COL32(255,170,90,255),0,60, "sync_loss_tooth", "Sync Loss Tooth", "Loss tooth", "Tooth count after the gap at the most recent counted sync loss.", false},
+    {"First Inhibit Reason","",IM_COL32(170,140,240,255),0,65535, "first_inhibit_reason", "First Inhibit", "First inhibit", "Output-inhibit bits of the first inhibit since ECU reset.", true},
+    {"Crank Capture Resyncs","count",IM_COL32(120,220,200,255),0,65535, "crank_capture_resyncs", "Capture Resyncs", "Capture resyncs", "Crank edges counted but not captured (two edges within one interrupt latency) since reset. Rising during running indicates crank-signal interference.", true},
+    {"Crank Capture Overruns","count",IM_COL32(100,200,180,255),0,65535, "crank_capture_overruns", "Capture Overruns", "Capture overruns", "Crank capture buffer overruns since reset.", true},
 };
 
 namespace {

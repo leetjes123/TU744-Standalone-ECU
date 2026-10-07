@@ -6,6 +6,9 @@
 #include "protocol.h"
 #include "theme.h"
 #include "ui_helpers.h"
+#ifdef TW_UI_PREVIEW
+extern ImVec2 closedLoopPreviewCheckbox;
+#endif
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
@@ -1493,6 +1496,12 @@ void DrawFlagEditors(const char* category, CalBuffer& cal, UndoStack& undo) {
                 undo.finalize(cal.data, f.offset, 1);
             }
         }
+#ifdef TW_UI_PREVIEW
+        if(f.offset==0x5D4 && f.mask==0x20) {
+            const ImVec2 a=ImGui::GetItemRectMin(),b=ImGui::GetItemRectMax();
+            closedLoopPreviewCheckbox=ImVec2((a.x+b.x)*.5f,(a.y+b.y)*.5f);
+        }
+#endif
         // Tooltip on the checkbox
         { const char* tip = GetTooltip(f.name);
           if (tip && ImGui::IsItemHovered()) ImGui::SetTooltip("%s", tip); }

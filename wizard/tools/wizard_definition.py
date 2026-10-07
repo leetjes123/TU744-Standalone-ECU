@@ -91,7 +91,10 @@ def generate():
         # Dependencies are keyed by byte offset, not display strings.
         def dep(control, mask, value, reason):
             deps.append(f'{{{offset}, {control}, {mask}, {value}, {q(reason)}}}')
-        if cat == 'Closed loop (STFT)': dep(0x5D4, 32, 32, 'Enable closed-loop fuel trim')
+        # The enable switch must remain editable while its dependent settings are disabled.
+        # Dependencies use byte offsets, so gating 0x5D4 also locks its other feature switches.
+        if cat == 'Closed loop (STFT)' and offset != 0x5D4:
+            dep(0x5D4, 32, 32, 'Enable closed-loop fuel trim')
         if offset in (0x601, 0x602, 0x8C1, 0x8CD, 0x926): dep(0x600, 255, 1, 'Select wideband oxygen input')
         if offset in (0x8C2, 0x8C3, 0x8C4, 0x8C7, 0x8C8, 0x8C9): dep(0x600, 255, 0, 'Select narrowband oxygen input')
         if offset in (0x928, 0x92A, 0x92C, 0x92E): dep(0x926, 255, 1, 'Enable wideband qualification')

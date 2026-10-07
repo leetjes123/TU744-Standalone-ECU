@@ -9,7 +9,7 @@ u8 fake_eeprom[8192], fake_injectors[4], fake_coils[2];
 u8 fake_iac_ok = 1, fake_iac_response = 0xC0, fake_write_fail = 0;
 u8 fake_eeprom_status, fake_eeprom_read_fail;
 u8 fake_iac_command, fake_fan, fake_heaters;
-u8 fake_hold_fault, fake_hold_active, fake_hold_high;
+u8 fake_hold_fault, fake_hold_active, fake_hold_high, fake_hold_reset_busy;
 u32 fake_iac_transfers;
 u16 fake_irq = 1, fake_injector_ticks[4];
 u32 fake_starts = 0, fake_writes = 0;
@@ -93,6 +93,12 @@ u8 hal_iac_hold_fault(void) {
 }
 u8 hal_iac_hold_response(void) {
     return fake_iac_response;
+}
+u8 hal_iac_hold_reset(void) {
+    if (fake_hold_reset_busy)
+        return 0;
+    fake_hold_fault = 0;
+    return 1;
 }
 u8 hal_eeprom_read(u16 at, u8 *b, u8 n) {
     if (fake_eeprom_read_fail || at > EEPROM_BYTES || n > EEPROM_BYTES - at)

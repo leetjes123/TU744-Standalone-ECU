@@ -6,6 +6,8 @@ ImVec2 diagnosticPreviewCardCenter;
 ImVec2 graphPreviewStart,graphPreviewSize;
 bool graphPreviewControls=false;
 float graphPreviewInitialSpan=0;
+ImVec2 closedLoopPreviewCheckbox;
+bool closedLoopPreviewSawOff=false;
 static bool PreviewOption(const char* option) {
     const std::string command=std::string(" ")+GetCommandLineA()+" ";
     return command.find(std::string(" ")+option+" ")!=std::string::npos;
@@ -23,6 +25,7 @@ static void InitScalingPreview() {
     const int table=PreviewIndex("--table=");
     const int settings=PreviewIndex("--settings=");
     const int page=PreviewIndex("--page=");
+    if(PreviewOption("--closed-loop-toggle")) gApp.cal.data[0x5D4]|=0x20;
     if(PreviewOption("--search-ect")) snprintf(gApp.search,sizeof(gApp.search),"ECT");
     if(PreviewOption("--search-dtc")) snprintf(gApp.search,sizeof(gApp.search),"DTC");
     if(PreviewOption("--search-ve")) snprintf(gApp.search,sizeof(gApp.search),"Running VE");
@@ -120,6 +123,12 @@ static void DrawDashboardPreview() {
     ImGui::End();
 }
 static void DiagnosticPreviewInput(int frame) {
+    if(PreviewOption("--closed-loop-toggle")) {
+        auto& io=ImGui::GetIO();
+        if(frame==2 || frame==5) { io.AddMousePosEvent(closedLoopPreviewCheckbox.x,closedLoopPreviewCheckbox.y); io.AddMouseButtonEvent(0,true); }
+        if(frame==3 || frame==6) io.AddMouseButtonEvent(0,false);
+        if(frame==4) closedLoopPreviewSawOff=!(gApp.cal.data[0x5D4]&0x20);
+    }
     if(PreviewOption("--logging") || PreviewOption("--csv")) {
         auto& io=ImGui::GetIO();
         const float x=graphPreviewStart.x,y=graphPreviewStart.y+graphPreviewSize.y*.5f;
@@ -163,6 +172,7 @@ static void InitDiagnosticPreview() {
     if(strstr(GetCommandLineA(),"--contrast")) { gApp.uiTheme=UiTheme::HighContrast; ApplyUiTheme(gApp.uiTheme,g_dpiScale); }
 }
 static bool SaveDiagnosticPreview() {
+    if(PreviewOption("--closed-loop-toggle") && (!closedLoopPreviewSawOff || !(gApp.cal.data[0x5D4]&0x20))) return false;
     if(PreviewOption("--drag-zoom") || PreviewOption("--drag-click")) {
         const auto& view=PreviewOption("--csv")?gApp.logViewers.back():gApp.logState.viewer;
         const float expected=graphPreviewInitialSpan*(PreviewOption("--drag-click")?1:.45f);

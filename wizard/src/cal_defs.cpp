@@ -271,7 +271,6 @@ static const DropdownDef dropdownDefs[] = {
 const DropdownDef* ALL_DROPDOWNS = dropdownDefs;
 const int NUM_DROPDOWNS = sizeof(dropdownDefs)/sizeof(DropdownDef);
 const Dependency DEPENDENCIES[] = {
-{1492, 1492, 32, 32, "Enable closed-loop fuel trim"},
 {1511, 1492, 4, 4, "Enable launch control"},
 {1537, 1536, 255, 1, "Select wideband oxygen input"},
 {1538, 1536, 255, 1, "Select wideband oxygen input"},

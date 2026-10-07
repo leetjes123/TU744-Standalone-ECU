@@ -1,0 +1,3 @@
+PASS 1095 Keil-machine-code arithmetic/calibration checks
+PASS 109 phase-overflow boundaries, 7 HAL gates and 232 scheduler paths
+High-RPM schedule maximum: {'normal_period_ticks': 125, 'tooth': 0, 'instructions': 1565, 'modeled_cpu_cycles': 3846, 'system_stack_bytes': 34, 'user_stack_bytes': 24}

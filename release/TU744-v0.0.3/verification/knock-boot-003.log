@@ -1,0 +1,13 @@
+OEM:
+   0.0000 ms  G2=1 G1=1 G0=1 KTI=1 KSA3=1 MF=1 BF2=1
+  27.7607 ms  G2=1 G1=1 G0=1 KTI=1 KSA3=1 MF=0 BF2=1
+  53.3224 ms  G2=1 G1=0 G0=1 KTI=1 KSA3=1 MF=0 BF2=1
+  53.3226 ms  G2=1 G1=0 G0=1 KTI=0 KSA3=1 MF=0 BF2=1
+  53.3227 ms  G2=1 G1=0 G0=1 KTI=0 KSA3=0 MF=0 BF2=1
+standalone (stock-95080):
+   0.0000 ms  G2=1 G1=1 G0=1 KTI=1 KSA3=1 MF=1 BF2=1
+  54.5278 ms  G2=1 G1=1 G0=1 KTI=1 KSA3=1 MF=0 BF2=1
+  70.5675 ms  G2=1 G1=0 G0=1 KTI=1 KSA3=1 MF=0 BF2=1
+  70.5677 ms  G2=1 G1=0 G0=1 KTI=0 KSA3=1 MF=0 BF2=1
+  70.5678 ms  G2=1 G1=0 G0=1 KTI=0 KSA3=0 MF=0 BF2=1
+PASS knock IC boot: 5 identical pin states; standalone hold 16.040 ms vs OEM 16.042 ms (Keil; emulator 25.562 ms); release 0.3 us; BF2 matches ROM for 0..19 kHz

@@ -27,6 +27,13 @@ struct MonitorData {
     uint16_t knockMv=65535;
     uint8_t knockFlags=0;
     float knockRetard=0;
+    // Command 13 version 4 (firmware 0.0.3+): idle-actuator and sync-loss detail.
+    bool detailAvailable=false;
+    int iacTarget=0;
+    uint8_t iacState=0, iacFault=0, iacLastFault=0, iacRetries=0, iacFaultCount=0, iacResponse=0;
+    uint8_t idleMode=0, syncLossReason=0, syncLossTooth=0;
+    float idleIntegral=0, idleSpark=0;
+    uint16_t firstInhibit=0, captureResyncs=0, captureOverruns=0;
     float plannedDutyPercent() const { return pulseUs * float(rpm) / 600000.0f; }
     bool synced() const { return (state&1)!=0; }
     bool unsaved() const { return (flags&16)!=0; }
@@ -40,6 +47,10 @@ struct TpsSnapshot {
     uint8_t flags=0; uint16_t raw=0, ageMs=0, closed=0, open=0, generation=0;
 };
 bool DecodeMonitor(const unsigned char* data, int length, MonitorData& out);
+const char* IacStateName(int state);
+const char* IacFaultName(int fault);
+const char* IdleModeName(int mode);
+const char* SyncLossReasonName(int reason);
 struct EcuProtocol {
     SerialPort* port=nullptr;
     char versionString[64]={};
@@ -48,7 +59,9 @@ struct EcuProtocol {
     int monitorFailCount=0;
     // Transport injection is used by protocol and failure-recovery tests.
     std::function<int(const unsigned char*,int,unsigned char*,int,int)> exchange;
-    void setPort(SerialPort* p) { port=p; }
+    // Set once the ECU rejects a version 4 live request (firmware 0.0.2 or older).
+    bool liveV4Unsupported=false;
+    void setPort(SerialPort* p) { port=p; liveV4Unsupported=false; }
     int transact(const unsigned char*, int, unsigned char*, int, int timeoutMs=500);
     bool getVersion();
     bool capabilities(Capabilities&);

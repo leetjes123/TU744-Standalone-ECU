@@ -238,6 +238,15 @@ void DrawDashboard(const MonitorData& m,bool connected,bool monitoring,float age
     ImGui::NewLine();
     if(fresh) ImGui::Text("Trigger Sync Losses: %u%s",m.lossOfSyncCount,m.lossOfSyncCount==65535?"+":"");
     else ImGui::TextDisabled("Trigger Sync Losses: --");
+    if(fresh && m.detailAvailable) {
+        if(m.lossOfSyncCount) ImGui::Text("Last sync loss: %s at tooth %u",SyncLossReasonName(m.syncLossReason),m.syncLossTooth);
+        ImGui::Text("Idle valve: %s, %d steps (target %d), idle %s",IacStateName(m.iacState),m.iacPosition,m.iacTarget,IdleModeName(m.idleMode));
+        if(m.iacFault)
+            ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram),"Idle valve fault: %s - automatic recovery pending",IacFaultName(m.iacFault));
+        if(m.iacLastFault)
+            ImGui::TextDisabled("Last idle valve fault: %s; %u fault(s), %u recover%s since ECU reset",IacFaultName(m.iacLastFault),
+                                m.iacFaultCount,m.iacRetries,m.iacRetries==1?"y":"ies");
+    } else if(fresh) ImGui::TextDisabled("Idle valve and sync-loss detail need firmware 0.0.3");
     if(fresh && m.inhibits) {
         const char* reasons[]={"Crank sync","Calibration","Sensor","Stale input","Service mode","Deadline","Power","Board","Output"};
         ImGui::TextUnformatted("Output inhibits:");

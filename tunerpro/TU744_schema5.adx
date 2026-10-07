@@ -6,7 +6,7 @@
     <objectcount>62</objectcount>
     <userversion>7.1</userversion>
     <author>TU744 project</author>
-    <desc>TU744 0.0.2, schema 5, monitor extension 4. Requires TU744.dll 0.6 or later and matching firmware; the plugin validates framing and checksums. Lambda displays use a fixed 14.7 AFR reference; wideband readings require a configured, warmed-up wideband controller.</desc>
+    <desc>TU744 0.0.3, schema 5, monitor extension 4. Requires TU744.dll 0.6 or later and matching firmware; the plugin validates framing and checksums. Lambda displays use a fixed 14.7 AFR reference; wideband readings require a configured, warmed-up wideband controller.</desc>
     <baud>19200</baud>
     <DEPENDSONPLUGIN guid="265a1534-e71f-4b6f-8932-71936121d003" filename="TU744.dll" desc="TU744 schema-5 logging, monitor extension 4" minvermajor="0" minverminor="6" />
     <DEFAULTS datasizeinbits="8" sigdigits="2" outputtype="3" baud="0" signed="0" lsbfirst="0" float="0" />

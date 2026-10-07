@@ -171,7 +171,7 @@ def oem(run_tests=True):
              'oem_diagnostics_sensors','oem_diagnostics_capture','oem_diagnostics_context',
              'oem_diagnostics_engine','oem_diagnostics_demand','oem_diagnostics_clear_ported',
              'oem_readiness_init','oem_readiness_update','oem_readiness_clear','oem_diagnostics_readiness',
-             'reset_capture_raw','reset_capture_marker','bridge_reset','bridge_exchange','bridge_sync_losses','fake_firmware_updates DATA']
+             'reset_capture_raw','reset_capture_marker','bridge_reset','bridge_exchange','bridge_sync_losses','bridge_iac_detail','fake_firmware_updates DATA']
     if os.name=='nt':
         vc=Path(os.environ.get('VCVARS64',r'C:\Program Files\Microsoft Visual Studio\18\Community\VC\Auxiliary\Build\vcvars64.bat'))
         (out/'oem.def').write_text('EXPORTS\n'+'\n'.join(exports)+'\n')

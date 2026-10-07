@@ -1,0 +1,7 @@
+Not run or not completed for this package (testing stopped on request):
+- knock-keil-boot-003
+- scheduler-regressions
+- target-lifecycle
+- target-foreground
+- target-engine
+- target-timing

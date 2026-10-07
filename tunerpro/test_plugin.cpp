@@ -43,7 +43,7 @@ int main() {
     };
     tu5jp::Client client(exchange);
     bridge_reset(); client.identify();
-    CHECK(exchange({0})==Bytes({'T','U','7','4','4',' ','0','.','0','.','2'}));
+    CHECK(exchange({0})==Bytes({'T','U','7','4','4',' ','0','.','0','.','3'}));
     auto original=client.read(0,3072);
     CHECK(original.size()==3072 && original[0x903]==5);
     std::atomic<bool> cancel{false};

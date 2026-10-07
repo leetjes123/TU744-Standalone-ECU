@@ -11,7 +11,7 @@ extern s32 fake_write_budget;
 extern u32 fake_watchdog_services;
 extern u8 fake_iac_command, fake_fan, fake_heaters;
 extern u8 fake_eeprom_status, fake_eeprom_read_fail;
-extern u8 fake_hold_fault, fake_hold_active, fake_hold_high;
+extern u8 fake_hold_fault, fake_hold_active, fake_hold_high, fake_hold_reset_busy;
 extern u32 fake_iac_transfers;
 static unsigned tests;
 extern unsigned test_lifecycle(void);
@@ -29,7 +29,7 @@ static void setup(void) {
     ecu.cal.generation = 1;
     fake_iac_ok = 1;
     fake_iac_response = 0xC0;
-    fake_hold_fault = fake_hold_active = 0;
+    fake_hold_fault = fake_hold_active = fake_hold_reset_busy = 0;
     fake_heaters = 0;
 }
 static void feed(const u8 *p, u16 n, u32 now) {
@@ -100,6 +100,48 @@ static void test_rotation(void) {
     rotation_edge(stamp);
     CHECK(ecu.rotation.state == ROT_UNSYNCED);
     CHECK(ecu.authority.inhibits & INH_SYNC);
+    CHECK(ecu.rotation.losses == 1 && ecu.rotation.loss_reason == ROT_LOSS_IRREGULAR);
+    CHECK(ecu.rotation.loss_tooth == 0);
+}
+static u32 synchronize(u32 stamp) {
+    u16 rev, tooth;
+    rotation_edge(stamp);
+    for (rev = 0; rev < 3; rev++) {
+        for (tooth = 0; tooth < 57; tooth++)
+            rotation_edge(stamp += 1250);
+        rotation_edge(stamp += 3750);
+    }
+    CHECK(ecu.rotation.state == ROT_VALID);
+    return stamp;
+}
+/* Each counted loss records its cause and tooth, so a log separates
+   electrical noise from a damaged trigger wheel. */
+static void test_rotation_loss_reason(void) {
+    u16 tooth, caps[3];
+    u32 stamp, fastest;
+    setup();
+    stamp = synchronize(0);
+    for (tooth = 0; tooth < 20; tooth++)
+        rotation_edge(stamp += 1250);
+    rotation_edge(stamp += 3750); /* gap at tooth 20 */
+    CHECK(ecu.rotation.loss_reason == ROT_LOSS_GAP_EARLY && ecu.rotation.loss_tooth == 20);
+    setup();
+    stamp = synchronize(0);
+    for (tooth = 0; tooth < 57; tooth++)
+        rotation_edge(stamp += 1250);
+    rotation_edge(stamp += 1250); /* tooth 58, no gap */
+    CHECK(ecu.rotation.loss_reason == ROT_LOSS_GAP_MISSING && ecu.rotation.loss_tooth == 57);
+    setup();
+    stamp = synchronize(0);
+    for (tooth = 0; tooth < 10; tooth++)
+        rotation_edge(stamp += 1250);
+    /* An interference spike 40 ticks after a tooth, inside one capture block. */
+    caps[0] = (u16)(stamp + 1250);
+    caps[1] = (u16)(stamp + 1290);
+    caps[2] = (u16)(stamp + 2500);
+    rotation_block(caps, 3, stamp + 2500, 1, &fastest);
+    CHECK(ecu.rotation.state == ROT_UNSYNCED && ecu.rotation.losses == 1);
+    CHECK(ecu.rotation.loss_reason == ROT_LOSS_NOISE && ecu.rotation.loss_tooth == 11);
 }
 /* rotation_block must equal the original XP1 decode: every edge through
    rotation_edge in order, a rejected edge revoking synchronization, and the
@@ -127,6 +169,7 @@ static void block_reference(const u32 *stamps, u8 n, u32 *fastest, u8 *accepted)
         if (!valid && ecu.rotation.state == ROT_VALID) {
             ecu.rotation.state = ROT_UNSYNCED; ecu.rotation.have_gap = 0;
             ecu.rotation.epoch++; ecu.rotation.losses++;
+            ecu.rotation.loss_reason = ROT_LOSS_NOISE; ecu.rotation.loss_tooth = ecu.rotation.tooth;
             safety_inhibit(INH_SYNC, ecu.milliseconds);
         }
     }
@@ -445,6 +488,105 @@ static void test_iac_direction_and_status(void) {
     CHECK(ecu.iac.fault == 7 && ecu.iac.state == IAC_FAULT);
     CHECK(!ecu.iac.holding && fake_iac_command == 0x3F);
 }
+/* Field log ecu_log_20261007_150809: one sync loss at idle left the IAC
+   frozen at 45 steps for 157 s, until the engine stalled. A driver fault
+   must recover instead of latching until reset. */
+static void iac_running_fault(u32 now) {
+    fake_hold_fault = 7;
+    iac_service(now);
+    CHECK(ecu.iac.state == IAC_FAULT && ecu.iac.fault == 7 && ecu.iac.last_fault == 7);
+}
+static void test_iac_recovery(void) {
+    u32 count;
+    setup();
+    ecu.control.key_on = 1;
+    ecu.control.mode = ENGINE_RUNNING;
+    ecu.iac.state = IAC_READY;
+    ecu.iac.position = ecu.iac.target = 45;
+    ecu.iac.holding = 1;
+    iac_running_fault(1000);
+    count = ecu.iac.fault_count;
+    iac_service(1010); /* arms the retry */
+    iac_service(1209);
+    CHECK(ecu.iac.state == IAC_FAULT && !ecu.iac.retries);
+    iac_service(1210);
+    CHECK(ecu.iac.state == IAC_READY && !ecu.iac.fault && ecu.iac.last_fault == 7);
+    CHECK(ecu.iac.retries == 1 && ecu.iac.fault_count == count);
+    CHECK(ecu.iac.position == 45); /* running: counted position, never homing */
+    CHECK(fake_iac_command == 0x3F && !fake_hold_fault);
+    /* Idle control moves the valve again. */
+    ecu.iac.target = 43;
+    iac_service(1215);
+    iac_service(1220);
+    CHECK(ecu.iac.position == 44);
+
+    /* A repeat fault is retried no more often than every 10 s. */
+    iac_running_fault(2000);
+    CHECK(ecu.iac.fault_count == count + 1);
+    iac_service(2010);
+    iac_service(5000);
+    iac_service(11209);
+    CHECK(ecu.iac.state == IAC_FAULT && ecu.iac.retries == 1);
+    iac_service(11210);
+    CHECK(ecu.iac.state == IAC_READY && ecu.iac.retries == 2);
+
+    /* No retry while the hold session still owns the bus, key off, or service. */
+    iac_running_fault(30000);
+    fake_hold_reset_busy = 1;
+    iac_service(30010);
+    iac_service(30300);
+    CHECK(ecu.iac.state == IAC_FAULT && fake_hold_fault == 7);
+    fake_hold_reset_busy = 0;
+    ecu.control.key_on = 0;
+    iac_service(30400);
+    CHECK(ecu.iac.state == IAC_FAULT);
+    ecu.control.key_on = 1;
+    ecu.service = 1;
+    iac_service(30500);
+    CHECK(ecu.iac.state == IAC_FAULT);
+    ecu.service = 0;
+    ecu.authority.inhibits = INH_OUTPUT;
+    iac_service(30600);
+    CHECK(ecu.iac.state == IAC_FAULT);
+    ecu.authority.inhibits = INH_SYNC; /* a sync loss alone never blocks recovery */
+    iac_service(30700);
+    CHECK(ecu.iac.state == IAC_READY && ecu.iac.retries == 3);
+
+    /* A failing driver re-faults; the retry spacing bounds the attempts. */
+    iac_running_fault(41000);
+    fake_iac_ok = 0;
+    iac_service(41010);
+    iac_service(41210);
+    CHECK(ecu.iac.state == IAC_FAULT && ecu.iac.fault == 1 && ecu.iac.retries == 4);
+    iac_service(41220);
+    iac_service(45000);
+    CHECK(ecu.iac.retries == 4);
+    fake_iac_ok = 1;
+
+    /* Stopped engine: recovery re-references by homing. */
+    setup();
+    ecu.control.key_on = 1;
+    ecu.control.mode = ENGINE_STOPPED;
+    ecu.iac.state = IAC_READY;
+    ecu.iac.position = 45;
+    iac_running_fault(0);
+    iac_service(10);
+    iac_service(210);
+    CHECK(ecu.iac.state == IAC_HOMING && !ecu.iac.fault && ecu.iac.remaining);
+
+    /* Key-on is a fresh reference even with a fault from the last drive. */
+    setup();
+    ecu.iac.state = IAC_FAULT;
+    ecu.iac.fault = ecu.iac.last_fault = 2;
+    iac_home(0);
+    CHECK(ecu.iac.state == IAC_HOMING && !ecu.iac.fault && ecu.iac.last_fault == 2);
+    setup();
+    ecu.iac.state = IAC_FAULT;
+    ecu.iac.fault = 2;
+    fake_hold_reset_busy = 1;
+    iac_home(0);
+    CHECK(ecu.iac.state == IAC_FAULT && ecu.iac.fault == 2);
+}
 static void fan_pass(u32 now, Rotation *r) {
     const u8 *c = cal_active();
     engine_state_update(now, r, c);
@@ -641,6 +783,7 @@ static void test_controls(void) {
     Rotation r;
     EnginePlan p;
     u32 now;
+    u8 step;
     setup();
     c = ecu.cal.bytes[0];
     memset(&r, 0, sizeof(r));
@@ -698,6 +841,31 @@ static void test_controls(void) {
         lambda_update(now, c, &p);
     }
     CHECK(ecu.control.applied_trim > 1170 && ecu.control.applied_trim < 1280);
+    /* Turning closed loop off must neutralize telemetry immediately, including
+       the gap between a calibration commit and the next control pass. */
+    c[0x5D4] = (u8)(c[0x5D4] & ~CFG_STFT);
+    {
+        static const u8 live[] = {0xAA, 1, 0x13, 0x14};
+        static const u8 legacy[] = {0xAA, 1, 0x10, 0x11};
+        feed(live, sizeof(live), now);
+        CHECK(get16(ecu.protocol.tx + 2 + 13) == 1024);
+        CHECK(!(ecu.protocol.tx[2 + 31] & 16));
+        while (ecu.protocol.tx_length) protocol_poll(now);
+        feed(legacy, sizeof(legacy), now + 1);
+        CHECK(ecu.protocol.tx[2 + 19] == 128 && ecu.protocol.tx[2 + 20] == 0);
+        CHECK(!(ecu.protocol.tx[2 + 49] & 32));
+    }
+    ecu.sensors.afr10 = 200; /* Persistent lean feedback must not accumulate trim. */
+    for (step = 0; step < 5; ++step) {
+        lambda_update(now + (u32)step * 500UL, c, &p);
+        CHECK(ecu.control.applied_trim == 1024 && !ecu.control.trim_enabled);
+        CHECK(ecu.control.trim_q16 == 65536L);
+    }
+    c[0x5D4] |= CFG_STFT;
+    lambda_update(now + 2001, c, &p);
+    CHECK(ecu.control.trim_enabled && ecu.control.applied_trim == 1024);
+    lambda_update(now + 2501, c, &p);
+    CHECK(ecu.control.trim_enabled && ecu.control.applied_trim > 1024);
     ecu.sensors.oxygen.quality = QUALITY_STALE;
     lambda_update(now, c, &p);
     CHECK(ecu.control.applied_trim == 1024 && !ecu.control.trim_enabled);
@@ -705,6 +873,70 @@ static void test_controls(void) {
     c[0x731] = 128;
     lambda_update(now + 1, c, &p);
     CHECK(ecu.control.trim_q16 == 65536);
+}
+static void test_closed_loop_pulse_width(void) {
+    u8 *c;
+    Rotation r;
+    EnginePlan p;
+    u16 i;
+    setup();
+    c = ecu.cal.bytes[0];
+    memset(&r, 0, sizeof(r));
+    memset(&p, 0, sizeof(p));
+    r.rpm = p.rpm = 1000;
+    memset(c, 100, 256); /* 100% VE */
+    memset(c + 0x200, 147, 256);
+    memset(c + 0x480, 100, 16);
+    memset(c + 0x4C0, 0, 16);
+    for (i = 0; i < 8; ++i) put16(c + 0x540 + i * 2, 850);
+    put16(c + 0x5DF, 5000);
+    c[0x5D4] = CFG_STFT;
+    c[0x600] = 1;
+    c[0x8C7] = 0;
+    c[0x731] = 192;
+    c[0x732] = 64;
+    ecu.control.mode = ENGINE_RUNNING;
+    ecu.control.lambda_type = 1;
+    ecu.control.ae_percent = 100;
+    ecu.sensors.iat.value = 0;
+    ecu.sensors.map.value = 100;
+    ecu.sensors.clt.value = 90;
+    ecu.sensors.battery.value = 12000;
+    ecu.sensors.clt.quality = ecu.sensors.tps.quality = ecu.sensors.oxygen.quality = QUALITY_VALID;
+    ecu.sensors.wideband_ready = 1;
+    ecu.sensors.afr10 = 147; /* No new integral correction while testing application. */
+    ecu.control.trim_q16 = 65536L;
+    fuel_plan(100, &r, c, &p);
+    CHECK(ecu.control.trim_enabled && p.requested_us == 3350 && p.pulse_us == 3350);
+    ecu.control.trim_q16 = 81920L; /* +25% fuel: dead time remains unscaled. */
+    fuel_plan(101, &r, c, &p);
+    CHECK(ecu.control.applied_trim == 1280 && p.requested_us == 3975 && p.pulse_us == 3975);
+    p.epoch = ecu.authority.epoch;
+    p.stamp = 101;
+    p.max_age_ms = 50;
+    ecu.authority.inhibits = 0;
+    ecu.rotation.state = ROT_VALID;
+    ecu.milliseconds = 101;
+    CHECK(safety_publish(&p));
+    CHECK(injector_admit(0) && fake_injector_ticks[0] == us_ticks(3975));
+    injector_done(0);
+    ecu.control.trim_q16 = 49152L; /* -25% fuel */
+    fuel_plan(102, &r, c, &p);
+    CHECK(ecu.control.applied_trim == 768 && p.requested_us == 2725 && p.pulse_us == 2725);
+    c[0x5D4] = (u8)(c[0x5D4] & ~CFG_STFT);
+    fuel_plan(103, &r, c, &p);
+    CHECK(ecu.control.applied_trim == 1024 && p.requested_us == 3350 && p.pulse_us == 3350);
+    /* A duty clamp can hide trim changes in the limited command, but not the request. */
+    c[0x5D4] |= CFG_STFT;
+    c[0x8CF] = 10;
+    put16(c + 0x7BC, 12000);
+    r.rpm = p.rpm = 6000;
+    ecu.control.trim_q16 = 65536L;
+    fuel_plan(104, &r, c, &p);
+    CHECK(p.requested_us == 3350 && p.pulse_us == 1000);
+    ecu.control.trim_q16 = 81920L;
+    fuel_plan(105, &r, c, &p);
+    CHECK(p.requested_us == 3975 && p.pulse_us == 1000);
 }
 static void test_storage(void) {
     u32 now, cut;
@@ -1279,6 +1511,7 @@ static void test_capture_detail_packet(void) {
 int main(void) {
     test_knock();
     test_idle_dfco();
+    test_idle_step_mode();
     test_math_cal();
     test_rotation();
     test_rotation_block();
@@ -1287,8 +1520,11 @@ int main(void) {
     test_parser();
     test_iac();
     test_iac_direction_and_status();
+    test_iac_recovery();
+    test_rotation_loss_reason();
     test_fan_preload();
     test_controls();
+    test_closed_loop_pulse_width();
     test_fuel_percentages();
     test_inputs_and_configuration();
     test_clock_health();

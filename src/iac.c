@@ -11,8 +11,10 @@ static void fault(u8 reason) {
     Iac *s = &ecu.iac;
     if (!s->fault) {
         s->fault = reason;
+        s->last_fault = reason;
         s->fault_count++;
     }
+    s->retry_armed = 0;
     s->state = IAC_FAULT;
     s->pending = 0;
     s->remaining = 0;
@@ -66,14 +68,27 @@ void iac_disable(void) {
     else
         ecu.iac.state = ecu.iac.fault ? IAC_FAULT : IAC_UNKNOWN;
 }
-void iac_home(u32 now) {
+static u8 recovery_permitted(void) {
+    return (u8)(ecu.cal.valid && ecu.board_released && !ecu.service && !ecu.iac.off_pending &&
+                !(ecu.authority.inhibits & (INH_DEADLINE | INH_OUTPUT)));
+}
+/* Drop a latched driver fault once the hold session has released the bus.
+   last_fault, fault_count and the DTC monitor history keep the evidence. */
+static u8 clear_fault(void) {
     Iac *s = &ecu.iac;
-    if (!ecu.cal.valid || !ecu.board_released || ecu.service ||
-        ecu.control.mode != ENGINE_STOPPED || s->fault)
-        return;
-    s->state = IAC_UNKNOWN;
-    if (!command(0x3F))
-        return;
+    if (!hal_iac_hold_reset())
+        return 0;
+    s->fault = 0;
+    s->open_count = 0;
+    s->pending = 0;
+    s->remaining = 0;
+    s->previous_active = 0;
+    s->holding = 0;
+    s->retry_armed = 0;
+    return 1;
+}
+static void start_homing(u32 now) {
+    Iac *s = &ecu.iac;
     s->open_count = 0;
     s->state = IAC_HOMING;
     s->remaining = get16(cal_active() + CAL_IAC_HOME_STEPS);
@@ -82,6 +97,47 @@ void iac_home(u32 now) {
     s->deadline = now + get16(cal_active() + CAL_HOME_MS);
     s->next_step = now;
     s->pending = 0;
+}
+void iac_home(u32 now) {
+    Iac *s = &ecu.iac;
+    if (!ecu.cal.valid || !ecu.board_released || ecu.service ||
+        ecu.control.mode != ENGINE_STOPPED)
+        return;
+    /* Key-on is a fresh reference: a fault from the last drive is retried. */
+    if (s->fault && (!recovery_permitted() || !clear_fault()))
+        return;
+    s->state = IAC_UNKNOWN;
+    if (!command(0x3F))
+        return;
+    start_homing(now);
+}
+/* A single disturbance (sync loss, SPI error, late hold service) must not
+   leave idle control frozen until reset. Retry IAC_RETRY_MS after the fault,
+   then no more often than every IAC_RETRY_SPACING_MS. Running: resume with
+   the counted position, as homing would close the valve under a running
+   engine. Stopped: re-reference by homing. */
+static void recover(u32 now) {
+    Iac *s = &ecu.iac;
+    if (!s->retry_armed) {
+        s->retry_armed = 1;
+        s->retry_at = now + IAC_RETRY_MS;
+        return;
+    }
+    if ((s32)(now - s->retry_at) < 0 ||
+        (s->retries && now - s->retried_at < IAC_RETRY_SPACING_MS) ||
+        !ecu.control.key_on || !recovery_permitted() || !clear_fault())
+        return;
+    if (s->retries != 255U)
+        s->retries++;
+    s->retried_at = now;
+    if (!command(0x3F))
+        return;
+    if (ecu.control.mode == ENGINE_STOPPED) {
+        start_homing(now);
+        return;
+    }
+    s->state = IAC_READY;
+    s->next_step = now;
 }
 void iac_service(u32 now) {
     Iac *s = &ecu.iac;
@@ -99,7 +155,11 @@ void iac_service(u32 now) {
         }
         return;
     }
-    if (s->state == IAC_FAULT || s->state == IAC_UNKNOWN)
+    if (s->state == IAC_FAULT) {
+        recover(now);
+        return;
+    }
+    if (s->state == IAC_UNKNOWN)
         return;
     if (s->state == IAC_HOMING && (s32)(now - s->deadline) >= 0) {
         fault(5);

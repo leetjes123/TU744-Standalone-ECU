@@ -23,7 +23,7 @@ def exchange(payload):
 
 lib.bridge_reset()
 client=Client(exchange)
-assert client.identity() == 'TU744 0.0.2'
+assert client.identity() == 'TU744 0.0.3'
 assert client.capabilities()['exact_dtc_parity'] is False
 assert client.storage() == dict(calibration_storage='eeprom', eeprom_bytes=8192,
                                calibration_copies=2, history_copies=2)
@@ -218,3 +218,24 @@ for losses in (0, 1, 255, 256, 0x1234, 65535, 65536, 0x12345678):
     legacy = exchange(b'\x10')
     assert len(legacy) == 98 and legacy[46] == min(losses, 255)
 print('PASS compact full-width sync losses and unchanged legacy layout')
+
+# Command 13 version 4 (firmware 0.0.3): [13, 4] appends idle-actuator and
+# sync-loss detail. A bare request keeps the 44-byte version 3 frame that the
+# 0.0.2 Wizard requires, and other versions are rejected.
+lib.bridge_reset()
+v3 = exchange(b'')
+v4 = exchange(b'')
+assert len(v3) == 44 and v3[0] == 3 and len(v4) == 64 and v4[0] == 4, v4.hex()
+assert v4[1:40] == v3[1:40]
+assert v4[44:64] == bytes(20), v4.hex()
+assert exchange(b'') == b'' and exchange(b'') == b''
+lib.bridge_iac_detail()
+v4 = exchange(b'')
+assert v4[44] == 255 and v4[45] == 2 and v4[46] == 0 and v4[47] == 7  # target saturates
+assert v4[48] == 2 and v4[49] == 255 and v4[50] == 0xC0 and v4[51] == 3
+assert int.from_bytes(v4[52:54], 'big', signed=True) == -123        # 0.1 steps
+assert int.from_bytes(v4[54:56], 'big', signed=True) == -35         # 0.1 deg
+assert v4[56] == 4 and v4[57] == 11
+assert v4[58:64] == bytes([0, 1, 0x12, 0x34, 0, 3])
+assert len(exchange(b'')) == 44
+print('PASS compact live frame version 4 idle/sync detail and version 3 compatibility')

@@ -153,10 +153,16 @@ static void test_faults(void) {
     T7 = (u16)(CC22 + HOLD_LATE_TICKS + 1);
     board_ssc_tick();
     CHECK(hold.fault == 7 && tx_buffer == 0x3F && hold.state == HOLD_RX);
+    CHECK(!hal_iac_hold_reset()); /* off transaction still owns the bus */
+    CHECK(hold.fault == 7 && owned == SSC_HOLD);
     CHECK(!hal_eeprom_read(0, &response, 1));
     complete(HOLD_SPI_TICKS, 0xC0);
     CHECK(owned == SSC_FREE && !hold.off_needed && hold.fault == 7);
     CHECK(!hal_iac_hold_start(0x12));
+    /* Foreground recovery drops the first cause only after release. */
+    CHECK(hal_iac_hold_reset());
+    CHECK(!hold.fault && !hal_iac_hold_fault() && owned == SSC_FREE);
+    CHECK(hal_iac_hold_start(0x12) && owned == SSC_HOLD);
 
     setup();
     CHECK(hal_iac_hold_start(0x12));

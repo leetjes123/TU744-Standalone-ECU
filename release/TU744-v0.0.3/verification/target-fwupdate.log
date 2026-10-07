@@ -1,0 +1,2 @@
+PASS 1095 Keil-machine-code arithmetic/calibration checks
+PASS 13 linked firmware-update handler cases; LRE-B4 wire protocol, erase/program in RAM only, status and page sums
