@@ -37,6 +37,7 @@ static bool firmwareAccepts(EcuProtocol& ecu,const CalBuffer& c) {
     bool result=ecu.command(0x22); ecu.command(0x23); return result;
 }
 void DiagnosticTests();
+void AutotuneTests();
 int main() {
     DiagnosticTests();
     HMODULE lib=LoadLibraryA(TEST_DLL_PATH); CHECK(lib);
@@ -198,14 +199,7 @@ int main() {
         return actual(p,n,o,cap,timeout);
     };
     TuneTransfer save; CHECK(save.save(ecu)); CHECK(save.busy()); save.step(ecu); CHECK(save.busy()); save.step(ecu); CHECK(save.phase==TuneTransfer::Phase::Complete);
-    // Autotune has no data at ineligible states, and bounds proposals.
-    AutoTune tune; tune.collecting=true; tune.delaySeconds=0.1f;
-    m={}; m.valid=true; m.state=5; m.warmup=m.afterstart=m.accel=100;
-    m.rpm=2500; m.targetAfr=14; m.measuredAfr=15; m.cellRpm=2; m.cellLoad=3;
-    for(int i=0;i<100;++i) tune.sample(m,i*.05f,true);
-    CalBuffer proposed; CHECK(tune.propose(original,proposed)==1); CHECK(proposed.data[50]==61);
-    tune.clear(); m.state|=16; for(int i=0;i<100;++i) tune.sample(m,i*.05f,true);
-    CHECK(tune.propose(original,proposed)==0);
+    AutotuneTests();
     // File marker rejection preserves the existing local buffer.
     FILE* f=fopen("invalid-tune.bin","wb"); CHECK(f); unsigned char bad[CAL_SIZE]={}; fwrite(bad,1,CAL_SIZE,f); fclose(f);
     c=original; CHECK(!c.loadFromFile("invalid-tune.bin")); CHECK(!memcmp(c.data,original.data,CAL_SIZE)); remove("invalid-tune.bin");

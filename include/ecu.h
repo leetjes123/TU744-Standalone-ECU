@@ -179,6 +179,10 @@ typedef struct {
     /* Map cell of the last fuel plan: axis index and fraction (0..256). */
     u8 cell_rpm, cell_load;
     u16 cell_rpm_fraction, cell_load_fraction;
+    /* Last in-deadband idle integral without fan demand, and the floor it
+       sets while the fan is requested so feedback cannot trim the preload. */
+    s32 idle_settled_integral, idle_fan_floor;
+    u8 idle_settled_valid, idle_fan_floor_valid;
 } Controls;
 typedef struct {
     u8 state, phase, previous_active, open_count, fault, response, pending;

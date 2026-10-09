@@ -43,6 +43,16 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
             clamp32(((s32)s->idle_position + fan_steps - s->idle_fan_steps - base - p) * 1000L,
                     -220000L, 220000L);
     }
+    if (s->mode != ENGINE_RUNNING)
+        s->idle_settled_valid = 0;
+    if (!s->fan_request)
+        s->idle_fan_floor_valid = 0;
+    else if (!s->idle_fan_floor_valid && s->idle_settled_valid) {
+        /* An externally switched fan can start long after the request: hold
+           the fan-free equilibrium so the feedforward stays in as reserve. */
+        s->idle_fan_floor = s->idle_settled_integral;
+        s->idle_fan_floor_valid = 1;
+    }
     s->idle_spark10 = 0;
     if (mode == IDLE_FEEDBACK) {
         fraction = axis_fraction(c + 0x610, 8, (s16)error, 1, &ix);
@@ -59,8 +69,18 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
             output = (s32)base + p + s->idle_integral / 1000L;
             if (s->fan_request && !s->fan)
                 change = 0; /* Do not integrate away the pending load preload. */
+            if (change < 0 && s->idle_fan_floor_valid)
+                change = s->idle_integral <= s->idle_fan_floor
+                             ? 0L
+                             : (s->idle_integral + change < s->idle_fan_floor
+                                    ? s->idle_fan_floor - s->idle_integral
+                                    : change);
             if ((change > 0 && output < maximum) || (change < 0 && output > 0))
                 s->idle_integral = clamp32(s->idle_integral + change, -220000L, 220000L);
+            if (!error && !s->fan_request) {
+                s->idle_settled_integral = s->idle_integral;
+                s->idle_settled_valid = 1;
+            }
             base = (u16)clamp32((s32)base + p + s->idle_integral / 1000L, 0, maximum);
         }
     } else if (mode == IDLE_RETURN && s->idle_position > base) {

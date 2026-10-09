@@ -7,6 +7,12 @@
 Ecu ecu;
 TimingHealth timing_health;
 static u16 clamp16(u32 v) { return (u16)(v > 65535UL ? 65535UL : v); }
+static u32 foreground_ms(void) {
+    u16 lock = hal_lock();
+    u32 now = ecu.milliseconds;
+    hal_unlock(lock);
+    return now;
+}
 void ecu_init(u8 released) {
     memset(&ecu, 0, sizeof(ecu));
     memset(&timing_health, 0, sizeof(timing_health));
@@ -134,8 +140,12 @@ void ecu_poll(void) {
        every control pass by their duration; with the 10 ms control gate,
        plans could then be published ~30 ms apart under interrupt load and
        trip STALE. The board clock observes the free-running T1 of capture. */
+    /* Each IAC step needs two services (drive, then hold) at least 5 ms
+       apart. Serviced once per pass with a pass-start stamp, a ~10 ms pass
+       halved the step rate; service around the diagnostics with fresh time. */
+    iac_service(foreground_ms());
     oem_runtime_poll(now, hal_capture_clock());
-    iac_service(now);
+    iac_service(foreground_ms());
     /* A calibration job step (several ms) runs only right after a release. */
     protocol_service(now, control_ran);
     storage_poll(now);

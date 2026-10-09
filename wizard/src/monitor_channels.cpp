@@ -1,4 +1,6 @@
 #include "monitor_channels.h"
+#include "protocol.h"
+#include <cmath>
 #include <cctype>
 
 const SignalDef SIGNAL_DEFS[SIG_COUNT] = {
@@ -103,4 +105,63 @@ std::string MonitorShortLabel(const std::string& name) {
     if(index<0) return name;
     const auto unit=name.rfind('(');
     return std::string(SIGNAL_DEFS[index].shortName)+(unit!=std::string::npos?" "+name.substr(unit):"");
+}
+
+float MonitorSignalValue(int sig,const MonitorData& mon) {
+    switch(sig) {
+    case SIG_RPM: return float(mon.rpm);
+    case SIG_MAP: return float(mon.kpa);
+    case SIG_TPS: return float(mon.tps);
+    case SIG_AFR: return float(mon.measuredAfr);
+    case SIG_TARGET_AFR: return float(mon.targetAfr);
+    case SIG_TIMING: return float(mon.advance);
+    case SIG_VE: return float(mon.ve);
+    case SIG_CLT: return float(mon.clt);
+    case SIG_IAT: return float(mon.iat);
+    case SIG_VBATT: return float(mon.battery);
+    case SIG_INJ_PW: return float(mon.pulseUs*0.001f);
+    case SIG_STFT: return float(mon.trimPercent);
+    case SIG_OXYGEN: return float(mon.oxygenMv);
+    case SIG_IAC_ACTUAL: return float(mon.iacPosition);
+    case SIG_TARGET_IDLE: return float(mon.idleTarget);
+    case SIG_SPEED: return float(mon.speed);
+    case SIG_GEAR: return float(mon.gear);
+    case SIG_WARMUP_ENRICH: return float(mon.warmup);
+    case SIG_ASE: return float(mon.afterstart);
+    case SIG_ACCEL_ENRICH: return float(mon.accel);
+    case SIG_SYNC: return float(mon.synced());
+    case SIG_SYNC_LOSS: return float(mon.lossOfSyncCount);
+    case SIG_CELL_RPM: return float(mon.cellRpm);
+    case SIG_RPM_FRACTION: return float(mon.rpmFraction);
+    case SIG_CELL_LOAD: return float(mon.cellLoad);
+    case SIG_LOAD_FRACTION: return float(mon.loadFraction);
+    case SIG_STATE: return float(mon.state);
+    case SIG_FLAGS: return float(mon.flags);
+    case SIG_INHIBITS: return float(mon.inhibits);
+    case SIG_GENERATION: return float(mon.generation);
+    case SIG_NB_BAND: return float(mon.narrowbandBand);
+    case SIG_AFR_VALID: return float(mon.measuredAfr>0);
+    case SIG_INJ_DUTY: return mon.plannedDutyPercent();
+    case SIG_KNOCK_MV: return mon.knockAvailable && mon.knockMv!=65535 ? float(mon.knockMv) : NAN;
+    case SIG_KNOCK_DETECTED: return mon.knockAvailable ? float((mon.knockFlags&1)!=0) : NAN;
+    case SIG_KNOCK_RETARD: return mon.knockAvailable ? mon.knockRetard : NAN;
+    case SIG_KNOCK_VALID: return mon.knockAvailable ? float((mon.knockFlags&2)!=0) : NAN;
+    case SIG_KNOCK_FAULT: return mon.knockAvailable ? float((mon.knockFlags&16)!=0) : NAN;
+    case SIG_IAC_TARGET: return mon.detailAvailable ? float(mon.iacTarget) : NAN;
+    case SIG_IAC_STATE: return mon.detailAvailable ? float(mon.iacState) : NAN;
+    case SIG_IAC_FAULT: return mon.detailAvailable ? float(mon.iacFault) : NAN;
+    case SIG_IAC_LAST_FAULT: return mon.detailAvailable ? float(mon.iacLastFault) : NAN;
+    case SIG_IAC_RECOVERIES: return mon.detailAvailable ? float(mon.iacRetries) : NAN;
+    case SIG_IAC_FAULT_COUNT: return mon.detailAvailable ? float(mon.iacFaultCount) : NAN;
+    case SIG_IAC_RESPONSE: return mon.detailAvailable ? float(mon.iacResponse) : NAN;
+    case SIG_IDLE_MODE: return mon.detailAvailable ? float(mon.idleMode) : NAN;
+    case SIG_IDLE_INTEGRAL: return mon.detailAvailable ? mon.idleIntegral : NAN;
+    case SIG_IDLE_SPARK: return mon.detailAvailable ? mon.idleSpark : NAN;
+    case SIG_SYNC_LOSS_REASON: return mon.detailAvailable ? float(mon.syncLossReason) : NAN;
+    case SIG_SYNC_LOSS_TOOTH: return mon.detailAvailable ? float(mon.syncLossTooth) : NAN;
+    case SIG_FIRST_INHIBIT: return mon.detailAvailable ? float(mon.firstInhibit) : NAN;
+    case SIG_CAPTURE_RESYNCS: return mon.detailAvailable ? float(mon.captureResyncs) : NAN;
+    case SIG_CAPTURE_OVERRUNS: return mon.detailAvailable ? float(mon.captureOverruns) : NAN;
+    default: return 0;
+    }
 }

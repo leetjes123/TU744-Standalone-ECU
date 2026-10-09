@@ -23,7 +23,7 @@ def exchange(payload):
 
 lib.bridge_reset()
 client=Client(exchange)
-assert client.identity() == 'TU744 0.0.3'
+assert client.identity() == 'TU744 0.0.4'
 assert client.capabilities()['exact_dtc_parity'] is False
 assert client.storage() == dict(calibration_storage='eeprom', eeprom_bytes=8192,
                                calibration_copies=2, history_copies=2)

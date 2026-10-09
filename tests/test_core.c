@@ -666,6 +666,42 @@ static void test_fan_preload(void) {
     fan_pass(10030, &r);
     CHECK(fake_fan && ecu.iac.target == 30);
 }
+static void test_fan_reserve(void) {
+    Rotation r;
+    u8 *c;
+    s32 settled;
+    u32 now;
+    u16 preloaded;
+    setup_fan(&r);
+    c = ecu.cal.bytes[0];
+    c[0x5D8] = 1;
+    put16(c + 0x630, 500);
+    put16(c + 0x632, 10000);
+    ecu.sensors.clt.value = 90;
+    r.rpm = ecu.control.idle_target;
+    fan_pass(10010, &r);
+    fan_pass(10020, &r);
+    CHECK(ecu.control.idle_settled_valid && !ecu.control.fan_request);
+    settled = ecu.control.idle_settled_integral;
+    ecu.sensors.clt.value = 95;
+    for (now = 10030; now < 10600; now += 10)
+        fan_pass(now, &r);
+    CHECK(fake_fan && ecu.control.idle_fan_floor_valid && ecu.control.idle_fan_floor == settled);
+    preloaded = ecu.iac.target;
+    r.rpm = (u16)(ecu.control.idle_target + 200U); /* Preload lifts rpm until the load arrives. */
+    for (; now < 15000; now += 10)
+        fan_pass(now, &r);
+    /* Only the proportional term (-200 rpm * 0.05) may take air back. */
+    CHECK(ecu.control.idle_integral == settled && ecu.iac.target + 10U == preloaded);
+    r.rpm = (u16)(ecu.control.idle_target - 200U); /* Load arrives: feedback still opens. */
+    fan_pass(now, &r);
+    CHECK(ecu.control.idle_integral > settled);
+    ecu.sensors.clt.value = 85;
+    r.rpm = (u16)(ecu.control.idle_target + 200U);
+    for (now += 10; now < 20000; now += 10)
+        fan_pass(now, &r);
+    CHECK(!ecu.control.idle_fan_floor_valid && ecu.control.idle_integral < settled);
+}
 static void test_fuel_percentages(void) {
     u8 *c;
     u16 i, error;
@@ -1523,6 +1559,7 @@ int main(void) {
     test_iac_recovery();
     test_rotation_loss_reason();
     test_fan_preload();
+    test_fan_reserve();
     test_controls();
     test_closed_loop_pulse_width();
     test_fuel_percentages();

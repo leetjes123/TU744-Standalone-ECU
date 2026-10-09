@@ -10,7 +10,7 @@ App gApp;
 #include "app_reused.inc"
 void App::init() {
     cal.clear(); ecu.setPort(&serial); ecu.initThread(); logState.init();
-    comPorts=SerialPort::enumerate(); loadRecentFiles(); openToolTab(OpenTab::AUTOTUNE); openToolTab(OpenTab::DIAGNOSTICS); openDashboardTab();
+    comPorts=SerialPort::enumerate(); loadRecentFiles(); loadAutotuneSettings(); openToolTab(OpenTab::AUTOTUNE); openToolTab(OpenTab::DIAGNOSTICS); openDashboardTab();
 }
 void App::guardedClose() {
     if(ecuBusy()) { snprintf(statusLine,sizeof(statusLine),"Wait for the ECU operation to finish"); return; }
@@ -29,6 +29,7 @@ void App::fileOpen() {
     if(!FileDialog(path,sizeof(path),false)) return;
     if(!cal.loadFromFile(path)) { snprintf(statusLine,sizeof(statusLine),"Expected a 3072-byte schema-5 calibration"); return; }
     undo.clear(); ecuSynced=false; liveTuning=false; addRecentFile(path);
+    autotune.clear(); autotune.baselineValid=false; autotuneReferenceValid=false;
     snprintf(statusLine,sizeof(statusLine),"Opened %s",path);
 }
 void App::fileCompare() {
@@ -57,7 +58,7 @@ void App::connect() {
 void App::disconnect() {
     if(!ecu.stopMonitor()) { snprintf(statusLine,sizeof(statusLine),"Monitor is still stopping"); return; }
     serial.close(); ecu.clearMonitorUpdates(); ecuSynced=false; liveTuning=false;
-    ecu.monitor.valid=false; autotune.clear(); autotune.collecting=false;
+    ecu.monitor.valid=false; autotune.clear(); autotune.collecting=false; autotune.settings.autoApply=false;
     snprintf(statusLine,sizeof(statusLine),"Disconnected");
 }
 bool App::beginOperation(Operation op) {
@@ -68,7 +69,8 @@ bool App::beginOperation(Operation op) {
     if(op!=Operation::Save && !CreateCalibrationBackup(cal,op==Operation::Read?"before-read":"before-write")) {
         snprintf(statusLine,sizeof(statusLine),"Could not create calibration backup"); return false;
     }
-    autotune.clear();
+    // Statistics survive transfers; syncAutotune resets cells whose VE changes.
+    autotune.resetHistory();
     if(!ecu.stopMonitor()) return false;
     ecu.clearMonitorUpdates();
     bool ok=false;
@@ -132,6 +134,7 @@ void App::update(float dt) {
                 baselineGeneration=transfer.verifiedGeneration();
                 if(operation==Operation::Read) {
                     memcpy(cal.data,ecuData,CAL_SIZE); cal.loaded=true; cal.markClean(); cal.filePath[0]=0; undo.clear();
+                    autotune.baselineValid=false;
                 }
             } else if(!success) { ecuSynced=false; liveTuning=false; }
             if(success && operation==Operation::Compare) { beginOperation(Operation::Write); return; }
@@ -139,12 +142,27 @@ void App::update(float dt) {
         }
         return;
     }
-    if(cal.loaded && (!ecuSynced || memcmp(cal.data,ecuData,CAL_SIZE))) autotune.clear();
+    syncAutotune();
     MonitorData m;
     if(ecu.consumeMonitorUpdate(m)) {
         ecu.monitor=m; monitorLastUpdateTick=GetTickCount(); logState.pushSample(m,elapsed);
-        autotune.sample(m,elapsed,cal.loaded && ecuSynced && !memcmp(cal.data,ecuData,CAL_SIZE) && cal.data[0x600]==1);
+        autotune.sample(m,elapsed,autotuneContext());
         if(ecuSynced && baselineGeneration!=m.generation) { ecuSynced=false; liveTuning=false; }
+    }
+    if(autotune.settings.autoApply) {
+        const char* stop=nullptr;
+        if(!autotune.settings.advanced || !autotune.collecting) stop="Auto-apply off";
+        else if(!liveTuning || !ecuSynced || !serial.isOpen()) stop="Auto-apply stopped: Live tuning is off or the calibration no longer matches the ECU";
+        else if(autotune.settings.mode!=autotuneApplyMode || ecuData[0x600]!=autotuneApplyOxygen) stop="Auto-apply stopped: feedback mode changed";
+        if(stop) { autotune.settings.autoApply=false; snprintf(statusLine,sizeof(statusLine),"%s",stop); }
+        else if(elapsed>=autotuneNextApply) {
+            // Wait for Live tuning to send the previous application first.
+            if(!memcmp(cal.data,ecuData,CAL_SIZE)) {
+                const int n=applyAutotuneProposals(true);
+                if(n) snprintf(statusLine,sizeof(statusLine),"Auto-apply: %d VE cells updated",n);
+            }
+            autotuneNextApply=elapsed+autotune.settings.autoApplyInterval;
+        }
     }
     if(serial.isOpen() && ecu.getMonitorFailCount()>=10) {
         disconnect(); snprintf(statusLine,sizeof(statusLine),"Connection lost or unsupported live frame; reconnect and read ECU");
@@ -385,4 +403,116 @@ void App::drawUI() {
     if(cal.filePath[0]) title+=" - Tuning Wizard";
     if(cal.dirty) title+=" *";
     SetWindowTextA(hwnd,title.c_str());
+}
+AutoTuneContext App::autotuneContext() const {
+    const bool matches=cal.loaded && ecuSynced && !memcmp(cal.data,ecuData,CAL_SIZE);
+    return AutoTuneContext::FromCalibration(ecuSynced?ecuData:cal.loaded?cal.data:nullptr,matches);
+}
+void App::syncAutotune() {
+    const std::string key=cal.loaded ? (cal.filePath[0] ? std::string(cal.filePath) : std::string("<read from ECU>")) : std::string();
+    if(key!=autotuneLockKey) { autotuneLockKey=key; loadAutotuneLocks(); }
+    if(!autotune.settings.sameErrorModel(autotuneSettingsSeen)) autotune.clear();
+    autotuneSettingsSeen=autotune.settings;
+    if(!cal.loaded || !ecuSynced) {
+        // Generation mismatch, failed transfer or a different file: nothing is known.
+        if(autotuneReferenceValid) { autotune.clear(); autotuneReferenceValid=false; }
+        return;
+    }
+    if(!autotuneReferenceValid) { autotune.clear(); memcpy(autotuneReference,ecuData,CAL_SIZE); autotuneReferenceValid=true; }
+    else if(memcmp(autotuneReference,ecuData,CAL_SIZE)) {
+        if(memcmp(autotuneReference+256,ecuData+256,CAL_SIZE-256)) autotune.clear();
+        else autotune.resetCells(autotuneReference,ecuData);
+        memcpy(autotuneReference,ecuData,CAL_SIZE);
+    }
+    // Unsent local VE edits: those cells' statistics describe a different VE.
+    if(memcmp(cal.data,ecuData,256)) autotune.resetCells(ecuData,cal.data);
+    if(!autotune.baselineValid) autotune.setBaseline(ecuData);
+}
+int App::applyAutotuneProposals(bool automatic) {
+    if(!cal.loaded) return 0;
+    CalBuffer proposed; const int changed=autotune.propose(cal,proposed);
+    if(!changed) return 0;
+    unsigned char before[256]; memcpy(before,cal.data,256);
+    undo.record(cal.data,0,256,automatic?"Autotune auto-apply":"Autotune VE proposal");
+    memcpy(cal.data,proposed.data,256); cal.recomputeDirty(); undo.finalize(cal.data,0,256);
+    autotune.resetCells(before,cal.data);
+    return changed;
+}
+void App::analyseAutotuneLog() {
+    if(!cal.loaded) return;
+    char path[260]={};
+    OPENFILENAMEA ofn={}; ofn.lStructSize=sizeof(ofn); ofn.hwndOwner=hwnd;
+    ofn.lpstrFilter="CSV logs (*.csv)\0*.csv\0All Files (*.*)\0*.*\0"; ofn.lpstrFile=path; ofn.nMaxFile=sizeof(path);
+    ofn.Flags=OFN_FILEMUSTEXIST;
+    if(!GetOpenFileNameA(&ofn)) return;
+    std::vector<AutoTuneLogFrame> frames;
+    if(!LoadAutotuneLog(path,frames,autotuneLog)) { snprintf(statusLine,sizeof(statusLine),"Log analysis: %s",autotuneLog.error.c_str()); return; }
+    // Offline analysis replaces live statistics and runs against the loaded calibration.
+    autotune.collecting=false; autotune.settings.autoApply=false; autotune.clear();
+    if(!autotune.baselineValid) autotune.setBaseline(cal.data);
+    ReplayAutotuneLog(autotune,frames,AutoTuneContext::FromCalibration(cal.data,true),cal.data,autotuneLog);
+    snprintf(statusLine,sizeof(statusLine),"Analysed %zu log rows: %u samples accepted",frames.size(),autotune.accepted);
+}
+static std::string AutotuneFilePath(const char* name) {
+    std::string dir;
+    return GetWizardDataDirectory(dir) ? dir+"\\"+name : std::string(name);
+}
+static bool WriteTextAtomically(const std::string& finalPath,const std::string& text) {
+    const std::string temp=finalPath+".tmp";
+    FILE* f=fopen(temp.c_str(),"wb"); if(!f) return false;
+    const bool ok=fwrite(text.data(),1,text.size(),f)==text.size() && fflush(f)==0;
+    if(fclose(f)!=0 || !ok || !MoveFileExA(temp.c_str(),finalPath.c_str(),MOVEFILE_REPLACE_EXISTING|MOVEFILE_WRITE_THROUGH)) {
+        DeleteFileA(temp.c_str()); return false;
+    }
+    return true;
+}
+static std::string ReadText(const std::string& path) {
+    std::string text; FILE* f=fopen(path.c_str(),"rb"); if(!f) return text;
+    char buffer[4096]; size_t n;
+    while((n=fread(buffer,1,sizeof(buffer),f))>0) text.append(buffer,n);
+    fclose(f); return text;
+}
+static std::vector<std::string> Lines(const std::string& text) {
+    std::vector<std::string> lines; size_t start=0;
+    while(start<text.size()) {
+        size_t end=text.find('\n',start); if(end==std::string::npos) end=text.size();
+        std::string line=text.substr(start,end-start); start=end+1;
+        if(!line.empty() && line.back()=='\r') line.pop_back();
+        lines.push_back(line);
+    }
+    return lines;
+}
+void App::loadAutotuneSettings() {
+    autotune.settings.parse(ReadText(AutotuneFilePath("tw_autotune.txt")));
+    autotuneSettingsSeen=autotune.settings; autotuneSavedSettings=autotune.settings.serialize();
+}
+void App::saveAutotuneSettings() {
+    const std::string text=autotune.settings.serialize();
+    if(text!=autotuneSavedSettings && WriteTextAtomically(AutotuneFilePath("tw_autotune.txt"),text)) autotuneSavedSettings=text;
+}
+// Locks are wizard state, never in the ECU image: one line per calibration,
+// 64 hex digits (cell 0 first, most significant bit first), a tab, then the key.
+void App::loadAutotuneLocks() {
+    autotune.locks={};
+    if(autotuneLockKey.empty()) return;
+    for(const auto& line:Lines(ReadText(AutotuneFilePath("tw_autotune_locks.txt")))) {
+        if(line.size()<66 || line[64]!='\t' || line.substr(65)!=autotuneLockKey) continue;
+        for(int i=0;i<64;++i) {
+            const char c=line[i]; const int v=c>='0'&&c<='9'?c-'0':c>='a'&&c<='f'?c-'a'+10:c>='A'&&c<='F'?c-'A'+10:0;
+            for(int b=0;b<4;++b) autotune.locks[i*4+b]=((v>>(3-b))&1)!=0;
+        }
+    }
+}
+void App::saveAutotuneLocks() {
+    if(autotuneLockKey.empty()) return;
+    const std::string path=AutotuneFilePath("tw_autotune_locks.txt");
+    std::string out;
+    for(const auto& line:Lines(ReadText(path))) if(line.size()>=66 && line.substr(65)!=autotuneLockKey) out+=line+"\n";
+    bool any=false; std::string bits;
+    for(int i=0;i<64;++i) {
+        int v=0; for(int b=0;b<4;++b) v=(v<<1)|(autotune.locks[i*4+b]?1:0);
+        any|=v!=0; bits+="0123456789abcdef"[v];
+    }
+    if(any) out+=bits+"\t"+autotuneLockKey+"\n";
+    WriteTextAtomically(path,out);
 }

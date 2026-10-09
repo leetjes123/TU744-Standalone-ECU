@@ -65,3 +65,6 @@ int FindMonitorChannel(const std::string& name);
 bool MonitorChannelMatches(const std::string& name,const char* query);
 std::string MonitorColumnName(int signal);
 std::string MonitorShortLabel(const std::string& name);
+struct MonitorData;
+// Logged value of one channel; logging and autotune log replay share this mapping.
+float MonitorSignalValue(int signal,const MonitorData& mon);

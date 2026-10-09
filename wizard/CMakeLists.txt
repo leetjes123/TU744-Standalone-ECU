@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(TuningWizard VERSION 0.0.3 LANGUAGES CXX RC)
+project(TuningWizard VERSION 0.0.4 LANGUAGES CXX RC)
 
 include(CTest)
 if(MSVC)
@@ -63,6 +63,7 @@ add_executable(TuningWizard WIN32
     src/cal_validate_generated.cpp
     src/tune_transfer.cpp
     src/autotune.cpp
+    src/autotune_log.cpp
     src/diagnostics.cpp
     src/dtc_defs.cpp
     src/calibration.cpp
@@ -125,10 +126,13 @@ if(BUILD_TESTING)
     add_executable(TuningWizardTests
         tests/port_tests.cpp
         tests/diagnostic_tests.cpp
+        tests/autotune_tests.cpp
         src/cal_defs.cpp
     src/cal_validate_generated.cpp
     src/tune_transfer.cpp
     src/autotune.cpp
+    src/autotune_log.cpp
+        src/monitor_channels.cpp
     src/diagnostics.cpp
     src/dtc_defs.cpp
     src/calibration.cpp
@@ -141,6 +145,7 @@ if(BUILD_TESTING)
         src/undo.cpp
     )
     target_include_directories(TuningWizardTests PRIVATE src)
+    target_link_libraries(TuningWizardTests PRIVATE imgui_lib)
     target_compile_definitions(TuningWizardTests PRIVATE NOMINMAX TEST_TUNE_PATH="${CMAKE_SOURCE_DIR}/../build/oem/example-schema5.bin" TEST_DLL_PATH="${CMAKE_SOURCE_DIR}/../build/oem/oem.dll")
     add_test(NAME calibration_and_protocol_safety COMMAND TuningWizardTests)
     find_package(Python3 REQUIRED COMPONENTS Interpreter)

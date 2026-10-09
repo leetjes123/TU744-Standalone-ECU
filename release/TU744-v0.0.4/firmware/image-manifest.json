@@ -1,0 +1,20 @@
+{
+  "ecu_name": "TU744",
+  "firmware_version": "0.0.4",
+  "profile": "stock-95080",
+  "target": "TU5JP Bosch M7.4.4, stock M95080",
+  "engine_outputs_enabled": true,
+  "special_test_behavior": false,
+  "flash_bytes": 524288,
+  "tune_slot": 0,
+  "tune_offset": "0x50020",
+  "calibration_schema": 5,
+  "base_firmware_sha256": "67609a1645b995be264beabae38392153d581971ca977cdeb5dac605b977783f",
+  "binary_sha256": "ca8db2c1534518cf94800e32b8539a8added40ec8a1304968ae271f2d34d66ff",
+  "hex_sha256": "2b26169b8410307fd98b7ba80cfee1b07c3549ea20621eb4ea113011294f534e",
+  "tune_sha256": "ad507f34e92dc1af208f3bcbac09699208beb7edaba2e77dddb2d9491728cf11",
+  "native_calibration_validation": true,
+  "hex_bin_roundtrip": true,
+  "physical_hardware_validation": false,
+  "ecu_programming_performed": false
+}

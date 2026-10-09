@@ -6,7 +6,7 @@ import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 FW = ROOT.parent
-name = 'TuningWizard-0.0.3-Windows-x64-experimental'
+name = 'TuningWizard-0.0.4-Windows-x64-experimental'
 files = {
     'TuningWizard.exe': ROOT / 'build/updated/bin/TuningWizard.exe',
     'docs/OPERATOR_MANUAL.md': ROOT / 'OPERATOR_MANUAL.md',
@@ -16,7 +16,7 @@ files = {
     'firmware/build-manifest.json': FW / 'build/stock-95080/manifest.json',
 }
 manifest = {
-    'application': 'Tuning Wizard', 'version': '0.0.3',
+    'application': 'Tuning Wizard', 'version': '0.0.4',
     'live_frame_version': 3, 'live_frame_bytes': 44,
     'sync_loss_counter': 'u16 saturated at 65535',
     'hardware_validated': False, 'engine_validated': False,

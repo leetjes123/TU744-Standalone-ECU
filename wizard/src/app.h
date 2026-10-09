@@ -13,6 +13,7 @@
 #include "theme.h"
 #include "tune_transfer.h"
 #include "autotune.h"
+#include "autotune_log.h"
 #include "diagnostics.h"
 #define MAX_OPEN_TABS 32
 inline float S(float v) { extern float g_dpiScale; return v*g_dpiScale; }
@@ -27,6 +28,16 @@ struct App {
     enum class Operation { Read, Compare, Write, Save } operation=Operation::Read;
     CalBuffer cal;
     AutoTune autotune;
+    // VE image the autotune statistics describe; diffs reset only affected cells.
+    unsigned char autotuneReference[CAL_SIZE]={};
+    bool autotuneReferenceValid=false;
+    float autotuneNextApply=0;
+    int autotuneApplyOxygen=-1; FeedbackMode autotuneApplyMode=FeedbackMode::Auto;
+    int autotuneMapView=0;
+    std::array<bool,256> autotuneSelected{};
+    std::string autotuneLockKey,autotuneSavedSettings;
+    AutoTuneSettings autotuneSettingsSeen;
+    AutoTuneLogReport autotuneLog;
     Diagnostics diagnostics;
     DtcRecord selectedDtc;
     ControllerFault selectedControllerFault;
@@ -89,6 +100,14 @@ struct App {
     void beginDiagnostics(bool clear=false);
     void drawDiagnostics();
     void drawAutotune();
+    AutoTuneContext autotuneContext() const;
+    void syncAutotune();
+    int applyAutotuneProposals(bool automatic);
+    void analyseAutotuneLog();
+    void loadAutotuneSettings();
+    void saveAutotuneSettings();
+    void loadAutotuneLocks();
+    void saveAutotuneLocks();
     void openLogViewer();
     void loadRecentFiles();
     void saveRecentFiles();

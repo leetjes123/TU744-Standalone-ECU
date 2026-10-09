@@ -1,6 +1,6 @@
 # TU744 / TunerPro RT
 
-Current delivery: **TU744 firmware 0.0.3**, **plugin 0.5.0**, **ADX 7.1**.
+Current delivery: **TU744 firmware 0.0.4**, **plugin 0.5.0**, **ADX 7.1**.
 Targets stock-M95080, protocol 3 and calibration schema 5. Monitor extension 4
 retains the narrowband lean/stoich/rich indicators without sensor-quality data.
 

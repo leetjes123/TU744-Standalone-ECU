@@ -164,17 +164,98 @@ reconnecting; live tuning does not resume automatically.
 
 ## Autotune suggestions
 
-Select wideband input and turn closed-loop trim off. The separate **Autotune** tab collects
-samples only with warm, steady running, acquired sync, no cuts, no output inhibits
-and neutral enrichment. Set the exhaust delay for your installation. Each cell
-requires at least 20 samples and 10 weighted samples. AFR errors outside 20%
-are rejected; proposed VE changes are bounded to 2% per application.
+The **Autotune** tab learns VE corrections from live data or from a recorded CSV
+log. Collection is read-only. Proposals are bounded and shown for review before
+anything changes. Applying them only edits the local VE map. Write active tune
+or Live tuning sends them through the normal verified path. Autotune never saves
+to flash.
 
-Review the proposed cells, then choose **Apply proposals locally**. Write active
-tune or Live tuning sends them through the normal verified path. Autotune never
-saves to flash. Changing a tune or losing eligibility clears or gates collection.
-This is a software implementation; exhaust-delay settings and engine behavior
-still require validation on the installation.
+### Feedback modes
+
+| Mode | Correction | Requirements |
+|---|---|---|
+| Auto | Picks a mode from the oxygen input setting (0x600) and the trim state. | |
+| Wideband, open loop | Measured AFR / target AFR one lambda delay earlier. | Wideband input; closed-loop trim inactive. |
+| Wideband, trim compensated | As open loop, multiplied by the trim applied at that time. | Wideband input. Trim may be on. |
+| Narrowband trim learning | Mean closed-loop trim over complete lean/rich switching cycles. | Narrowband input, STFT enabled and active, target AFR inside the narrowband window (0x8C8-0x8C9), trim not at its limit. |
+
+Narrowband learning can only tune cells whose target AFR is inside the
+narrowband window, which is about stoichiometric. Power-enrichment and other
+rich cells still need a wideband. In narrowband mode those cells are hatched on
+the map, and **Lock cells outside narrowband window** locks them.
+
+The header shows a live requirements checklist for the detected mode. Below it,
+counters show how many samples were accepted and why each rejected sample was
+rejected.
+
+### Lambda delay
+
+A measurement is attributed to the fuel plan from one transport delay earlier:
+`delay = base + cycles x 120 / RPM`. The defaults (0.05 s and 6 engine cycles)
+give about 0.95 s at 800 rpm and 0.17 s at 6000 rpm. Confirm them for your
+exhaust from a log of a fuel step.
+
+### Filters and confidence
+
+Fixed gates that cannot be changed: sync, running, not cranking, no DFCO, no rev
+limit, cuts, launch, antilag, storage or staging, no output inhibits, and the
+calibration must match the ECU. Configurable filters: RPM, load, TPS, coolant
+minimum (70 C), intake air maximum (60 C), TPS/RPM/MAP rate limits, settle time
+after a transient (0.5 s), idle exclusion, enrichments (off is recommended),
+plausible AFR range, maximum per-sample error (20%) and minimum cell weight
+(**Centre only** sets 0.5).
+
+A cell is ready with at least 20 hits, weight 10 and a standard deviation of at
+most 3%. After 10 hits, samples more than 3 standard deviations from the cell
+mean are rejected. Changing the mode, delay or filters clears the statistics;
+changing proposal limits does not.
+
+### Proposal limits
+
+| Setting | Default | Effect |
+|---|---|---|
+| Change resistance | Normal (0.5) | Fraction of the measured error used per update: Easy 1.0, Normal 0.5, Hard 0.25, Very hard 0.1, or custom. |
+| Authority from baseline | +/-20% | Maximum change from the baseline VE: the value when the session started or at **Reset baseline**. This bounds the total change however often proposals are applied. |
+| Max step per update | Off | Optional limit for one update. |
+| VE bounds | 1-255 | Absolute cell limits. |
+| Deadband | 0.5% | Smaller errors are ignored. |
+| Smoothing | Off | Blends a proposal with ready neighbours. |
+
+Presets: **Conservative** (Hard, +/-10%, centre only), **Normal** and
+**Aggressive** (Easy, +/-30%). A cell at its authority limit is outlined red.
+That usually means wrong injector data or a sensor problem, which retuning
+cannot fix. A cell whose correction is smaller than one VE unit after limits is
+outlined violet (blocked by resolution).
+
+### Map, locks and review
+
+The map shows coverage, correction, confidence, proposed VE, change from
+baseline or locks. Click a cell to lock or unlock it. Locks are stored by the
+Wizard for each calibration file, not in the ECU image. Right-click selects
+cells for **Clear selected**. The review table lists ready cells with their
+correction, standard deviation and limit flags.
+
+After VE changes, only the changed cells and their neighbours are reset. Other
+calibration changes, a new tune or a generation mismatch clear everything.
+
+### Auto-apply
+
+Enable **Show auto-apply** in the settings. With Live tuning and collection on,
+ready proposals are applied every interval (10 s by default) with an undo entry,
+and Live tuning writes them. The authority limit bounds the total change.
+Auto-apply stops on disconnect, mode change or calibration mismatch. Validate
+narrowband learning on the car before using it.
+
+### Log analysis
+
+**Analyse log...** runs a Live logging CSV through the same engine with the
+current settings against the loaded calibration. It replaces the current
+statistics, so the filters can be tuned and the same drive re-run. The Wizard
+warns when the log spans several calibration generations or when the logged VE
+does not match the loaded VE table.
+
+This is a software implementation; delay settings and engine behavior still
+require validation on the installation.
 
 ## Diagnostics and freeze frames
 
