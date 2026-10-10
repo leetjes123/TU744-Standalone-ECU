@@ -5,7 +5,7 @@ Branch: `firmware/0.0.4`. Calibration schema 5, 3072 bytes, unchanged from
 (command `13 04`) is unchanged.
 
 Includes Tuning Wizard 0.0.4. The Windows executable is at
-`wizard/TuningWizard.exe` in the release package.
+`wizard/TuningWizard_0.0.4.exe` in the release package.
 
 ## Firmware changes
 

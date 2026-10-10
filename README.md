@@ -37,7 +37,7 @@ release/TU744-v0.0.4/
 ├── firmware/      TU744_0.0.4_M95080.bin   ← the file you flash (basemap already inside)
 │                  TU744_0.0.4_M95080.hex   ← same firmware as HEX
 ├── basemaps/      TU5JP_1.6_8v_speed_density_v0.0.4.bin
-├── wizard/        TuningWizard.exe, OPERATOR_MANUAL.md
+├── wizard/        TuningWizard_0.0.4.exe, OPERATOR_MANUAL.md
 ├── docs/          protocol, live-monitor and knock references
 ├── tools/         migrate_schema5.py (schema-4 tunes from 0.0.1)
 └── verification/  build manifests and test logs
@@ -123,7 +123,7 @@ open the ECU or use debug mode again.
 
 ### 4. Set up the Tuning Wizard
 
-1. Run **`release/TU744-v0.0.4/wizard/TuningWizard.exe`** and connect to your
+1. Run **`release/TU744-v0.0.4/wizard/TuningWizard_0.0.4.exe`** and connect to your
    cable's COM port (19200 baud, 8N1).
 2. Select **ECU > Read calibration** to load the tune that is in the ECU.
 3. **Save file** to keep a copy on your PC before changing anything.

@@ -21,7 +21,7 @@ wizard=ROOT/'wizard/build/updated/bin/TuningWizard.exe'
 assert VERSION.encode() in wizard.read_bytes(), f'Wizard executable is not the {VERSION} build'
 files = {
     basemap: basemap,
-    'wizard/build/updated/bin/TuningWizard.exe':'wizard/TuningWizard.exe',
+    'wizard/build/updated/bin/TuningWizard.exe':f'wizard/TuningWizard_{VERSION}.exe',
     'wizard/OPERATOR_MANUAL.md':'wizard/OPERATOR_MANUAL.md',
     'docs/KNOCK.md':'docs/KNOCK.md',
     'docs/PROTOCOL.md':'docs/PROTOCOL.md',
