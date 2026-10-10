@@ -23,9 +23,6 @@ files = {
     basemap: basemap,
     'wizard/build/updated/bin/TuningWizard.exe':f'wizard/TuningWizard_{VERSION}.exe',
     'wizard/OPERATOR_MANUAL.md':'wizard/OPERATOR_MANUAL.md',
-    'docs/KNOCK.md':'docs/KNOCK.md',
-    'docs/PROTOCOL.md':'docs/PROTOCOL.md',
-    'docs/LIVE-MONITOR.md':'docs/LIVE-MONITOR.md',
     f'docs/RELEASE-{VERSION}.md':'README.md',
     'tools/migrate_schema5.py':'tools/migrate_schema5.py',
     'src/knock_defaults.inc':'src/knock_defaults.inc',
@@ -45,11 +42,8 @@ for name in logs:
 for source,destination in files.items():
     target=OUT/destination; target.parent.mkdir(parents=True,exist_ok=True)
     shutil.copyfile(ROOT/source,target)
-shutil.copyfile(ROOT/f'docs/RELEASE-{VERSION}.md', OUT/f'docs/RELEASE-{VERSION}.md')
 (OUT/'verification/NOT-RUN.txt').write_text(
     'Not run for this package:\n'+''.join(f'- {name}\n' for name in not_run))
-p=OUT/'README.md'
-p.write_text(p.read_text().replace('(LIVE-MONITOR.md)','(docs/LIVE-MONITOR.md)').replace('(KNOCK.md)','(docs/KNOCK.md)'))
 inventory=[]
 for p in sorted(OUT.rglob('*')):
     if p.is_file() and p.name!='SHA256SUMS.txt':

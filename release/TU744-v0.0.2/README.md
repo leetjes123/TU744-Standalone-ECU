@@ -16,7 +16,7 @@ release package.
   it; 5EB is reserved. Exit margin is at 93E (BE u16, 0..2000 RPM; zero retains
   the previous 200 RPM behavior).
 - The new TU5JP basemap uses 100 ms DFCO delay and 200 RPM exit margin.
-- [Global knock control](docs/KNOCK.md) adds OEM-seeded gain, two filter bands,
+- Global knock control adds OEM-seeded gain, two filter bands,
   window/threshold/load curves, attack/maximum/recovery controls, bench jobs and
   matching Wizard telemetry. Default disabled.
 

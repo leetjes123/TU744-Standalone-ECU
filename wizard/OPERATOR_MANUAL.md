@@ -7,7 +7,7 @@ disabled. Actual filter frequencies depend on board straps and clock. Retard per
 event, maximum retard and recovery speed are single settings. Knock changes
 require a stopped engine. Voltage, detection, freshness, fault and requested
 retard appear in the dashboard/logs; ignition timing remains the base command.
-See [firmware migration and verification notes](../docs/RELEASE-0.0.2.md).
+See the TU744 0.0.2 release notes (`release/TU744-v0.0.2/README.md`).
 
 ## Files and connection
 
@@ -129,8 +129,7 @@ Idle Valve Fault, Idle Valve Last Fault, Idle Valve Recoveries, Idle Valve Fault
 Count, Idle Driver Response, Idle Control Mode, Idle Integral, Idle Spark
 Correction, Sync Loss Reason, Sync Loss Tooth, First Inhibit Reason, Crank
 Capture Resyncs and Crank Capture Overruns. They are `nan` when the ECU runs
-older firmware. Codes are explained in each signal's tooltip and in
-`docs/LIVE-MONITOR.md`.
+older firmware. Codes are explained in each signal's tooltip.
 
 Logging records accepted monitor samples, including sync state, sync-loss count,
 status bitfields and map weights. Both live logging and opened CSV files use

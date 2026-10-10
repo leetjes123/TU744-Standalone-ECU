@@ -55,7 +55,7 @@ idle valve target, state, fault, last fault, recovery and fault counts, the
 L9935 response, idle mode, integral and spark correction, the sync-loss cause
 and tooth, the first inhibit reason, and the crank capture resync and overrun
 counters. A bare `13` still returns the unchanged 44-byte version 3 frame for
-0.0.2 hosts. See [LIVE-MONITOR.md](docs/LIVE-MONITOR.md).
+0.0.2 hosts.
 
 Wizard 0.0.3 requests version 4 and falls back to version 3 on older firmware.
 It logs 15 new CSV columns, which are `nan` on older firmware, and shows the

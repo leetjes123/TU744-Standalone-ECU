@@ -7,7 +7,7 @@ disabled. Actual filter frequencies depend on board straps and clock. Retard per
 event, maximum retard and recovery speed are single settings. Knock changes
 require a stopped engine. Voltage, detection, freshness, fault and requested
 retard appear in the dashboard/logs; ignition timing remains the base command.
-See [firmware migration and verification notes](../docs/RELEASE-0.0.2.md).
+See the TU744 0.0.2 release notes (`release/TU744-v0.0.2/README.md`).
 
 ## Files and connection
 

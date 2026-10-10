@@ -10,7 +10,7 @@ reworked specifically for the PSA TU engine family (crank pattern, sensors,
 injectors, coils and idle stepper as fitted to the TU).
 
 > **Current release: TU744 v0.0.4** – see [`release/TU744-v0.0.4`](release/TU744-v0.0.4)
-> and its [release notes](docs/RELEASE-0.0.4.md).
+> and its [release notes](release/TU744-v0.0.4/README.md).
 > When you connect, the ECU introduces itself as `TU744 0.0.4`.
 
 > ⚠️ **Use at your own risk.** This is hobby software for off-road/motorsport use.
@@ -38,7 +38,6 @@ release/TU744-v0.0.4/
 │                  TU744_0.0.4_M95080.hex   ← same firmware as HEX
 ├── basemaps/      TU5JP_1.6_8v_speed_density_v0.0.4.bin
 ├── wizard/        TuningWizard_0.0.4.exe, OPERATOR_MANUAL.md
-├── docs/          protocol, live-monitor and knock references
 ├── tools/         migrate_schema5.py (schema-4 tunes from 0.0.1)
 └── verification/  build manifests and test logs
 ```
