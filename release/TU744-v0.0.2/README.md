@@ -18,7 +18,7 @@ release package.
 - The new TU5JP basemap uses 100 ms DFCO delay and 200 RPM exit margin.
 - [Global knock control](docs/KNOCK.md) adds OEM-seeded gain, two filter bands,
   window/threshold/load curves, attack/maximum/recovery controls, bench jobs and
-  matching Wizard/TunerPro telemetry. Default disabled.
+  matching Wizard telemetry. Default disabled.
 
 Idle spark is still a correction to base timing. The OEM's approximately
 10-degree-ATDC overspeed behavior is not imposed as an absolute timing clamp;
@@ -54,8 +54,6 @@ python tests/test_knock_target.py --stock-95080
 python tests/test_knock_windows.py --stock-95080
 python tests/keil_knock_detection.py
 python tests/test_knock_boot_target.py --stock-95080
-python tests/test_tunerpro_definitions.py
-python tests/test_tunerpro_logging.py
 python tools/verify_artifacts.py --profile stock-95080 --skip-legacy
 ctest --test-dir wizard/build --output-on-failure
 ```

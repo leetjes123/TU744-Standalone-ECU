@@ -5,7 +5,7 @@
 // Parsing of pasted tabular text into a numeric grid.
 //
 // Deliberately free of ImGui/Win32 dependencies so it can be unit tested. The
-// parser is forgiving about how the text was produced (Excel, TunerPro, a log,
+// parser is forgiving about how the text was produced (Excel, another tuning tool, a log,
 // a forum post) but never guesses about ambiguous data: anything it cannot read
 // as a complete rectangular block of numbers is reported as an error instead of
 // being partially applied.

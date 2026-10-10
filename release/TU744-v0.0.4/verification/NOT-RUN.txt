@@ -1,6 +1,5 @@
 Not run for this package:
 - protocol (tests/test_protocol.py)
-- tunerpro plugin rebuild and tests (SDK unavailable)
 - keil knock detection and running windows (TU744_OEM_REPO)
 - target simulations: audit, lifecycle, output-closure, foreground, engine, faults, timing, fuel, reset, flash, fwupdate, main, oem-scheduler (TU744_OEM_REPO)
 - artifact verification report (tools/verify_artifacts.py, TU744_OEM_REPO)

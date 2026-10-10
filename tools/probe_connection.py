@@ -1,6 +1,6 @@
 """Read-only standalone identification probe with raw serial diagnostics.
 
-Close TunerPro before running. Uses the plugin's default DTR/RTS settings.
+Close the Tuning Wizard before running. Uses the default DTR/RTS settings.
 Sends only protocol capability command 0x20; never writes or saves a tune.
 """
 import argparse

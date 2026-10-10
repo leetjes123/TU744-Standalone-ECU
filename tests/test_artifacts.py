@@ -11,9 +11,7 @@ import unittest
 TOOLS = Path(__file__).resolve().parents[1] / 'tools'
 sys.path.insert(0, str(TOOLS))
 from artifacts import (PROFILES, binary_image, build_input_hashes, hashes,
-                       plugin_source_hashes, programmed, source_hashes,
-                       verify_firmware, verify_plugin)
-from package_tunerpro import package
+                       programmed, source_hashes, verify_firmware)
 
 
 def record(kind, at=0, payload=b''):
@@ -31,13 +29,8 @@ class ArtifactTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         for name in ['src/core.c', 'src/storage_flash.inc', 'include/ecu.h', 'target/c167/board.c',
-                     'tools/build.py', 'tools/artifacts.py', 'tools/build_tunerpro.py',
+                     'tools/build.py', 'tools/artifacts.py',
                      'TU5JP.uvproj', 'README.md', 'tools/pack_stock_tune.py',
-                     'tunerpro/README.md', 'tunerpro/TU744_schema4.adx',
-                     'tunerpro/TU744_schema4_speed_density.xdf', 'tunerpro/TU744_schema4_alpha_n.xdf',
-                     'tunerpro/plugin.cpp', 'tunerpro/protocol.hpp', 'tunerpro/plugin.rc',
-                     'tunerpro/plugin.def', 'tunerpro/test_plugin.cpp', 'tunerpro/progress.hpp',
-                     'tunerpro/test_host.hpp', 'tunerpro/dtc_table.hpp',
                      'tests/hal_fake.c', 'tests/protocol_bridge.c', 'docs/RELEASE.md']:
             path = self.root / name
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -66,30 +59,18 @@ class ArtifactTests(unittest.TestCase):
             if binary:
                 manifest.update(binary_sha256=hashlib.sha256(image).hexdigest(), binary_bytes=len(image))
             (build / 'manifest.json').write_text(json.dumps(manifest))
-        plugin = self.root / 'build/tunerpro'
-        plugin.mkdir()
-        (plugin / 'TU744.dll').write_bytes(b'fixture DLL')
-        (plugin / 'build.log').write_text('fixture tests passed\n')
-        (plugin / 'manifest.json').write_text(json.dumps(dict(
-            manifest_schema=1, plugin_tests_passed=True, source_sha256=plugin_source_hashes(self.root),
-            sdk_sha256={'ITPPlugin.h': '0' * 64}, toolchain_sha256={'cl.exe': '0' * 64},
-            artifacts_sha256=hashes(plugin, [plugin / 'TU744.dll', plugin / 'build.log']))))
         self.build = self.root / 'build/stock-95080'
 
-    def mutate_manifest(self, fn, build=None):
-        path = (build or self.build) / 'manifest.json'
+    def mutate_manifest(self, fn):
+        path = self.build / 'manifest.json'
         data = json.loads(path.read_text())
         fn(data)
         path.write_text(json.dumps(data))
 
-    def test_valid_profiles_and_package(self):
+    def test_valid_profiles(self):
         for profile in PROFILES:
             with self.subTest(profile=profile):
                 verify_firmware(self.root, self.root / 'build' / profile, profile)
-        verify_plugin(self.root, self.root / 'build/tunerpro')
-        report = package(self.root, self.root / 'candidate.zip')
-        self.assertIn('build/tunerpro/manifest.json', report)
-        self.assertIn('PACKAGE.json', report)
 
     def test_hex_rejects_malformed_records(self):
         cases = {
@@ -168,29 +149,6 @@ class ArtifactTests(unittest.TestCase):
         self.mutate_manifest(lambda m: m.update(toolchain_sha256={}))
         with self.assertRaisesRegex(ValueError, 'compiler/linker/runtime'):
             verify_firmware(self.root, self.build, 'stock-95080')
-
-    def test_plugin_source_drift_rejects_package(self):
-        output = self.root / 'candidate.zip'
-        output.write_bytes(b'previous archive')
-        (self.root / 'tunerpro/protocol.hpp').write_text('changed wire contract\n')
-        with self.assertRaisesRegex(ValueError, 'plugin: stale'):
-            package(self.root, output)
-        self.assertEqual(output.read_bytes(), b'previous archive')
-
-    def test_plugin_dll_drift_rejects_package(self):
-        (self.root / 'build/tunerpro/TU744.dll').write_bytes(b'wrong DLL')
-        with self.assertRaisesRegex(ValueError, 'DLL/log identity mismatch'):
-            package(self.root, self.root / 'candidate.zip')
-
-    def test_missing_definition_rejects_package(self):
-        (self.root / 'tunerpro/TU744_schema4_alpha_n.xdf').unlink()
-        with self.assertRaises(FileNotFoundError):
-            package(self.root, self.root / 'candidate.zip')
-
-    def test_failed_plugin_test_rejects_package(self):
-        self.mutate_manifest(lambda m: m.update(plugin_tests_passed=False), self.root / 'build/tunerpro')
-        with self.assertRaisesRegex(ValueError, 'successful build/test identity'):
-            package(self.root, self.root / 'candidate.zip')
 
     def test_optimized_subprocess_rejects_corruption(self):
         # Actually launch -O: source inspection alone cannot establish this.

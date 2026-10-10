@@ -19,16 +19,8 @@ basemap=f'basemaps/TU5JP_1.6_8v_speed_density_v{VERSION}.bin'
 assert hashlib.sha256((ROOT/basemap).read_bytes()).hexdigest()==image_manifest['tune_sha256']
 wizard=ROOT/'wizard/build/updated/bin/TuningWizard.exe'
 assert VERSION.encode() in wizard.read_bytes(), f'Wizard executable is not the {VERSION} build'
-# The plugin source is unchanged since 0.0.3; without the SDK it is carried over.
-previous=ROOT/'release/TU744-v0.0.3'
 files = {
     basemap: basemap,
-    'release/TU744-v0.0.3/tunerpro/TU744.dll':'tunerpro/TU744.dll',
-    'release/TU744-v0.0.3/tunerpro/build-manifest.json':'tunerpro/build-manifest.json',
-    'tunerpro/TU744_schema5_alpha_n.xdf':'tunerpro/TU744_schema5_alpha_n.xdf',
-    'tunerpro/TU744_schema5_speed_density.xdf':'tunerpro/TU744_schema5_speed_density.xdf',
-    'tunerpro/TU744_schema5.adx':'tunerpro/TU744_schema5.adx',
-    'tunerpro/README.md':'tunerpro/README.md',
     'wizard/build/updated/bin/TuningWizard.exe':'wizard/TuningWizard.exe',
     'wizard/OPERATOR_MANUAL.md':'wizard/OPERATOR_MANUAL.md',
     'docs/KNOCK.md':'docs/KNOCK.md',
@@ -38,8 +30,8 @@ files = {
     'tools/migrate_schema5.py':'tools/migrate_schema5.py',
     'src/knock_defaults.inc':'src/knock_defaults.inc',
 }
-logs=['firmware-0.0.4-native','firmware-0.0.4-stock-native','wizard-ctest-004','definitions-004']
-not_run=['protocol (tests/test_protocol.py)','tunerpro plugin rebuild and tests (SDK unavailable)',
+logs=['firmware-0.0.4-native','firmware-0.0.4-stock-native','wizard-ctest-004']
+not_run=['protocol (tests/test_protocol.py)',
          'keil knock detection and running windows (TU744_OEM_REPO)',
          'target simulations: audit, lifecycle, output-closure, foreground, engine, faults, timing, fuel, reset, flash, fwupdate, main, oem-scheduler (TU744_OEM_REPO)',
          'artifact verification report (tools/verify_artifacts.py, TU744_OEM_REPO)',

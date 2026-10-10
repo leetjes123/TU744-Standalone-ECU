@@ -78,12 +78,6 @@ autotune share it.
 fan reserve only takes effect with PI idle (`0x5D8` = 1) and a fan idle-up
 (`0x8C0`) above zero.
 
-## TunerPro
-
-The TunerPro plugin source is unchanged, so `TU744.dll` is the 0.0.3 build. The
-TunerPro SDK was not available to rebuild it. The ADX description now names
-firmware 0.0.4.
-
 ## Verification
 
 Passed:
@@ -94,6 +88,6 @@ Passed:
 - Wizard CTest: 5 of 5 suites passed.
 
 Not run: the target simulations, Keil knock runs and OEM scheduler tests,
-which need `TU744_OEM_REPO`; the protocol test; and the plugin rebuild and tests
-(no SDK). `verification/NOT-RUN.txt` lists them. No ECU was flashed by the
+which need `TU744_OEM_REPO`; and the protocol test. `verification/NOT-RUN.txt`
+lists them. No ECU was flashed by the
 release process, and the faster stepper has not been validated on the engine.

@@ -3,7 +3,7 @@
 TU744 turns the Bosch **M7.4.4** engine computer used on Peugeot/Citroën **TU**
 petrol engines into a fully tunable standalone ECU. You keep the original ECU
 box and the original wiring loom, and you tune it live from your laptop with
-**TunerPro RT** or the included **Tuning Wizard**.
+the included **Tuning Wizard**.
 
 It is a port of [WillItBoost/M744-Stand-Alone-ECU](https://github.com/WillItBoost/M744-Stand-Alone-ECU),
 reworked specifically for the PSA TU engine family (crank pattern, sensors,
@@ -27,7 +27,6 @@ injectors, coils and idle stepper as fitted to the TU).
 | [`release/TU744-v0.0.4`](release/TU744-v0.0.4) | **Ready-to-use files. Start here if you just want to flash your ECU.** |
 | [`basemaps/`](basemaps) | Starting tune for a stock **TU5JP 1.6 8v** (speed-density) |
 | [`flashing/`](flashing) | Flashing tools: `UploadViaDebug.exe` (+ `STAGE1/2/3` files), `FlashUpdate.exe`, `Hex2Bin.exe` |
-| [`tunerpro/`](tunerpro) | TunerPro RT plugin source, XDF map definitions and ADX logging definition |
 | [`wizard/`](wizard) | Tuning Wizard – a standalone tuning/logging program (source) |
 | `src/`, `include/`, `target/` | ECU firmware source (C167, Keil C166) |
 
@@ -37,8 +36,6 @@ injectors, coils and idle stepper as fitted to the TU).
 release/TU744-v0.0.4/
 ├── firmware/      TU744_0.0.4_M95080.bin   ← the file you flash (basemap already inside)
 │                  TU744_0.0.4_M95080.hex   ← same firmware as HEX
-├── tunerpro/      TU744.dll, TU744_schema5.adx,
-│                  TU744_schema5_speed_density.xdf, TU744_schema5_alpha_n.xdf
 ├── basemaps/      TU5JP_1.6_8v_speed_density_v0.0.4.bin
 ├── wizard/        TuningWizard.exe, OPERATOR_MANUAL.md
 ├── docs/          protocol, live-monitor and knock references
@@ -56,8 +53,7 @@ stock TU5JP can start straight after flashing. The same map is in
 so you can always go back to it.
 
 It is a **speed-density** tune: fuel is worked out from engine speed and intake
-manifold pressure (MAP sensor). Open it in TunerPro with
-`TU744_schema5_speed_density.xdf`.
+manifold pressure (MAP sensor). Open it in the Tuning Wizard with **Open file**.
 
 A basemap is a *starting point*, not a finished tune. Every engine is a bit
 different, so check your air/fuel ratio and fine-tune from there.
@@ -71,8 +67,7 @@ different, so check your air/fuel ratio and fine-tune from there.
 - A **12 V supply** (car battery or bench supply) and a few jumper wires for
   flashing on the bench.
 - A Windows PC.
-- **TunerPro RT** (free, [tunerpro.net](http://www.tunerpro.net)) and/or the
-  Tuning Wizard from the release folder.
+- The **Tuning Wizard** from the release folder.
 - Recommended: a **wideband lambda controller** (e.g. 14point7 Spartan). Its
   0–5 V output goes to the ECU's former upstream (narrowband) O2 sensor input.
 
@@ -109,7 +104,7 @@ it in its **debug (boot) mode** and load a small helper program into it.
    **`firmware/TU744_0.0.4_M95080.bin`**, and let it finish. Don't disconnect
    anything while it's writing.
    (Tuning Wizard can do the same: **ECU → Update firmware**.)
-6. Switch off and on again, then connect with TunerPro or the Wizard. The ECU
+6. Switch off and on again, then connect with the Wizard. The ECU
    should report **`TU744 0.0.4`**.
 
 `Hex2Bin.exe` converts a `.hex` file into a `.bin`. You only need it if you
@@ -126,34 +121,28 @@ open the ECU or use debug mode again.
    input.
 3. Connect the KKL cable to the car's diagnostic socket.
 
-### 4. Set up TunerPro RT
+### 4. Set up the Tuning Wizard
 
-1. Copy **`release/TU744-v0.0.4/tunerpro/TU744.dll`** into TunerPro's plugin folder
-   (normally `Documents\TunerPro Files\Plugins`) and restart TunerPro.
-2. For emulation hardware choose **TU744 schema-5 RAM tuning**. For data
-   acquisition choose **TU744 schema-5 logging**. Set your COM port (19200 baud, 8N1).
-3. Open the basemap **`basemaps/TU5JP_1.6_8v_speed_density_v0.0.4.bin`** with the
-   definition **`tunerpro/TU744_schema5_speed_density.xdf`**.
-4. Load **`tunerpro/TU744_schema5.adx`** for live data (rpm, temperatures,
-   AFR, faults and so on).
-5. Click **Initialize Emulation Hardware**, then **Download BIN from Emulator**,
-   and **save a copy on your PC** before changing anything.
+1. Run **`release/TU744-v0.0.4/wizard/TuningWizard.exe`** and connect to your
+   cable's COM port (19200 baud, 8N1).
+2. Select **ECU > Read calibration** to load the tune that is in the ECU.
+3. **Save file** to keep a copy on your PC before changing anything.
+4. The dashboard shows live data (rpm, temperatures, AFR, faults and so on).
 
-More detail: [tunerpro/README.md](tunerpro/README.md).
-Prefer the Wizard? See the [operator manual](wizard/OPERATOR_MANUAL.md).
+More detail: the [operator manual](wizard/OPERATOR_MANUAL.md).
 
 ### 5. Calibrate the throttle (TPS)
 
 Do this once, with the **ignition on and the engine off**:
 
 1. Wait a few seconds for the idle valve to finish homing.
-2. Open the plugin configuration: the **TU744 controls** panel.
-3. Foot **off** the pedal, then click **Capture closed**.
-4. Pedal **flat to the floor**, then click **Capture open**. Release the pedal.
-5. Click **Apply TPS**.
-6. **Download BIN from Emulator** and save it on your PC.
-7. Click **Save ECU tune to flash**, wait for "verified", then switch the
-   ignition off and on again.
+2. In the Wizard, open the TPS calibration settings (**TPS closed ADC** and
+   **TPS open ADC**).
+3. Foot **off** the pedal, then click **Set Closed**.
+4. Pedal **flat to the floor**, then click **Set WOT**. Release the pedal.
+5. Click **Write active tune**, then **Save file** to keep a copy on your PC.
+6. Select **Save tune to ECU flash**, wait for it to report success, then switch
+   the ignition off and on again.
 
 Check in the live data that the throttle reads about 0% released and 100% fully pressed.
 
@@ -164,9 +153,10 @@ Check in the live data that the throttle reads about 0% released and 100% fully 
 2. Start the engine. It should fire and settle into idle on the basemap.
 3. Watch the **AFR** and **coolant temperature**. Check ignition timing with a
    timing light.
-4. Make changes in TunerPro. They take effect immediately.
-5. **To keep your changes**, stop the engine, click **Save ECU tune to flash**,
-   then switch the ignition off and on. (Saving a BIN on your PC does *not*
+4. Make changes in the Wizard. With **Live tuning** on, map edits take effect
+   immediately; use **Write active tune** for settings and axes.
+5. **To keep your changes**, stop the engine, select **Save tune to ECU flash**,
+   then switch the ignition off and on. (Saving a file on your PC does *not*
    store it in the ECU.)
 
 ---
@@ -174,7 +164,7 @@ Check in the live data that the throttle reads about 0% released and 100% fully 
 ## Building from source
 
 Only needed if you want to change the software. You need Keil C166 (firmware),
-Visual Studio (plugin, Wizard) and Python 3.
+Visual Studio (Wizard) and Python 3.
 
 ```powershell
 cmake -S wizard -B wizard/build; cmake --build wizard/build --config Release
@@ -188,4 +178,3 @@ and returned by protocol command `00`.
 - [WillItBoost/M744-Stand-Alone-ECU](https://github.com/WillItBoost/M744-Stand-Alone-ECU):
   the original M7.4.4 standalone project this port is based on, including the
   flashing tools.
-- TunerPro RT by Mark Mansur.

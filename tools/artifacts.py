@@ -38,15 +38,6 @@ def build_input_hashes(root):
                         ['tools/build.py', 'tools/artifacts.py', 'TU5JP.uvproj']])
 
 
-def plugin_source_hashes(root):
-    return hashes(root, [*(root / 'src').glob('*.c'), *(root / 'include').glob('*.h'),
-                         *(root / 'src').glob('*.inc'),
-                         *[root / 'tunerpro' / name for name in
-                           ['plugin.cpp', 'protocol.hpp', 'dtc_table.hpp', 'progress.hpp', 'plugin.rc', 'plugin.def', 'test_plugin.cpp', 'test_host.hpp']],
-                         root / 'tests/hal_fake.c', root / 'tests/protocol_bridge.c',
-                         root / 'tools/build_tunerpro.py', root / 'tools/artifacts.py'])
-
-
 def programmed(path, limit=0x70000):
     """Parse all records, rejecting bad shapes, unknown types and missing EOF."""
     base, written, ended = 0, {}, False
@@ -125,17 +116,3 @@ def verify_firmware(root, build, profile):
         require(manifest.get('binary_sha256') == sha256(build / binary) and
                 manifest.get('binary_bytes') == len(image), f'{profile}: binary identity mismatch')
     return manifest, written
-
-
-def verify_plugin(root, build):
-    manifest = json.loads((build / 'manifest.json').read_text())
-    require(manifest.get('manifest_schema') == 1 and manifest.get('plugin_tests_passed') is True,
-            'plugin: missing successful build/test identity')
-    require(manifest.get('source_sha256') == plugin_source_hashes(root),
-            'plugin: stale or incomplete source identity')
-    require(manifest.get('artifacts_sha256') == hashes(build, [build / 'TU744.dll',
-                                                            build / 'build.log']),
-            'plugin: DLL/log identity mismatch')
-    require(bool(manifest.get('sdk_sha256')) and bool(manifest.get('toolchain_sha256')),
-            'plugin: missing SDK/toolchain identity')
-    return manifest

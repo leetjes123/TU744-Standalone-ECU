@@ -1,19 +1,15 @@
-"""Generate standalone schema-5 XDFs for 3072-byte calibration files.
+"""Schema-5 calibration layout for 3072-byte standalone calibration files.
 
-The two definitions share storage, but display the selected fueling load axis.
-No live transport or flash programming is implied by an XDF.
-
-Every item states its offset and the range the firmware accepts, so the XDF
-can be read without the source. Units follow the firmware code that consumes
-each field (src/*.c, src/calibration.c validation).
+Lists every table, scalar and flag the Tuning Wizard edits: offset, storage,
+scaling, units and the range the firmware accepts. Units follow the firmware
+code that consumes each field (src/*.c, src/calibration.c validation).
+wizard/tools/wizard_definition.py turns this into wizard/src/cal_defs.cpp.
 """
 from pathlib import Path
-import xml.etree.ElementTree as ET
 
 ROOT = Path(__file__).resolve().parents[1]
 
-# TunerPro numbers CATEGORY from 0 and refers to it from CATEGORYMEM as
-# index+1 (see any TunerPro-authored XDF), so names are listed in order here.
+# Display order of the Wizard categories.
 CATEGORIES = [
     'Fuel', 'Fuel - start and warm-up', 'Fuel - acceleration', 'Injectors', 'Ignition',
     'Rev limit and fuel cut', 'Launch and anti-lag', 'Idle', 'Closed loop (STFT)',
@@ -90,93 +86,22 @@ def dtc_codes():
     """Event -> {subtype: (code, description)} from the ROM report table."""
     import csv
     table = {}
-    path = ROOT / 'tunerpro/dtc_events.csv'
+    path = ROOT / 'wizard/data/dtc_events.csv'
     for row in csv.DictReader(path.open()):
         table[int(row['event'], 16)] = {
             s: (row[f'subtype_{s}_code'], row[f'subtype_{s}_description']) for s in (1, 2, 4, 8)}
     return table
 
 
-def text(parent, tag, value):
-    ET.SubElement(parent, tag).text = str(value)
+def generate():
+    """Return every item as a dict in display order.
 
-
-def data(parent, at, bits, rows=1, columns=1, signed=False):
-    assert 0 <= at < at + bits // 8 * rows * columns <= 3072
-    return ET.SubElement(parent, 'EMBEDDEDDATA', mmedtypeflags='0x01' if signed else '0x00',
-                         mmedaddress=hex(at), mmedelementsizebits=str(bits),
-                         mmedrowcount=str(rows), mmedcolcount=str(columns),
-                         mmedmajorstridebits='0', mmedminorstridebits='0')
-
-
-def math(parent, equation):
-    ET.SubElement(ET.SubElement(parent, 'MATH', equation=equation), 'VAR', id='X')
-
-
-def scale(parent, units, equation='X', decimals=0):
-    text(parent, 'units', units)
-    text(parent, 'decimalpl', decimals)
-    text(parent, 'outputtype', 1 if decimals else 2)
-    math(parent, equation)
-
-
-def axis(parent, name, spec):
-    """spec: (offset or None, count, bits, units, signed[, labels])."""
-    at, count, bits, units, signed = spec[:5]
-    node = ET.SubElement(parent, 'XDFAXIS', id=name, uniqueid='0x0')
-    if at is None:
-        ET.SubElement(node, 'EMBEDDEDDATA', mmedelementsizebits='8',
-                      mmedmajorstridebits='-32', mmedminorstridebits='0')
-        labels = spec[5] if len(spec) > 5 else [''] * count
-        for i, label in enumerate(labels):
-            ET.SubElement(node, 'LABEL', index=str(i), value=str(label))
-        text(node, 'outputtype', 4)
-    else:
-        data(node, at, bits, columns=count, signed=signed)
-        ET.SubElement(node, 'embedinfo', type='1')
-        text(node, 'outputtype', 2)
-    text(node, 'indexcount', count)
-    text(node, 'units', units)
-    text(node, 'decimalpl', 0)
-    text(node, 'datatype', 0)
-    text(node, 'unittype', 0)
-    ET.SubElement(node, 'DALINK', index='0')
-    math(node, 'X')
-
-
-def generate(alpha_n=False):
-    root = ET.Element('XDFFORMAT', version='1.70')
-    header = ET.SubElement(root, 'XDFHEADER')
-    text(header, 'flags', '0x1')
-    text(header, 'fileversion', '5.1')
-    mode = 'Alpha-N' if alpha_n else 'Speed-density'
-    text(header, 'deftitle', f'TU744 schema 5 - {mode}')
-    text(header, 'description', 'For 3072-byte schema-5 standalone calibration files only. '
-         'Not an OEM ROM or full firmware image. Confirm LR 00 05 at 0x900 and the selected '
-         'load mode. XDF does not select the ECU fueling mode (see Feature switches). '
-         'Each description gives the offset and the range the ECU accepts; an update outside '
-         'it is rejected and the previous tune stays active. See docs/FUELING.md and tunerpro/README.md.')
-    text(header, 'author', 'TU744 project')
-    ET.SubElement(header, 'BASEOFFSET', offset='0', subtract='0')
-    ET.SubElement(header, 'DEFAULTS', datasizeinbits='8', sigdigits='2', outputtype='1',
-                  signed='0', lsbfirst='0', float='0')
-    ET.SubElement(header, 'REGION', type='0xFFFFFFFF', startaddress='0x0', size='0xC00',
-                  regionflags='0x0', name='Schema-5 calibration', desc='3072 bytes, big endian')
-    for i, label in enumerate(CATEGORIES):
-        ET.SubElement(header, 'CATEGORY', index=hex(i), name=label)
-    uid = 0x4000
-
-    def item(kind, title, description, categories):
-        nonlocal uid
-        node = ET.SubElement(root, kind, uniqueid=hex(uid), flags='0x0')
-        uid += 1
-        text(node, 'title', title)
-        text(node, 'description', description)
-        if isinstance(categories, str):
-            categories = [categories]
-        for i, name in enumerate(categories):
-            ET.SubElement(node, 'CATEGORYMEM', index=str(i), category=str(CAT[name]))
-        return node
+    Items: kind ('table', 'scalar', 'flag'), title, description, categories,
+    offset, bits, signed, and per kind: rows/columns/x/y (tables), units,
+    equation (X is the stored value), low/high, mask (flags). Axis specs are
+    (offset or None, count, bits, units, signed[, fixed labels]).
+    """
+    items = []
 
     def note(description, at, valid):
         parts = [description.strip()] if description else []
@@ -185,48 +110,47 @@ def generate(alpha_n=False):
             parts.append(f'ECU accepts {valid}.')
         return ' '.join(parts)
 
+    def item(kind, title, description, categories, at, bits, signed=False, **fields):
+        assert 0 <= at < 3072
+        if isinstance(categories, str):
+            categories = [categories]
+        items.append(dict(kind=kind, title=title, description=description,
+                          categories=list(categories), offset=at, bits=bits,
+                          signed=signed, **fields))
+
     blank = (None, 1, 8, '', False)
     rpm = (0x400, 16, 16, 'RPM', False)
-    load = (0x440 if alpha_n else 0x420, 16, 16, 'TPS %' if alpha_n else 'kPa', False)
+    load = (0x420, 16, 16, 'kPa', False)
     temp = (0x460, 16, 16, 'C', True)
     voltage = (None, 8, 8, 'V', False, [4 + 2 * i for i in range(8)])
 
     def table(title, at, bits, units, x, y=blank, equation='X', decimals=0,
               low=0, high=255, category='Fuel', description='', valid=''):
-        node = item('XDFTABLE', title, note(description, at, valid), category)
-        axis(node, 'x', x); axis(node, 'y', y)
-        z = ET.SubElement(node, 'XDFAXIS', id='z')
-        data(z, at, bits, rows=y[1], columns=x[1])
-        text(z, 'min', low); text(z, 'max', high)
-        scale(z, units, equation, decimals)
+        assert at + bits // 8 * x[1] * y[1] <= 3072
+        item('table', title, note(description, at, valid), category, at, bits,
+             rows=y[1], columns=x[1], x=x, y=y, units=units, equation=equation,
+             decimals=decimals, low=low, high=high)
 
     def scalar(title, at, bits, units, low, high, equation='X', decimals=0,
                category='Fuel', signed=False, description='', valid=None):
-        node = item('XDFCONSTANT', title,
-                    note(description, at, f'{low}..{high} {units}' if valid is None else valid),
-                    category)
-        data(node, at, bits, signed=signed)
-        text(node, 'min', low); text(node, 'max', high)
-        scale(node, units, equation, decimals)
+        item('scalar', title,
+             note(description, at, f'{low}..{high} {units}' if valid is None else valid),
+             category, at, bits, signed, units=units, equation=equation,
+             decimals=decimals, low=low, high=high)
 
     def flag(title, at, mask, category, description=''):
-        node = item('XDFFLAG', title, note(description, at, '') + f' Bit mask 0x{mask:02X}.',
-                    category)
-        data(node, at, 8)
-        text(node, 'mask', hex(mask))
+        item('flag', title, note(description, at, '') + f' Bit mask 0x{mask:02X}.',
+             category, at, 8, mask=mask)
 
     def breakpoints(title, at, count, bits, units, signed, low, high, users):
-        node = item('XDFTABLE', title,
-                    note(f'Strictly increasing. Used by: {users}.', at, f'{low}..{high} {units}'),
-                    'Axis breakpoints')
-        axis(node, 'x', (None, count, 8, 'point', False, list(range(1, count + 1))))
-        axis(node, 'y', blank)
-        z = ET.SubElement(node, 'XDFAXIS', id='z')
-        data(z, at, bits, columns=count, signed=signed)
-        text(z, 'min', low); text(z, 'max', high)
-        scale(z, units)
+        assert at + bits // 8 * count <= 3072
+        item('table', title,
+             note(f'Strictly increasing. Used by: {users}.', at, f'{low}..{high} {units}'),
+             'Axis breakpoints', at, bits, signed, rows=1, columns=count,
+             x=(None, count, 8, 'point', False, list(range(1, count + 1))), y=blank,
+             units=units, equation='X', decimals=0, low=low, high=high)
 
-    load_name = 'TPS' if alpha_n else 'MAP'
+    load_name = 'MAP'
     # ---- Fuel
     table('Running VE', 0, 8, 'VE %', rpm, load,
           description=f'Volumetric efficiency for the air-charge fuel calculation. Columns: RPM; rows: {load_name}.')
@@ -237,8 +161,7 @@ def generate(alpha_n=False):
          'On: fuel is scaled by stoichiometric AFR / target AFR. Off: target AFR only feeds closed loop.')
     scalar('Stoichiometric AFR', 0x912, 16, 'AFR', 7, 22, 'X/10', 1, valid='7.0..22.0 AFR')
     flag('Alpha-N fueling (TPS load axis)', 0x5D4, 0x01, ['Fuel', 'Feature switches'],
-         'On: TPS is the load axis and MAP is not used for fuel. Must match the XDF you opened. '
-         'Stopped engine only.')
+         'On: TPS is the load axis and MAP is not used for fuel. Stopped engine only.')
     # ---- Start and warm-up
     table('Cranking VE', 0x490, 16, 'VE %', temp, high=1000, category='Fuel - start and warm-up',
           description='Replaces running VE while cranking; not a pulsewidth. Includes MAP in speed-density mode.',
@@ -420,13 +343,12 @@ def generate(alpha_n=False):
     flag('Downstream heater relay fitted', 0x916, 0x02, 'Oxygen sensor and wideband')
     # ---- Sensors
     scalar('TPS closed ADC', 0x7B0, 16, 'ADC counts', 0, 923, category=['TPS calibration', 'Sensors'],
-           description='Ignition on, engine stopped: release the pedal and use Capture closed in the TU744 controls panel. '
-           'Raw counts are also shown in the ADX TPS calibration list. Apply both endpoints together, then Download BIN from Emulator. '
-           'Save the ECU tune to flash to retain calibration after a key cycle.')
+           description='Ignition on, engine stopped: release the pedal and press Set Closed. '
+           'Write both endpoints to the ECU together, then save the ECU tune to flash to retain calibration after a key cycle.')
     scalar('TPS open ADC', 0x7B2, 16, 'ADC counts', 100, 1023, category=['TPS calibration', 'Sensors'],
-           description='Ignition on, engine stopped: fully press the pedal and use Capture open in the TU744 controls panel. '
-           'Release the pedal before Apply TPS. Open must be at least 100 counts above closed. '
-           'Manual editing uses the raw ADC value, not TPS percent; upload both endpoints in one complete BIN if an intermediate pair is invalid.')
+           description='Ignition on, engine stopped: fully press the pedal and press Set WOT. '
+           'Open must be at least 100 counts above closed. '
+           'Manual editing uses the raw ADC value, not TPS percent; write both endpoints together if an intermediate pair is invalid.')
     table('MAP sensor transfer', 0x594, 16, 'kPa',
           (None, 16, 8, 'ADC', False, [round(i * 1023 / 15) for i in range(16)]), high=600,
           category='Sensors', description='Pressure at evenly spaced ADC counts. Must not decrease.',
@@ -558,34 +480,4 @@ def generate(alpha_n=False):
         ('Knock minimum filling',0xA70,'%',0.75,191.25,'X*0.75')]:
         table(title,at,8,unit,krpm,equation=equation,decimals=2,low=low,high=high,
               category='Knock',description='Stopped engine only. See docs/KNOCK.md for standalone deviations and qualification.')
-    ET.indent(root, space='  ')
-    return ET.ElementTree(root)
-
-
-def dtc_header():
-    """C++ table the plugin uses to name stored DTC records."""
-    codes = dtc_codes()
-    quote = lambda value: '"' + value.replace('\\', '\\\\').replace('"', '\\"') + '"'
-    lines = ['// Generated by tools/tunerpro_definition.py from the ROM report table',
-             '// (tunerpro/dtc_events.csv). Do not edit.',
-             '#pragma once', 'namespace tu5jp {',
-             'struct DtcEvent { unsigned char event; const char* code[4]; const char* text[4]; };',
-             'inline const DtcEvent dtc_events[]={']
-    for event, _, _, _ in sorted(DTC_EVENTS):
-        row = [codes[event][s] for s in (1, 2, 4, 8)]
-        lines.append(f'    {{0x{event:02X},{{{",".join(quote(c) for c, _ in row)}}},'
-                     f'{{{",".join(quote(t) for _, t in row)}}}}},')
-    lines += ['};', '}', '']
-    return '\n'.join(lines)
-
-
-if __name__ == '__main__':
-    out = ROOT / 'tunerpro'
-    out.mkdir(exist_ok=True)
-    (out / 'dtc_table.hpp').write_text(dtc_header(), encoding='utf-8', newline='\n')
-    print(out / 'dtc_table.hpp')
-    for alpha_n in (False, True):
-        name = 'TU744_schema5_' + ('alpha_n' if alpha_n else 'speed_density') + '.xdf'
-        tree = generate(alpha_n)
-        tree.write(out / name, encoding='utf-8', xml_declaration=True)
-        print(out / name)
+    return items

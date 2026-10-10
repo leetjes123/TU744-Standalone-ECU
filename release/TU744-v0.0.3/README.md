@@ -104,7 +104,7 @@ unchanged. Schema 5 tunes from 0.0.2 load as-is.
 
 ## Verification
 
-Run from the repository root with `TU744_OEM_REPO` and `TUNERPRO_SDK` set. The
+Run from the repository root with `TU744_OEM_REPO` set. The
 Wizard needs the MSVC x64 environment.
 
 ```
@@ -120,9 +120,6 @@ python tests/test_knock_target.py --stock-95080
 python tests/test_knock_windows.py --stock-95080
 python tests/keil_knock_detection.py
 python tests/test_knock_boot_target.py --stock-95080
-python tools/build_tunerpro.py
-python tests/test_tunerpro_definitions.py
-python tests/test_tunerpro_logging.py
 python tools/verify_artifacts.py --profile stock-95080 --skip-legacy
 ctest --test-dir wizard/build --output-on-failure
 python tools/package_003.py
@@ -131,7 +128,7 @@ python tools/package_003.py
 For this package the simulator lane was stopped on request before it finished:
 `verification/NOT-RUN.txt` lists the target tests without a passing log, and
 `verification/` holds the logs of everything that passed (native, stock-native,
-protocol, migration, knock, TunerPro, Wizard, SSC/IAC hold and the completed
+protocol, migration, knock, Wizard, SSC/IAC hold and the completed
 target tests).
 
 These are software and simulator checks. No ECU was flashed. Bench and engine
