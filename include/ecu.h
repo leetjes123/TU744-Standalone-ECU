@@ -52,6 +52,17 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
 #define DFCO_EXIT_RPM_DEFAULT 200U
 #define IAC_HOME_STEPS_DEFAULT 250U
 #define IAC_HOME_MS_PER_STEP 12U /* 10 ms step cadence plus scheduling margin */
+/* OEM stepper timing (0x40FA6/0x41040): a step call every 5th ~1 ms ADC
+   completion, every 4th after an opening step; reversal waits 5 calls. */
+#define IAC_STEP_MS 5U
+#define IAC_OPEN_STEP_MS 4U
+#define IAC_REVERSE_MS 25U
+/* OEM position re-sync (0x41258): 5 s at >= 120 rpm over target adds 5
+   counts, at most 40 times (files 0x15AD2, 0x159F8, 0x10FB2, 0x10FB0). */
+#define IAC_RESYNC_MS 5000UL
+#define IAC_RESYNC_RPM 120
+#define IAC_RESYNC_COUNTS 5U
+#define IAC_RESYNC_LIMIT 40U
 /* Geometry, units and sensor/equipment changes require a stopped engine. */
 #define CFG_ALPHA_N 0x01U
 #define CFG_STFT 0x20U
@@ -201,6 +212,9 @@ typedef struct {
     /* Recovery telemetry: last_fault survives recovery until reset. */
     u8 last_fault, retry_armed, retries;
     u32 retry_at, retried_at;
+    /* Reversal wait: direction of the last step (1 open, 2 close). */
+    u8 last_direction, resyncs;
+    u32 reverse_at, resync_since;
 } Iac;
 typedef struct {
     volatile u8 ring[128], head, tail, overflow;
@@ -349,6 +363,7 @@ void ecu_poll(void);
 void controls_update(u32 now, const Rotation *rotation);
 void iac_home(u32 now);
 void iac_service(u32 now);
+void iac_resync(u32 now, u8 qualified);
 void iac_disable(void);
 void protocol_receive(u8 byte) SHARED;
 void protocol_poll(u32 now);

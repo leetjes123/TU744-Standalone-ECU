@@ -490,7 +490,7 @@ static void test_iac(void) {
 static void test_iac_direction_and_status(void) {
     u32 now, transfers;
     u8 i;
-    static const u8 closing[4] = {0x13, 0x1B, 0x1A, 0x12};
+    static const u8 closing[4] = {0x01, 0x09, 0x08, 0x00};
     setup();
     ecu.iac.position = 72;
     iac_home(0);
@@ -501,6 +501,7 @@ static void test_iac_direction_and_status(void) {
         CHECK(ecu.iac.remaining == 250U - i);
         iac_service((u32)i * 10UL + 5UL);
         CHECK(ecu.iac.remaining == 249U - i);
+        CHECK(fake_iac_command == closing[i]); /* qualified at drive current */
     }
     iac_service(4000);
     CHECK(ecu.iac.fault == 5 && ecu.iac.position == 72);
@@ -508,26 +509,29 @@ static void test_iac_direction_and_status(void) {
     ecu.iac.state = IAC_READY;
     ecu.iac.target = 1;
     iac_service(0);
-    CHECK(fake_iac_command == 0x1A); /* Opening reverses table traversal. */
+    CHECK(fake_iac_command == 0x08); /* Opening reverses table traversal. */
     CHECK(ecu.iac.position == 0 && ecu.iac.pending == 1);
     iac_service(5);
     CHECK(ecu.iac.position == 1);
-    CHECK(ecu.iac.holding && fake_hold_active && fake_hold_high == 0x1A);
+    /* No hold modulation: the OEM phase byte stays latched. */
+    CHECK(!ecu.iac.holding && !fake_hold_active && fake_iac_command == 0x08);
     ecu.iac.target = 0;
     iac_service(10);
-    CHECK(fake_iac_command == 0x12);
-    iac_service(15);
+    CHECK(!ecu.iac.pending && ecu.iac.position == 1); /* reversal wait */
+    iac_service(25);
+    CHECK(fake_iac_command == 0x00 && ecu.iac.pending == 2);
+    iac_service(30);
     CHECK(ecu.iac.position == 0);
 
     setup();
     iac_home(0);
     fake_iac_response = 0x40;
-    for (now = 0; now < 85; now += 5) {
+    for (now = 0; now < 45; now += 5) {
         iac_service(now);
         CHECK(ecu.iac.state == IAC_HOMING);
     }
     CHECK(ecu.iac.open_count == 8);
-    iac_service(85); /* Ninth qualified drive response; hold samples ignored. */
+    iac_service(45); /* Ninth qualified drive response; the off echo is ignored. */
     CHECK(ecu.iac.state == IAC_FAULT && ecu.iac.fault == 2);
     CHECK(fake_iac_command == 0x3F);
     CHECK(ecu.iac.remaining == 0 && !ecu.iac.pending);
@@ -539,12 +543,10 @@ static void test_iac_direction_and_status(void) {
     iac_service(5);
     CHECK(ecu.iac.open_count == 1);
     fake_iac_response = 0xC0;
-    iac_service(10); /* Hold response cannot certify recovery. */
-    CHECK(ecu.iac.open_count == 1);
-    iac_service(15);
+    iac_service(10); /* A healthy drive response resets the count. */
     CHECK(ecu.iac.open_count == 0);
     fake_iac_response = 0x80;
-    iac_service(20); /* Short indication is actionable even in hold. */
+    iac_service(15); /* Short indication is actionable. */
     CHECK(ecu.iac.fault == 3);
 
     setup();
@@ -567,6 +569,71 @@ static void test_iac_direction_and_status(void) {
     iac_service(0);
     CHECK(ecu.iac.fault == 7 && ecu.iac.state == IAC_FAULT);
     CHECK(!ecu.iac.holding && fake_iac_command == 0x3F);
+}
+/* OEM 0x40FA6/0x41040 cadence: 5 ms per closing step, 4 ms after an
+   opening step, five-call (25 ms) wait before a reversal. */
+static void test_iac_oem_timing(void) {
+    u32 transfers;
+    setup();
+    ecu.iac.state = IAC_READY;
+    ecu.iac.position = 10;
+    ecu.iac.target = 12;
+    iac_service(0);
+    CHECK(ecu.iac.pending == 1);
+    iac_service(3);
+    CHECK(ecu.iac.position == 10);
+    iac_service(4); /* qualifies the step and opens the next at once */
+    CHECK(ecu.iac.position == 11 && ecu.iac.pending == 1);
+    iac_service(8);
+    CHECK(ecu.iac.position == 12 && !ecu.iac.pending);
+    ecu.iac.target = 11;
+    transfers = fake_iac_transfers;
+    iac_service(20);
+    iac_service(28);
+    CHECK(fake_iac_transfers == transfers && ecu.iac.position == 12);
+    iac_service(29); /* 25 ms after the last opening step */
+    CHECK(ecu.iac.pending == 2);
+    iac_service(33);
+    CHECK(ecu.iac.position == 12);
+    iac_service(34);
+    CHECK(ecu.iac.position == 11);
+    /* Same direction never waits. */
+    ecu.iac.target = 9;
+    iac_service(39);
+    CHECK(ecu.iac.pending == 2);
+    iac_service(44);
+    CHECK(ecu.iac.position == 10 && ecu.iac.pending == 2);
+}
+/* OEM 0x41258 re-sync: 5 s of qualified overspeed adds 5 counts, so the
+   valve closes 5 more steps than counted; 40 per key cycle at most. */
+static void test_iac_resync(void) {
+    u8 i;
+    setup();
+    ecu.iac.state = IAC_READY;
+    ecu.iac.position = ecu.iac.target = 0;
+    iac_resync(0, 0);
+    iac_resync(4999, 1);
+    CHECK(ecu.iac.position == 0);
+    iac_resync(5000, 1);
+    CHECK(ecu.iac.position == 5 && ecu.iac.resyncs == 1);
+    iac_service(5000);
+    CHECK(ecu.iac.pending == 2); /* drives toward the unchanged target */
+    ecu.iac.position = ecu.iac.pending = 0;
+    iac_resync(6000, 0); /* any unqualified pass restarts the 5 s */
+    iac_resync(10999, 1);
+    CHECK(ecu.iac.position == 0);
+    iac_resync(11000, 1);
+    CHECK(ecu.iac.position == 5);
+    ecu.iac.state = IAC_FAULT;
+    iac_resync(20000, 1);
+    CHECK(ecu.iac.position == 5);
+    ecu.iac.state = IAC_READY;
+    for (i = 2; i < 45; i++)
+        iac_resync(20000UL + i * 5000UL, 1);
+    CHECK(ecu.iac.resyncs == IAC_RESYNC_LIMIT && ecu.iac.position == 5U * (IAC_RESYNC_LIMIT - 1U));
+    ecu.control.mode = ENGINE_STOPPED;
+    iac_home(0);
+    CHECK(ecu.iac.resyncs == 0);
 }
 /* Field log ecu_log_20261007_150809: one sync loss at idle left the IAC
    frozen at 45 steps for 157 s, until the engine stalled. A driver fault
@@ -1637,6 +1704,8 @@ int main(void) {
     test_parser();
     test_iac();
     test_iac_direction_and_status();
+    test_iac_oem_timing();
+    test_iac_resync();
     test_iac_recovery();
     test_rotation_loss_reason();
     test_fan_preload();

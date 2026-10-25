@@ -1,5 +1,8 @@
 #include "ecu.h"
-static const u8 phases[4] = {0x12, 0x13, 0x1B, 0x1A};
+/* OEM drive bytes (file 0x15AD6 = 00,08,09,01): polarity bits only, current
+   code 00 on both bridges, walked in the same cycle as before. The OEM sends
+   nothing at target, so the last phase stays energized at drive current. */
+static const u8 phases[4] = {0x00, 0x01, 0x09, 0x08};
 static void bridges_off(void) {
     u8 ignored;
     ecu.iac.off_pending = (u8)!hal_iac_transfer(0x3F, &ignored);
@@ -97,6 +100,8 @@ static void start_homing(u32 now) {
     s->deadline = now + get16(cal_active() + CAL_HOME_MS);
     s->next_step = now;
     s->pending = 0;
+    s->last_direction = 0;
+    s->resyncs = 0;
 }
 void iac_home(u32 now) {
     Iac *s = &ecu.iac;
@@ -138,6 +143,27 @@ static void recover(u32 now) {
     }
     s->state = IAC_READY;
     s->next_step = now;
+    s->last_direction = 0;
+}
+/* OEM position re-sync (0x41258 counter 848C, 0x41040 FD28.3 edge): after
+   5 s of qualified idle at least 120 rpm above target, the counted position
+   gains 5, so the valve is driven 5 steps further closed than the count
+   says. At most 40 per key cycle (92BF, file 0x10FB0). The caller qualifies
+   with target <= position instead of the OEM's controller-state compare
+   9762 == 9746 and its not-at-target test, so it also acts at closed. */
+void iac_resync(u32 now, u8 qualified) {
+    Iac *s = &ecu.iac;
+    if (!qualified || s->state != IAC_READY) {
+        s->resync_since = now;
+        return;
+    }
+    if (now - s->resync_since < IAC_RESYNC_MS)
+        return;
+    s->resync_since = now;
+    if (s->resyncs >= IAC_RESYNC_LIMIT)
+        return;
+    s->position = (u16)(s->position + IAC_RESYNC_COUNTS);
+    s->resyncs++;
 }
 void iac_service(u32 now) {
     Iac *s = &ecu.iac;
@@ -169,8 +195,9 @@ void iac_service(u32 now) {
         return;
     if (s->pending) {
         /* Validate the response to the last energized phase before accounting
-           for it. This is still commanded position, not a position sensor. */
-        if (!command((u8)((phases[s->phase] & 0x09U) | 0x24U)))
+           for it, re-sending the same byte so the coil current is unchanged.
+           This is still commanded position, not a position sensor. */
+        if (!command(phases[s->phase]))
             return;
         if (s->state == IAC_HOMING) {
             if (s->remaining)
@@ -184,25 +211,29 @@ void iac_service(u32 now) {
         else if (s->position)
             s->position--;
         s->pending = 0;
-        if (!hal_iac_hold_start(phases[s->phase])) {
-            hold_fault = hal_iac_hold_fault();
-            fault(hold_fault ? hold_fault : 7);
+        if (s->state == IAC_HOMING) {
+            s->next_step = now + IAC_STEP_MS; /* homing keeps its 10 ms cadence */
             return;
         }
-        s->holding = 1;
-        s->next_step = now + 5UL;
-        return;
     }
     if (s->state == IAC_READY && s->target == s->position)
         return;
     closing = (u8)(s->state == IAC_HOMING || s->target < s->position);
+    /* OEM 0x41040: a step against the previous direction waits five driver
+       calls (counters 92BB/92BC), 25 ms at the OEM 5 ms step call. */
+    if (s->last_direction && s->last_direction != (closing ? 2U : 1U) &&
+        (s32)(now - s->reverse_at) < 0)
+        return;
     /* Existing vehicle firmware closes by walking FORWARD through this table;
-       opening walks backward. This is supplied vehicle evidence, not a newly
-       inferred OEM electrical polarity. */
+       opening walks backward. The OEM walks the same cycle: one count is one
+       table step (0x411A4), so counts are physical full steps. */
     phase = (u8)((s->phase + (closing ? 1U : 3U)) & 3U);
     if (!command(phases[phase]))
         return;
     s->phase = phase;
     s->pending = closing ? 2 : 1;
-    s->next_step = now + 5UL;
+    s->last_direction = s->pending;
+    s->reverse_at = now + IAC_REVERSE_MS;
+    /* OEM step call: every 5th ADC completion, every 4th after opening. */
+    s->next_step = now + (closing ? IAC_STEP_MS : IAC_OPEN_STEP_MS);
 }

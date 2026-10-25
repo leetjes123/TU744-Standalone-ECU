@@ -90,6 +90,9 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
     if (s->fan_waiting && s->fan_request && base < s->fan_target)
         base = s->fan_target;
     s->idle_position = (u16)clamp32(base, 0, maximum);
+    iac_resync(now, (u8)(mode == IDLE_FEEDBACK && c[0x5D8] != 2 &&
+                         r->rpm >= (s32)s->idle_target + IAC_RESYNC_RPM &&
+                         s->idle_position <= ecu.iac.position));
     s->idle_fan_steps = fan_steps;
     s->idle_mode = mode;
     s->previous_generation = ecu.cal.generation;
