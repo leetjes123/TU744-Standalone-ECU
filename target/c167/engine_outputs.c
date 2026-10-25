@@ -249,9 +249,12 @@ void hal_coil_off(u8 ch) SHARED {
     ecu.authority.spark_draining &= (u8)~(1U << ch);
 }
 u8 hal_injector_start(u8 ch, u16 ticks) SHARED {
-    s32 remaining = (s32)(injection_clock - hal_capture_clock());
+    /* Callers verified the start against the 32-bit capture clock moments
+       ago (>= 64 ticks, at most 30000), so 16-bit T7 distance is exact here
+       and avoids a masked clock read per channel. T7 counts with T1. */
+    s16 remaining = (s16)(injection_at - T7);
     if (!BOARD_RELEASED || ch > 3U || ticks < 25U || ticks > 31250U ||
-        remaining < 64L || remaining > 30000L) return 0;
+        remaining < 64 || remaining > 30000) return 0;
     injector_epoch[ch] = ecu.authority.epoch;
     injector_end[ch] = (u16)(injection_at + ticks);
     injector_phase[ch] = 1;
@@ -291,6 +294,7 @@ void board_schedule(u32 captured) {
     u16 target, counts, cycle, lock, reference;
     u32 delay, now;
     u8 ch;
+    InjectorTicket ticket;
     if (ecu.rotation.state != ROT_VALID || ecu.authority.inhibits) return;
     now = hal_capture_clock(); reference = T7;
     if (now - captured > ecu.rotation.normal * 30UL) {
@@ -304,6 +308,9 @@ void board_schedule(u32 captured) {
         counts = target >= ecu.rotation.tooth ? target - ecu.rotation.tooth : target + 60U - ecu.rotation.tooth;
         delay = ecu.rotation.normal * counts;
         if (delay > 30000UL || (s32)(captured + delay - hal_capture_clock()) < 128L) continue;
+        /* Plan-derived admission checks run here, preemptible: this section
+           blocks every handler up to ILVL14 (IAC hold, injector edges). */
+        injector_prepare(&ticket);
         lock = hal_lock();
         /* Recheck inside the same exclusion as publication/admission. An
            intervening higher-priority handler cannot consume this margin. */
@@ -313,6 +320,18 @@ void board_schedule(u32 captured) {
         if (!ecu.authority.inhibits && event_claim((u8)(ch + 2U), cycle)) {
             if (pending_injection[ch].ready) {
                 safety_inhibit(INH_DEADLINE, ecu.milliseconds);
+            } else if (!ecu.authority.injector_active[ch * 2U] &&
+                       !ecu.authority.injector_active[ch * 2U + 1U]) {
+                /* Idle pair: what injection_pending would do with the
+                   descriptor at once, without storing and re-reading it,
+                   including its 64-tick deadline (16-bit: the start was
+                   >= 128 and <= 30000 ticks away just above). */
+                injection_clock = captured + delay;
+                injection_at = (u16)(reference + (u16)delay);
+                if ((s16)(injection_at - T7) < 64)
+                    safety_inhibit(INH_DEADLINE, ecu.milliseconds);
+                else
+                    injector_commit(ch, &ticket);
             } else {
                 pending_injection[ch].clock = captured + delay;
                 pending_injection[ch].at = (u16)(reference + (u16)delay);

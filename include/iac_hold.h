@@ -11,7 +11,14 @@
 #define HOLD_SPI_TICKS 129U
 #define HOLD_HIGH_TICKS 460U
 #define HOLD_LOW_TICKS 790U
-#define HOLD_LATE_TICKS 250U
+/* Late-service bound for the hold compare. A late compare only stretches one
+   hold phase; a stalled T7 or stuck session is caught by the 2 ms progress
+   supervision in board_ssc_tick. The compare runs at ILVL11 and waits behind
+   any hal_lock section plus level-15 capture work: Keil at 2700-3500 rpm
+   measured up to 221 ticks (injector admission ~85 us, ignition segment pass
+   up to ~146 us, each stretched by capture interrupts). 250 ticks latched
+   fault 7 on a healthy driver. */
+#define HOLD_LATE_TICKS 1250U
 #define HOLD_RX_TICKS 625U
 typedef struct {
     volatile u16 due, stamp;

@@ -151,7 +151,16 @@ typedef struct {
     volatile u16 feedback_missing[2], feedback_invalid[2], late_events;
     volatile s16 feedback_correction[2];
     volatile u8 spark_draining;
+    /* Bumped by every write of inhibits, epoch or plan (safety.c). An
+       injector ticket prepared under one generation is valid only in it. */
+    volatile u16 generation;
 } Authority;
+/* injector_admit split around the critical section: the plan-derived checks
+   run before hal_lock, the lock only re-validates and starts the pair. */
+typedef struct {
+    u16 generation, ticks;
+    u8 ok;
+} InjectorTicket;
 typedef struct {
     u8 bytes[2][CAL_SIZE];
     u8 active, staging, valid, dirty;
@@ -328,6 +337,8 @@ void safety_conditions(u16 reasons, u32 now);
 u8 safety_aux_permitted(void) SHARED;
 u8 safety_publish(const EnginePlan *plan) SHARED;
 u8 injector_admit(u8 pair) SHARED;
+u8 injector_prepare(InjectorTicket *ticket) SHARED;
+u8 injector_commit(u8 pair, const InjectorTicket *ticket) SHARED;
 u8 coil_admit(u8 channel, u16 epoch, u16 dwell_us) SHARED;
 void injector_done(u8 channel) SHARED;
 void coil_done(u8 channel) SHARED;

@@ -22,6 +22,7 @@ void safety_inhibit(u16 reason, u32 now) SHARED {
         }
     }
     a->inhibits |= reason;
+    a->generation++;
     knock_invalidate(0);
     hal_cancel_fuel();
     if (reason & (INH_OUTPUT | INH_BOARD)) {
@@ -46,6 +47,7 @@ void safety_conditions(u16 reasons, u32 now) {
     if (!reasons && ecu.authority.inhibits)
         ecu.authority.epoch++;
     ecu.authority.inhibits = reasons;
+    ecu.authority.generation++;
     hal_unlock(lock);
 }
 u8 safety_publish(const EnginePlan *p) SHARED {
@@ -64,6 +66,7 @@ u8 safety_publish(const EnginePlan *p) SHARED {
         hal_revoke_spark(0);
     }
     a->plan = *p;
+    a->generation++;
     hal_unlock(lock);
     return 1;
 }
@@ -72,29 +75,60 @@ static u8 permitted(u8 spark) SHARED {
                 ecu.milliseconds - ecu.authority.plan.stamp <= ecu.authority.plan.max_age_ms &&
                 !(spark ? ecu.authority.plan.spark_cut : ecu.authority.plan.fuel_cut));
 }
-u8 injector_admit(u8 pair) SHARED {
-    u16 lock = hal_lock(), ticks;
+/* Soft-cut accounting and pair start; hal_lock held, admission checked. */
+static u8 injector_start_pair(u8 pair, u16 ticks) SHARED {
     u8 ch = (u8)(pair * 2U);
-    if (pair > 1 || !permitted(0) || ecu.authority.plan.pulse_us < 20 || ecu.authority.injector_active[ch] ||
-        ecu.authority.injector_active[ch + 1]) {
-        hal_unlock(lock);
-        return 0;
-    }
     ecu.authority.fuel_accumulator[pair] += ecu.authority.plan.soft_fuel;
     if (ecu.authority.fuel_accumulator[pair] >= 100) {
         ecu.authority.fuel_accumulator[pair] -= 100;
-        hal_unlock(lock);
         return 0;
     }
-    ticks = us_ticks(ecu.authority.plan.pulse_us);
     if (!hal_injector_start(ch, ticks) || !hal_injector_start((u8)(ch + 1), ticks)) {
         safety_inhibit(INH_OUTPUT, ecu.milliseconds);
-        hal_unlock(lock);
         return 0;
     }
     ecu.authority.injector_active[ch] = ecu.authority.injector_active[ch + 1] = 1;
-    hal_unlock(lock);
     return 1;
+}
+u8 injector_admit(u8 pair) SHARED {
+    u16 lock = hal_lock();
+    u8 ch = (u8)(pair * 2U), result = 0;
+    if (pair <= 1 && permitted(0) && ecu.authority.plan.pulse_us >= 20 && !ecu.authority.injector_active[ch] &&
+        !ecu.authority.injector_active[ch + 1])
+        result = injector_start_pair(pair, us_ticks(ecu.authority.plan.pulse_us));
+    hal_unlock(lock);
+    return result;
+}
+/* Without hal_lock: everything permitted(0) derives from inhibits, epoch,
+   plan and rotation. Authority fields are volatile, so they are read after
+   the generation; a writer preempting this changes the generation, and a
+   loss of ROT_VALID always passes through safety_inhibit. */
+u8 injector_prepare(InjectorTicket *t) SHARED {
+    const volatile Authority *a = &ecu.authority;
+    t->generation = a->generation;
+    t->ok = (u8)(!a->inhibits && a->plan.epoch == a->epoch && ecu.rotation.state == ROT_VALID &&
+                 !a->plan.fuel_cut && a->plan.pulse_us >= 20);
+    t->ticks = us_ticks(a->plan.pulse_us);
+    return t->ok;
+}
+/* Same admission as injector_admit for a ticket of the current generation:
+   only plan age and the pair's activity can change without a generation
+   step. Any other ticket takes the full injector_admit path. */
+u8 injector_commit(u8 pair, const InjectorTicket *t) SHARED {
+    u16 lock;
+    u8 ch = (u8)(pair * 2U), result = 0;
+    if (!t->ok || pair > 1)
+        return injector_admit(pair);
+    lock = hal_lock();
+    if (t->generation != ecu.authority.generation) {
+        hal_unlock(lock);
+        return injector_admit(pair);
+    }
+    if (ecu.milliseconds - ecu.authority.plan.stamp <= ecu.authority.plan.max_age_ms &&
+        !ecu.authority.injector_active[ch] && !ecu.authority.injector_active[ch + 1])
+        result = injector_start_pair(pair, t->ticks);
+    hal_unlock(lock);
+    return result;
 }
 u8 coil_admit(u8 ch, u16 epoch, u16 dwell_us) SHARED {
     u16 lock = hal_lock();

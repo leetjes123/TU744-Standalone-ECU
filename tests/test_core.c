@@ -12,7 +12,7 @@ extern u32 fake_watchdog_services;
 extern u8 fake_iac_command, fake_fan, fake_heaters;
 extern u8 fake_eeprom_status, fake_eeprom_read_fail;
 extern u8 fake_hold_fault, fake_hold_active, fake_hold_high, fake_hold_reset_busy;
-extern u32 fake_iac_transfers;
+extern u32 fake_iac_transfers, fake_starts;
 static unsigned tests;
 extern unsigned test_lifecycle(void);
 extern unsigned test_faults(void);
@@ -335,6 +335,86 @@ static void test_authority(void) {
     ecu.authority.inhibits = 0;
     safety_publish(&p);
     CHECK(!injector_admit(0));
+}
+/* injector_prepare/injector_commit must admit exactly what injector_admit
+   admits in the same state, and never act on a ticket from an older
+   generation of inhibits, epoch or plan. */
+static void ticket_state(u32 r) {
+    Authority *a = &ecu.authority;
+    a->inhibits = (r & 7U) ? 0 : INH_SYNC;
+    a->plan.epoch = (u16)(a->epoch + ((r >> 3) % 7U == 0U));
+    ecu.rotation.state = (u8)((r >> 6) % 5U ? ROT_VALID : ROT_ACQUIRING);
+    a->plan.fuel_cut = (u16)((r >> 9) % 9U == 0U);
+    a->plan.pulse_us = (u16)((r >> 12) % 6U ? 20U + (r >> 4) % 30000U : (r >> 4) % 20U);
+    a->plan.soft_fuel = (u8)((r >> 15) % 3U ? 0U : (r >> 5) % 101U);
+    a->plan.max_age_ms = (u16)((r >> 18) % 40U);
+    a->plan.stamp = 1000UL;
+    ecu.milliseconds = 1000UL + (r >> 20) % 50U;
+    a->injector_active[0] = (u8)((r >> 26) % 7U == 0U);
+    a->injector_active[1] = (u8)((r >> 27) % 7U == 0U);
+    a->fuel_accumulator[0] = (u16)((r >> 8) % 100U);
+}
+static void test_injector_ticket(void) {
+    EnginePlan p;
+    InjectorTicket t;
+    Authority before;
+    u32 r = 12345UL, trial, starts;
+    u16 g, ticks, acc;
+    u8 admitted;
+    setup();
+    memset(&p, 0, sizeof(p));
+    ecu.rotation.state = ROT_VALID;
+    ecu.authority.inhibits = 0;
+    p.epoch = ecu.authority.epoch;
+    p.pulse_us = 5000;
+    p.max_age_ms = 50;
+    g = ecu.authority.generation;
+    CHECK(safety_publish(&p) && ecu.authority.generation == (u16)(g + 1U));
+    CHECK(injector_prepare(&t) && t.ticks == 6250);
+    CHECK(injector_commit(0, &t) && fake_injector_ticks[0] == 6250 && fake_injector_ticks[1] == 6250);
+    CHECK(ecu.authority.injector_active[0] && ecu.authority.injector_active[1]);
+    starts = fake_starts;
+    CHECK(!injector_commit(0, &t) && fake_starts == starts); /* pair busy */
+    injector_done(0); injector_done(1);
+    /* An inhibit between prepare and commit: the ticket is stale. */
+    CHECK(injector_prepare(&t));
+    g = ecu.authority.generation;
+    safety_inhibit(INH_SYNC, 0);
+    CHECK(ecu.authority.generation != g);
+    CHECK(!injector_commit(0, &t) && fake_starts == starts);
+    /* A republished plan between prepare and commit: the new pulse is used. */
+    g = ecu.authority.generation;
+    safety_conditions(0, 0);
+    CHECK(ecu.authority.generation != g && !ecu.authority.inhibits);
+    p.epoch = ecu.authority.epoch;
+    CHECK(safety_publish(&p) && injector_prepare(&t) && t.ticks == 6250);
+    p.pulse_us = 2000;
+    CHECK(safety_publish(&p));
+    CHECK(injector_commit(1, &t) && fake_injector_ticks[2] == us_ticks(2000) && fake_injector_ticks[3] == us_ticks(2000));
+    injector_done(2); injector_done(3);
+    /* Plan age is not covered by the generation: commit re-checks it. */
+    CHECK(injector_prepare(&t));
+    ecu.milliseconds += 51UL;
+    starts = fake_starts;
+    CHECK(!injector_commit(1, &t) && fake_starts == starts);
+    /* Randomized equivalence with injector_admit from the same state. */
+    for (trial = 0; trial < 200000UL; trial++) {
+        r = r * 1103515245UL + 12345UL;
+        ticket_state(r);
+        before = ecu.authority;
+        starts = fake_starts;
+        admitted = injector_admit(0);
+        ticks = fake_injector_ticks[0];
+        acc = ecu.authority.fuel_accumulator[0];
+        ecu.authority = before;
+        fake_starts = starts;
+        fake_injector_ticks[0] = 0;
+        injector_prepare(&t);
+        CHECK(injector_commit(0, &t) == admitted);
+        CHECK(ecu.authority.fuel_accumulator[0] == acc);
+        CHECK(!admitted || fake_injector_ticks[0] == ticks);
+        CHECK(fake_starts == starts + (admitted ? 2U : 0U));
+    }
 }
 static void test_parser(void) {
     static const u8 malformed[] = {0xAA, 4, 5, 0, 0x20, 0x20, 0x49};
@@ -1553,6 +1633,7 @@ int main(void) {
     test_rotation_block();
     test_table_math();
     test_authority();
+    test_injector_ticket();
     test_parser();
     test_iac();
     test_iac_direction_and_status();
