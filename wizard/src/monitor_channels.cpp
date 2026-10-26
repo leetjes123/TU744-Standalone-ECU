@@ -57,6 +57,8 @@ const SignalDef SIGNAL_DEFS[SIG_COUNT] = {
     {"First Inhibit Reason","",IM_COL32(170,140,240,255),0,65535, "first_inhibit_reason", "First Inhibit", "First inhibit", "Output-inhibit bits of the first inhibit since ECU reset.", true},
     {"Crank Capture Resyncs","count",IM_COL32(120,220,200,255),0,65535, "crank_capture_resyncs", "Capture Resyncs", "Capture resyncs", "Crank edges counted but not captured (two edges within one interrupt latency) since reset. Rising during running indicates crank-signal interference.", true},
     {"Crank Capture Overruns","count",IM_COL32(100,200,180,255),0,65535, "crank_capture_overruns", "Capture Overruns", "Capture overruns", "Crank capture buffer overruns since reset.", true},
+    {"Link Failures","count",IM_COL32(255,110,160,255),0,65535, "link_failures", "Link Failures", "Monitor failures", "Live-frame requests that failed since connecting (Tuning Wizard side). A rising count with the engine running points to K-line noise; see Link Last Failure for the cause.", true},
+    {"Link Last Failure","",IM_COL32(255,150,190,255),0,5, "link_last_failure", "Link Last Failure", "Monitor last failure", "Cause of the most recent failed live-frame request: 0 none, 1 no reply (timeout), 2 serial error (framing/parity/overrun, usually noise), 3 echo mismatch, 4 bad or corrupt frame, 5 frame failed validation.", true},
 };
 
 namespace {
@@ -162,6 +164,8 @@ float MonitorSignalValue(int sig,const MonitorData& mon) {
     case SIG_FIRST_INHIBIT: return mon.detailAvailable ? float(mon.firstInhibit) : NAN;
     case SIG_CAPTURE_RESYNCS: return mon.detailAvailable ? float(mon.captureResyncs) : NAN;
     case SIG_CAPTURE_OVERRUNS: return mon.detailAvailable ? float(mon.captureOverruns) : NAN;
+    case SIG_LINK_FAILURES: return float(mon.linkFailures);
+    case SIG_LINK_LAST_FAILURE: return float(mon.linkLastFailure);
     default: return 0;
     }
 }

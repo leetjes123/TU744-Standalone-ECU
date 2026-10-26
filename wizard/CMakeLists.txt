@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(TuningWizard VERSION 0.0.4 LANGUAGES CXX RC)
+project(TuningWizard VERSION 0.0.5 LANGUAGES CXX RC)
 
 include(CTest)
 if(MSVC)
@@ -49,6 +49,10 @@ target_include_directories(imgui_lib PUBLIC
 )
 target_compile_definitions(imgui_lib PUBLIC IMGUI_ENABLE_FREETYPE)
 target_link_libraries(imgui_lib PUBLIC d3d11 dxgi d3dcompiler freetype)
+if(MINGW)
+    # MSVC picks these up from #pragma comment(lib) in the ImGui backend.
+    target_link_libraries(imgui_lib PUBLIC dwmapi)
+endif()
 
 # Main application
 add_executable(TuningWizard WIN32

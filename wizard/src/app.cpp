@@ -143,10 +143,19 @@ void App::update(float dt) {
         return;
     }
     syncAutotune();
-    MonitorData m;
-    if(ecu.consumeMonitorUpdate(m)) {
-        ecu.monitor=m; monitorLastUpdateTick=GetTickCount(); logState.pushSample(m,elapsed);
-        autotune.sample(m,elapsed,autotuneContext());
+    // Take every frame received since the last UI frame, each at the time its
+    // reply arrived (mapped onto the UI clock), not when the UI got to it.
+    if(ecu.drainMonitorSamples(monitorBatch)) {
+        LARGE_INTEGER now,frequency; QueryPerformanceCounter(&now); QueryPerformanceFrequency(&frequency);
+        const AutoTuneContext context=autotuneContext();
+        for(const MonitorSample& sample:monitorBatch) {
+            const double age=double(now.QuadPart-sample.receivedQpc)/double(frequency.QuadPart);
+            const double time=double(elapsed)-(age>0 ? age : 0.0);
+            logState.pushSample(sample.data,time);
+            autotune.sample(sample.data,float(time),context);
+        }
+        const MonitorData& m=monitorBatch.back().data;
+        ecu.monitor=m; monitorLastUpdateTick=GetTickCount();
         if(ecuSynced && baselineGeneration!=m.generation) { ecuSynced=false; liveTuning=false; }
     }
     if(autotune.settings.autoApply) {

@@ -1,6 +1,9 @@
 #pragma once
 #include "serial.h"
 #include <atomic>
+#include <deque>
+#include <mutex>
+#include <vector>
 #include <functional>
 #include <cstdint>
 #define CMD_GET_VERSION 0x00
@@ -34,9 +37,21 @@ struct MonitorData {
     uint8_t idleMode=0, syncLossReason=0, syncLossTooth=0;
     float idleIntegral=0, idleSpark=0;
     uint16_t firstInhibit=0, captureResyncs=0, captureOverruns=0;
+    // Host-side link health, filled in by the monitor thread (not sent by the ECU).
+    uint32_t linkFailures=0;    // failed live-frame requests since connect
+    uint8_t linkLastFailure=0;  // LinkFailure code of the most recent failure
     float plannedDutyPercent() const { return pulseUs * float(rpm) / 600000.0f; }
     bool synced() const { return (state&1)!=0; }
     bool unsaved() const { return (flags&16)!=0; }
+};
+// Why a request failed. Logged so that link noise and ECU silence can be told apart.
+enum LinkFailure : uint8_t {
+    LINK_OK=0, LINK_TIMEOUT=1, LINK_SERIAL_ERROR=2, LINK_ECHO_MISMATCH=3, LINK_BAD_FRAME=4, LINK_DECODE=5
+};
+// One live frame, stamped (QueryPerformanceCounter) when its reply was complete.
+struct MonitorSample {
+    MonitorData data;
+    int64_t receivedQpc=0;
 };
 struct Capabilities { uint16_t generation=0; };
 struct EcuStatus {
@@ -56,7 +71,8 @@ struct EcuProtocol {
     char versionString[64]={};
     MonitorData monitor={};
     std::atomic<bool> monitorActive{false};
-    int monitorFailCount=0;
+    std::atomic<int> monitorFailCount{0};
+    uint8_t lastFailure=LINK_OK; // cause of the last failed transact (serial owner only)
     // Transport injection is used by protocol and failure-recovery tests.
     std::function<int(const unsigned char*,int,unsigned char*,int,int)> exchange;
     // Set once the ECU rejects a version 4 live request (firmware 0.0.2 or older).
@@ -80,16 +96,25 @@ struct EcuProtocol {
     CRITICAL_SECTION    serialCS;       // protects serial port access
     std::atomic<bool>       threadRunning = false;
     std::atomic<bool>       threadPaused = false;  // pause during cal transfers
-    MonitorData         threadMonitor = {};     // latest data from thread
+    MonitorData         threadMonitor = {};     // worker's parse buffer
     MonitorData*        monitorParseTarget = nullptr; // worker parses away from UI-owned snapshot
-    std::atomic<bool>       threadNewData = false;  // set by thread, cleared by UI
     int                 monitorIntervalMs = 5; // poll interval
+    // Every received frame is queued for the UI. The queue has its own short
+    // lock, so the UI never waits for (or misses frames during) a serial
+    // transaction. Bounded in case the UI thread stalls (modal dialogs).
+    static constexpr size_t MONITOR_QUEUE_MAX = 4096;
+    std::mutex              sampleMutex;
+    std::deque<MonitorSample> sampleQueue;
+    uint32_t                linkFailureTotal = 0;   // monitor thread only
+    uint8_t                 linkLastFailure = LINK_OK; // monitor thread only
 
     void initThread();      // call once at startup (inits CS)
     void startMonitor();    // start background polling
     bool stopMonitor();     // stop background polling; false if thread did not exit
     void destroyThread();   // call at shutdown
-    bool consumeMonitorUpdate(MonitorData& out);
+    bool consumeMonitorUpdate(MonitorData& out); // latest frame only; drops the rest
+    size_t drainMonitorSamples(std::vector<MonitorSample>& out); // all frames, oldest first
+    void monitorCycle();    // one poll of the monitor thread (also used by tests)
     int  getMonitorFailCount();
     void resetMonitorFailCount();
     void clearMonitorUpdates();

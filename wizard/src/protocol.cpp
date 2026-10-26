@@ -12,41 +12,50 @@
 // ============================================================
 
 int EcuProtocol::transact(const unsigned char* payload,int payloadLen,unsigned char* response,int capacity,int timeoutMs) {
-    if(exchange) return exchange(payload,payloadLen,response,capacity,timeoutMs);
-    if(!port || !port->isOpen()) return -1;
+    lastFailure=LINK_OK;
+    if(exchange) {
+        const int n=exchange(payload,payloadLen,response,capacity,timeoutMs);
+        if(n<0) lastFailure=LINK_TIMEOUT;
+        return n;
+    }
+    auto fail=[this](uint8_t cause) { lastFailure=cause; return -1; };
+    if(!port || !port->isOpen()) return fail(LINK_SERIAL_ERROR);
     unsigned char packet[128],raw[512];
     const int length=BuildRequestPacket(payload,payloadLen,packet,sizeof(packet));
-    if(length<0) return -1;
+    if(length<0) return fail(LINK_BAD_FRAME);
     PurgeComm(port->handle,PURGE_RXCLEAR);
     DWORD written=0;
-    if(!WriteFile(port->handle,packet,length,&written,nullptr) || written!=DWORD(length)) return -1;
+    if(!WriteFile(port->handle,packet,length,&written,nullptr) || written!=DWORD(length)) return fail(LINK_SERIAL_ERROR);
     COMMTIMEOUTS timeouts={}; timeouts.ReadIntervalTimeout=MAXDWORD;
     timeouts.ReadTotalTimeoutConstant=1; timeouts.WriteTotalTimeoutConstant=500;
-    if(!SetCommTimeouts(port->handle,&timeouts)) return -1;
+    if(!SetCommTimeouts(port->handle,&timeouts)) return fail(LINK_SERIAL_ERROR);
     int total=0; const DWORD start=GetTickCount();
     while(GetTickCount()-start<DWORD(timeoutMs) && total<int(sizeof(raw))) {
         COMSTAT state={}; DWORD errors=0;
-        if(!ClearCommError(port->handle,&errors,&state) || errors) return -1;
+        // Framing/parity/overrun errors: usually electrical noise on the K-line.
+        if(!ClearCommError(port->handle,&errors,&state) || errors) return fail(LINK_SERIAL_ERROR);
         if(!state.cbInQue) { Sleep(1); continue; }
         DWORD count=0;
         const DWORD want=state.cbInQue<DWORD(sizeof(raw)-total)?state.cbInQue:DWORD(sizeof(raw)-total);
-        if(!ReadFile(port->handle,raw+total,want,&count,nullptr)) return -1;
+        if(!ReadFile(port->handle,raw+total,want,&count,nullptr)) return fail(LINK_SERIAL_ERROR);
         total+=int(count);
         // Accept adapters with or without local echo, never arbitrary payload
         // bytes that happen to resemble a frame header.
         int at=0;
         if(total && raw[0]==REQ_HEADER) {
             if(total<length) continue;
-            if(memcmp(raw,packet,length)) return -1;
+            if(memcmp(raw,packet,length)) return fail(LINK_ECHO_MISMATCH);
             at=length;
         }
         if(total>=at+2) {
-            if(raw[at]!=RESP_HEADER) return -1;
-            if(total>=at+int(raw[at+1])+3)
-                return ParseResponsePacket(raw+at,total-at,response,capacity);
+            if(raw[at]!=RESP_HEADER) return fail(LINK_BAD_FRAME);
+            if(total>=at+int(raw[at+1])+3) {
+                const int n=ParseResponsePacket(raw+at,total-at,response,capacity);
+                return n<0 ? fail(LINK_BAD_FRAME) : n;
+            }
         }
     }
-    return -1;
+    return fail(LINK_TIMEOUT);
 }
 
 bool EcuProtocol::getVersion() {
@@ -130,12 +139,18 @@ bool EcuProtocol::readMonitor(MonitorData& out) {
     if(!liveV4Unsupported) {
         const unsigned char request[]={CMD_MONITOR,4};
         const int n=transact(request,2,b,sizeof(b));
-        if(n==64) return DecodeMonitor(b,n,out);
+        if(n==64) {
+            if(DecodeMonitor(b,n,out)) return true;
+            lastFailure=LINK_DECODE; return false;
+        }
         // Firmware 0.0.2 and older answer an unknown request with one status byte.
-        if(n!=1) { out.valid=false; return false; }
+        if(n!=1) { out.valid=false; if(n>=0) lastFailure=LINK_DECODE; return false; }
         liveV4Unsupported=true;
     }
-    const unsigned char cmd=CMD_MONITOR; return DecodeMonitor(b,transact(&cmd,1,b,44),out);
+    const unsigned char cmd=CMD_MONITOR; const int n=transact(&cmd,1,b,44);
+    if(DecodeMonitor(b,n,out)) return true;
+    if(n>=0) lastFailure=LINK_DECODE;
+    return false;
 }
 const char* IacStateName(int state) {
     switch(state) {
@@ -168,6 +183,29 @@ const char* SyncLossReasonName(int reason) {
 void EcuProtocol::pollMonitor() {
     if(readMonitor(monitor)) monitorFailCount=0; else ++monitorFailCount;
 }
+// One live-frame poll. The frame is stamped when its reply is complete and
+// queued; the UI drains the queue, so no frame is lost while a later request
+// is in flight, and log times reflect when the ECU answered.
+void EcuProtocol::monitorCycle() {
+    EnterCriticalSection(&serialCS);
+    const bool ok=readMonitor(threadMonitor);
+    const uint8_t cause=ok ? LINK_OK : (lastFailure ? lastFailure : LINK_DECODE);
+    LARGE_INTEGER stamp; QueryPerformanceCounter(&stamp);
+    MonitorSample sample;
+    if(ok) sample.data=threadMonitor;
+    LeaveCriticalSection(&serialCS);
+    if(!ok) {
+        ++monitorFailCount; ++linkFailureTotal; linkLastFailure=cause;
+        return;
+    }
+    monitorFailCount=0;
+    sample.data.linkFailures=linkFailureTotal;
+    sample.data.linkLastFailure=linkLastFailure;
+    sample.receivedQpc=stamp.QuadPart;
+    std::lock_guard<std::mutex> guard(sampleMutex);
+    if(sampleQueue.size()>=MONITOR_QUEUE_MAX) sampleQueue.pop_front();
+    sampleQueue.push_back(sample);
+}
 static DWORD WINAPI MonitorThreadProc(LPVOID param) {
     EcuProtocol* ecu = (EcuProtocol*)param;
 
@@ -176,14 +214,7 @@ static DWORD WINAPI MonitorThreadProc(LPVOID param) {
             Sleep(10);
             continue;
         }
-
-        EnterCriticalSection(&ecu->serialCS);
-
-        if (ecu->readMonitor(ecu->threadMonitor)) {
-            ecu->threadNewData=true; ecu->monitorFailCount=0;
-        } else { ++ecu->monitorFailCount; }
-        LeaveCriticalSection(&ecu->serialCS);
-
+        ecu->monitorCycle();
         Sleep(ecu->monitorIntervalMs);
     }
     return 0;
@@ -218,33 +249,36 @@ void EcuProtocol::destroyThread() {
 }
 
 bool EcuProtocol::consumeMonitorUpdate(MonitorData& out) {
-    if (!TryEnterCriticalSection(&serialCS)) return false;
-    const bool available = threadNewData;
-    if (available) {
-        out = threadMonitor;
-        threadNewData = false;
-    }
-    LeaveCriticalSection(&serialCS);
-    return available;
+    std::lock_guard<std::mutex> guard(sampleMutex);
+    if (sampleQueue.empty()) return false;
+    out = sampleQueue.back().data;
+    sampleQueue.clear();
+    return true;
+}
+
+size_t EcuProtocol::drainMonitorSamples(std::vector<MonitorSample>& out) {
+    out.clear();
+    std::lock_guard<std::mutex> guard(sampleMutex);
+    out.assign(sampleQueue.begin(), sampleQueue.end());
+    sampleQueue.clear();
+    return out.size();
 }
 
 int EcuProtocol::getMonitorFailCount() {
-    if (!TryEnterCriticalSection(&serialCS)) return 0;
-    const int count = monitorFailCount;
-    LeaveCriticalSection(&serialCS);
-    return count;
+    return monitorFailCount;
 }
 
 void EcuProtocol::resetMonitorFailCount() {
-    EnterCriticalSection(&serialCS);
     monitorFailCount = 0;
-    LeaveCriticalSection(&serialCS);
 }
 
 void EcuProtocol::clearMonitorUpdates() {
     EnterCriticalSection(&serialCS);
-    threadNewData = false;
     threadMonitor = {};
     monitor.valid = false;
+    linkFailureTotal = 0;
+    linkLastFailure = LINK_OK;
     LeaveCriticalSection(&serialCS);
+    std::lock_guard<std::mutex> guard(sampleMutex);
+    sampleQueue.clear();
 }

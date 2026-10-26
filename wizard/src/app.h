@@ -45,6 +45,7 @@ struct App {
     char diagnosticSearch[128]={};
     int diagnosticFilter=0;
     float elapsed=0;
+    std::vector<MonitorSample> monitorBatch; // reused per UI frame
     UndoStack undo;
     unsigned char ecuData[CAL_SIZE]={},compareData[CAL_SIZE]={};
     bool ecuSynced=false,compareActive=false,liveTuning=false,updateOnly=false;

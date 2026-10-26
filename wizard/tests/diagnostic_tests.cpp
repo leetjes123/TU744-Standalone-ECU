@@ -2,9 +2,49 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <vector>
 #define REQUIRE(x) do { if(!(x)) { fprintf(stderr,"Diagnostic failure at %d: %s\n",__LINE__,#x); std::exit(1); } } while(0)
 
+// Live frames are queued with receive stamps; none are lost between UI frames,
+// and failed requests are counted with their cause (Tuning Wizard 0.0.5).
+static void MonitorQueueTests() {
+    EcuProtocol ecu; ecu.initThread();
+    int calls=0; int mode=0; // 0 valid frame, 1 no reply, 2 frame fails validation
+    ecu.exchange=[&](const unsigned char* p,int,unsigned char* o,int cap,int) {
+        REQUIRE(p[0]==CMD_MONITOR && cap>=64);
+        if(mode==1) return -1;
+        memset(o,0,64); o[0]=mode==2?9:4; ++calls;
+        o[1]=(unsigned char)(calls>>8); o[2]=(unsigned char)calls; // rpm = call number
+        return 64;
+    };
+    std::vector<MonitorSample> batch;
+    ecu.monitorCycle(); mode=1; ecu.monitorCycle(); ecu.monitorCycle();
+    mode=2; ecu.monitorCycle(); mode=0; ecu.monitorCycle(); ecu.monitorCycle();
+    REQUIRE(ecu.getMonitorFailCount()==0);
+    REQUIRE(ecu.drainMonitorSamples(batch)==3);
+    REQUIRE(batch[0].data.rpm==1 && batch[1].data.rpm==3 && batch[2].data.rpm==4);
+    REQUIRE(batch[0].data.linkFailures==0 && batch[0].data.linkLastFailure==LINK_OK);
+    REQUIRE(batch[1].data.linkFailures==3 && batch[1].data.linkLastFailure==LINK_DECODE);
+    REQUIRE(batch[0].receivedQpc<=batch[1].receivedQpc && batch[1].receivedQpc<=batch[2].receivedQpc);
+    REQUIRE(ecu.drainMonitorSamples(batch)==0);
+    mode=1; ecu.monitorCycle(); REQUIRE(ecu.getMonitorFailCount()==1);
+    mode=0; ecu.monitorCycle(); ecu.drainMonitorSamples(batch);
+    REQUIRE(batch.size()==1 && batch[0].data.linkFailures==4 && batch[0].data.linkLastFailure==LINK_TIMEOUT);
+    // Bounded: a stalled UI keeps the newest frames.
+    for(size_t i=0;i<EcuProtocol::MONITOR_QUEUE_MAX+10;++i) ecu.monitorCycle();
+    REQUIRE(ecu.drainMonitorSamples(batch)==EcuProtocol::MONITOR_QUEUE_MAX);
+    REQUIRE(batch.back().data.rpm==uint16_t(calls));
+    // Reconnect clears queue and link counters.
+    ecu.monitorCycle(); ecu.clearMonitorUpdates(); REQUIRE(ecu.drainMonitorSamples(batch)==0);
+    mode=1; ecu.monitorCycle(); ecu.clearMonitorUpdates(); mode=0; ecu.monitorCycle();
+    ecu.drainMonitorSamples(batch); REQUIRE(batch.size()==1 && batch[0].data.linkFailures==0);
+    MonitorData latest; ecu.monitorCycle(); ecu.monitorCycle();
+    REQUIRE(ecu.consumeMonitorUpdate(latest) && latest.rpm==uint16_t(calls) && !ecu.consumeMonitorUpdate(latest));
+    ecu.destroyThread();
+}
+
 void DiagnosticTests() {
+    MonitorQueueTests();
     unsigned char raw[24]={}; raw[0]=0x43; raw[2]=1; raw[3]=0x21; raw[4]=24;
     raw[9]=126; raw[10]=67; raw[11]=80; raw[12]=92; raw[13]=139; raw[14]=100;
     raw[17]=74; raw[18]=2; raw[19]=128; raw[20]=0x12; raw[21]=0x34; raw[22]=7;
