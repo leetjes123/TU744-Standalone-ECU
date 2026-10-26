@@ -4,7 +4,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools'))
 from migrate_schema5 import migrate
 
-source = (ROOT/'release/TU744-v0.0.1/basemaps/TU5JP_1.6_8v_speed_density.bin').read_bytes()
+source = (ROOT/'tests/fixtures/schema4_TU5JP_basemap_v0.0.1.bin').read_bytes()
 out = migrate(source)
 assert len(out) == len(source) == 3072
 for i, (before, after) in enumerate(zip(source, out)):
