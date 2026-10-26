@@ -7,7 +7,6 @@ disabled. Actual filter frequencies depend on board straps and clock. Retard per
 event, maximum retard and recovery speed are single settings. Knock changes
 require a stopped engine. Voltage, detection, freshness, fault and requested
 retard appear in the dashboard/logs; ignition timing remains the base command.
-See the TU744 0.0.2 release notes (`release/TU744-v0.0.2/README.md`).
 
 ## Files and connection
 
@@ -131,10 +130,18 @@ Correction, Sync Loss Reason, Sync Loss Tooth, First Inhibit Reason, Crank
 Capture Resyncs and Crank Capture Overruns. They are `nan` when the ECU runs
 older firmware. Codes are explained in each signal's tooltip.
 
-Logging records accepted monitor samples, including sync state, sync-loss count,
-status bitfields and map weights. Both live logging and opened CSV files use
-stacked graphs with a shared time axis and cursor. Recorded times come from
-accepted packets, so pauses and irregular packet timing remain visible.
+Logging records every accepted monitor sample, including sync state, sync-loss
+count, status bitfields and map weights. Both live logging and opened CSV files
+use stacked graphs with a shared time axis and cursor. Each sample is stamped
+when its reply arrived from the ECU, so the time column shows the real packet
+timing; a gap means the ECU did not deliver a valid frame in that time.
+
+Tuning Wizard 0.0.5 adds two link-health columns: **Link Failures** (failed
+live-frame requests since connecting) and **Link Last Failure** (cause of the
+most recent one: 1 no reply, 2 serial error, 3 echo mismatch, 4 bad frame,
+5 failed validation). A count that only rises with the engine running usually
+means noise on the K-line. Older Wizard versions could drop received samples
+while the window was visible; logs from them can show gaps that were not real.
 
 Use **Channels** to search, enable traces, assign each trace to a graph, select
 full-log, visible-window or manual ranges, and change colors. **Graph configuration**

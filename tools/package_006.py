@@ -1,8 +1,9 @@
 """Assemble the local 0.0.6 package after builds and verification.
 
-Run tools/package_ecu.py first (it writes release/TU744-v0.0.6/firmware).
-Firmware-only release: the Tuning Wizard 0.0.4 executable is carried over
-unchanged from the 0.0.4 package.
+Run tools/package_ecu.py first (it writes release/TU744-v0.0.6/firmware),
+with basemaps/TU5JP_1.6_8v_speed_density_v0.0.6.bin as the built-in tune.
+The package carries Tuning Wizard 0.0.5 from build/wizard-0.0.5 and both
+basemaps (TU5JP 1.6 built in, TU3JP 1.4 to load with the Wizard).
 """
 from pathlib import Path
 import hashlib
@@ -12,7 +13,7 @@ from artifacts import verify_firmware
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = '0.0.6'
-WIZARD = '0.0.4'
+WIZARD = '0.0.5'
 OUT = ROOT/f'release/TU744-v{VERSION}'
 verify_firmware(ROOT,ROOT/'build/stock-95080','stock-95080')
 image_manifest=json.loads((OUT/'firmware/image-manifest.json').read_text())
@@ -20,9 +21,11 @@ assert image_manifest['firmware_version']==VERSION and image_manifest['calibrati
 assert hashlib.sha256((OUT/f'firmware/TU744_{VERSION}_M95080.bin').read_bytes()).hexdigest()==image_manifest['binary_sha256']
 basemap=f'basemaps/TU5JP_1.6_8v_speed_density_v{VERSION}.bin'
 assert hashlib.sha256((ROOT/basemap).read_bytes()).hexdigest()==image_manifest['tune_sha256']
-wizard=f'release/TU744-v{WIZARD}/wizard/TuningWizard_{WIZARD}.exe'
+wizard=f'build/wizard-{WIZARD}/TuningWizard_{WIZARD}.exe'
+tu3=f'basemaps/TU3JP_1.4_8v_speed_density_v{VERSION}.bin'
 files = {
     basemap: basemap,
+    tu3: tu3,
     wizard:f'wizard/TuningWizard_{WIZARD}.exe',
     'wizard/OPERATOR_MANUAL.md':'wizard/OPERATOR_MANUAL.md',
     f'docs/RELEASE-{VERSION}.md':'README.md',
@@ -34,7 +37,8 @@ not_run=['protocol (tests/test_protocol.py)',
          'keil knock detection and running windows (TU744_OEM_REPO)',
          'target simulations: audit, lifecycle, output-closure, foreground, engine, faults, timing, fuel, reset, flash, fwupdate, main, oem-scheduler (TU744_OEM_REPO)',
          'artifact verification report (tools/verify_artifacts.py, TU744_OEM_REPO)',
-         'Wizard CTest (Wizard unchanged from 0.0.4; see the 0.0.4 package)',
+         'Wizard port tests (tests/port_tests.cpp, need build/oem/oem.dll); the Wizard graph, diagnostic and monitor-queue tests ran (MinGW build under Wine)',
+         'Tuning Wizard 0.0.5 GUI smoke test on Windows (wizard/tools/smoke_test.ps1)',
          'foreground target simulation: run, fails with cal_valid 0 (0.0.5 fails the same way)',
          'Keil timing measurement of the OEM stepper call rate (assumed ~1 ms ADC completion)',
          'engine validation of stepper drive current, step rate, reversal wait and re-sync']
@@ -44,6 +48,9 @@ for name in logs:
     text=data.decode('utf-16' if data.startswith(b'\xff\xfe') else 'utf-8',errors='replace')
     assert not any(m in text for m in ('Traceback','Assertion failed','FAIL')), name
     files[f'build/{name}.log']=f'verification/{name}.log'
+# Files from earlier packages that this one replaces.
+for stale in ['wizard/TuningWizard_0.0.4.exe']:
+    if (OUT/stale).exists(): (OUT/stale).unlink()
 for source,destination in files.items():
     target=OUT/destination; target.parent.mkdir(parents=True,exist_ok=True)
     shutil.copyfile(ROOT/source,target)

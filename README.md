@@ -25,7 +25,7 @@ injectors, coils and idle stepper as fitted to the TU).
 | Folder | What it is |
 | --- | --- |
 | [`release/TU744-v0.0.6`](release/TU744-v0.0.6) | **Ready-to-use files. Start here if you just want to flash your ECU.** |
-| [`basemaps/`](basemaps) | Starting tune for a stock **TU5JP 1.6 8v** (speed-density) |
+| [`basemaps/`](basemaps) | Starting tunes for a stock **TU5JP 1.6 8v** and **TU3JP 1.4 8v** (speed-density) |
 | [`flashing/`](flashing) | Flashing tools: `UploadViaDebug.exe` (+ `STAGE1/2/3` files), `FlashUpdate.exe`, `Hex2Bin.exe` |
 | [`wizard/`](wizard) | Tuning Wizard – a standalone tuning/logging program (source) |
 | `src/`, `include/`, `target/` | ECU firmware source (C167, Keil C166) |
@@ -37,19 +37,25 @@ release/TU744-v0.0.6/
 ├── firmware/      TU744_0.0.6_M95080.bin   ← the file you flash (basemap already inside)
 │                  TU744_0.0.6_M95080.hex   ← same firmware as HEX
 ├── basemaps/      TU5JP_1.6_8v_speed_density_v0.0.6.bin
-├── wizard/        TuningWizard_0.0.4.exe, OPERATOR_MANUAL.md
+│                  TU3JP_1.4_8v_speed_density_v0.0.6.bin
+├── wizard/        TuningWizard_0.0.5.exe, OPERATOR_MANUAL.md
 ├── tools/         migrate_schema5.py (schema-4 tunes from 0.0.1)
 └── verification/  build manifests and test logs
 ```
 
 The flashing tools are in the repository's [`flashing/`](flashing) folder.
 
-## The basemap
+## The basemaps
 
 The firmware comes with a **basemap for the TU5JP 1.6 8v** already built in, so a
 stock TU5JP can start straight after flashing. The same map is in
 [`basemaps/TU5JP_1.6_8v_speed_density_v0.0.6.bin`](basemaps/TU5JP_1.6_8v_speed_density_v0.0.6.bin),
 so you can always go back to it.
+
+For a **TU3JP 1.4 8v**, use
+[`basemaps/TU3JP_1.4_8v_speed_density_v0.0.6.bin`](basemaps/TU3JP_1.4_8v_speed_density_v0.0.6.bin).
+Load it before the first start: **Open file**, **Write active tune**, then
+**Save tune to ECU flash** and switch the ignition off and on.
 
 It is a **speed-density** tune: fuel is worked out from engine speed and intake
 manifold pressure (MAP sensor). Open it in the Tuning Wizard with **Open file**.
@@ -122,7 +128,7 @@ open the ECU or use debug mode again.
 
 ### 4. Set up the Tuning Wizard
 
-1. Run **`release/TU744-v0.0.6/wizard/TuningWizard_0.0.4.exe`** and connect to your
+1. Run **`release/TU744-v0.0.6/wizard/TuningWizard_0.0.5.exe`** and connect to your
    cable's COM port (19200 baud, 8N1).
 2. Select **ECU > Read calibration** to load the tune that is in the ECU.
 3. **Save file** to keep a copy on your PC before changing anything.

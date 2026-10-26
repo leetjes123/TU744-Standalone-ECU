@@ -3,8 +3,21 @@
 Calibration schema 5, 3072 bytes, unchanged from 0.0.5, so no migration is
 needed. Identity: `TU744 0.0.6`. The live frame (command `13 04`) is unchanged.
 
-The Tuning Wizard has no changes in this release. The package ships the 0.0.4
-executable as `wizard/TuningWizard_0.0.4.exe`, and it works with this firmware.
+The package ships Tuning Wizard 0.0.5 as `wizard/TuningWizard_0.0.5.exe`.
+
+## Tuning Wizard 0.0.5
+
+Live logging no longer drops samples. Before, the Wizard kept only the newest
+live frame and the screen picked it up once per redraw, so frames that arrived
+while the next request was in flight were lost and rows were timestamped at
+redraw time. Logs showed irregular gaps (0.17-0.6 s, sometimes more) that were
+not real. Now every received frame is queued and stamped when its reply
+arrived.
+
+Two new log channels show link health: **Link Failures** (failed live-frame
+requests since connecting) and **Link Last Failure** (1 no reply, 2 serial
+error, 3 echo mismatch, 4 bad frame, 5 failed validation). Older CSV files
+still open.
 
 ## Firmware changes
 
@@ -51,9 +64,18 @@ position instead, so the re-sync also acts with the valve at 0 steps.
 Tests: `test_iac_direction_and_status`, `test_iac_oem_timing` and
 `test_iac_resync` (`tests/test_core.c`).
 
-## Basemap
+## Basemaps
 
-`TU5JP_1.6_8v_speed_density_v0.0.6.bin` is identical to the 0.0.5 basemap.
+New basemaps replace the previous one; both are schema 5 and pass the
+firmware's calibration validation.
+
+- `TU5JP_1.6_8v_speed_density_v0.0.6.bin`: TU5JP 1.6 8v. Built into the
+  firmware image.
+- `TU3JP_1.4_8v_speed_density_v0.0.6.bin`: TU3JP 1.4 8v. Load it with the
+  Wizard (**Open file**, **Write active tune**, **Save tune to ECU flash**).
+
+The firmware code is unchanged; only the built-in calibration slot of
+`TU744_0.0.6_M95080.bin` differs from the first 0.0.6 package.
 
 ## Verification
 
@@ -67,8 +89,9 @@ The foreground target simulation was run and fails with `cal_valid 0`.
 Firmware 0.0.5 fails the same way, so this is not caused by this release.
 
 Not run: the other target simulations, Keil knock runs and OEM scheduler tests;
-the protocol test; and the Wizard CTest, because the Wizard is unchanged.
-`verification/NOT-RUN.txt` lists them.
+the protocol test; the Wizard port tests and a Windows GUI smoke test of Wizard
+0.0.5. `verification/NOT-RUN.txt` lists them. Wizard 0.0.5 graph, diagnostic
+and monitor-queue tests passed.
 
 The OEM step timing assumes the OEM ADC scan completes about every 1 ms. That
 comes from static analysis and was not timed in the simulator. The absolute coil
