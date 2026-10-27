@@ -100,6 +100,31 @@ void controls_update(u32 now, const Rotation *r) {
     auxiliary_update(now, r, c);
     knock_update(now, r, c);
 }
+/* End a finished tool session (save, knock bench, refused update). If the
+   engine stayed stopped and unsynced throughout, its storage stalls caused
+   any deadline, so SERVICE and that deadline clear without a reset. A
+   deadline latched before the session, or any rotation, keeps the latch. */
+void service_poll(u32 now) {
+    u16 lock, cleared;
+    if (!ecu.service)
+        return;
+    if (ecu.control.mode != ENGINE_STOPPED || ecu.rotation.state != ROT_UNSYNCED)
+        ecu.service_clean = 0;
+    /* Wait for one ordinary pass after the last stall, or the tick check
+       re-latches the deadline from the stale foreground stamp. */
+    if (!ecu.service_clean || ecu.storage.phase || knock.bench || ecu.protocol.update ||
+        ecu.iac.off_pending || now - ecu.foreground_stamp > 50UL)
+        return;
+    lock = hal_lock();
+    cleared = (u16)(INH_SERVICE | (ecu.service_prior_deadline ? 0U : INH_DEADLINE));
+    ecu.service = 0;
+    ecu.authority.inhibits &= (u16)~cleared;
+    ecu.authority.epoch++;
+    ecu.authority.generation++;
+    hal_unlock(lock);
+    if (ecu.control.key_on)
+        iac_home(now);
+}
 void ecu_poll(void) {
     u32 now, finished;
     u16 lock, count;
@@ -111,6 +136,7 @@ void ecu_poll(void) {
     cal_poll(now);
     if (now - ecu.foreground_stamp > 50UL)
         safety_inhibit(INH_DEADLINE, now);
+    service_poll(now);
     fault_set(FAULT_CAL, ecu.cal.valid ? 0 : 1, now);
     power_poll(now);
     if (now - ecu.control.last_control >= 10UL) {

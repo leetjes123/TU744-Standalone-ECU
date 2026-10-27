@@ -278,6 +278,10 @@ def generate():
     table('Idle spark correction', 0x620, 8, 'deg', (0x610, 8, 16, 'RPM error', True),
           equation='X/2-20', decimals=1, low=-20, high=20, category='Idle',
           description='Columns: idle target minus actual RPM.')
+    scalar('Idle spark correction RPM limit', 0x96E, 16, 'RPM', 0, 3000, category='Idle',
+           description='Idle spark correction applies only up to idle target plus this margin, so '
+                       'coasting above idle keeps normal advance. 0 = no limit (firmware 0.0.6 and older '
+                       'behaviour). Firmware 0.0.7 or later; live tunable.')
     scalar('Idle start duration', 0x5EE, 8, 's', 0, 25.5, 'X/10', 1, 'Idle')
     scalar('Closed throttle threshold', 0x5E6, 8, '%', 0, 20, category=['Idle', 'Rev limit and fuel cut'],
            description='Shared idle and overrun threshold, inclusive and without debounce. Invalid TPS disables both.')
@@ -381,6 +385,12 @@ def generate():
            description='Must exceed the cranking re-entry threshold.')
     scalar('Cranking re-entry threshold', 0x906, 16, 'RPM', 100, 1999, category='Engine state')
     scalar('Running qualification', 0x908, 16, 'ms', 100, 5000, category='Engine state')
+    scalar('Sync loss recovery window', 0x96C, 16, 'ms', 0, 2000, category='Engine state',
+           description='If crank sync returns within this time after a loss while running, the engine '
+                       'goes straight back to running: no cranking fuel or advance, and after-start '
+                       'enrichment, idle start catch and the STFT delay are not restarted. The sync-loss '
+                       'count still increases. 0 = every loss is a new start (firmware 0.0.6 and older '
+                       'behaviour). Firmware 0.0.7 or later; live tunable.')
     scalar('Plan age limit', 0x922, 16, 'ms', 20, 50, category='Engine state',
            description='Outputs are inhibited if the fuel/spark plan is older than this.')
     # ---- Vehicle speed and gear

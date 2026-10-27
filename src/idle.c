@@ -1,7 +1,7 @@
 #include "control.h"
 void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
     Controls *s = &ecu.control;
-    u16 base, start, duration, maximum, fan_steps;
+    u16 base, start, duration, maximum, fan_steps, spark_rpm;
     u32 age;
     u8 mode, ix;
     s32 error, p, change, output;
@@ -55,8 +55,13 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
     }
     s->idle_spark10 = 0;
     if (mode == IDLE_FEEDBACK) {
-        fraction = axis_fraction(c + 0x610, 8, (s16)error, 1, &ix);
-        s->idle_spark10 = (s16)((s32)lerp(c[0x620 + ix], c[0x621 + ix], fraction) * 5L - 200L);
+        /* Coasting well above idle keeps its normal advance. */
+        spark_rpm = get16(c + CAL_IDLE_SPARK_RPM);
+        if (!spark_rpm || (s32)r->rpm <= (s32)s->idle_target + spark_rpm) {
+            fraction = axis_fraction(c + 0x610, 8, (s16)error, 1, &ix);
+            s->idle_spark10 =
+                (s16)((s32)lerp(c[0x620 + ix], c[0x621 + ix], fraction) * 5L - 200L);
+        }
         if (c[0x5D8] != 2 && ecu.iac.state == IAC_READY) {
             change = error * get16(c + 0x632) / 100L * (s32)dt / 1000L;
             if (c[0x5D8] == 0) {

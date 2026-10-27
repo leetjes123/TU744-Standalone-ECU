@@ -47,6 +47,8 @@ static u16 get16(const u8* p) { return (p[0]<<8)|p[1]; }
 #define CAL_IDLE_STEP_MS 0x924U
 #define CAL_IAC_HOME_STEPS 0x93CU
 #define CAL_DFCO_EXIT_RPM 0x93EU
+#define CAL_SYNC_RECOVERY_MS 0x96CU
+#define CAL_IDLE_SPARK_RPM 0x96EU
 #define IAC_HOME_STEPS_DEFAULT 250U
 #define IAC_HOME_MS_PER_STEP 12U /* 10 ms step cadence plus scheduling margin */
 #define CFG_ALPHA_N 0x01U
@@ -295,6 +297,10 @@ std::vector<CalibrationIssue> ValidateCalibration(const CalBuffer& cal) {
         report(0x5E9);
     if (get16(c + CAL_DFCO_EXIT_RPM) > 2000U)
         report(CAL_DFCO_EXIT_RPM);
+    if (get16(c + CAL_SYNC_RECOVERY_MS) > 2000U)
+        report(CAL_SYNC_RECOVERY_MS);
+    if (get16(c + CAL_IDLE_SPARK_RPM) > 3000U)
+        report(CAL_IDLE_SPARK_RPM);
     if (c[0x5D9] != 5 || c[0x5DA] != 6)
         report(0x5D9); /* fixed development IAC waveform */
     if (get16(c + CAL_IDLE_STEP_MS) < 20 || get16(c + CAL_IDLE_STEP_MS) > 1000)
@@ -357,7 +363,8 @@ std::vector<CalibrationIssue> ValidateCalibration(const CalBuffer& cal) {
 const CalibrationRange STRUCTURAL_RANGES[] = {
     {0x460, 0x480}, {0x550, 0x5B4}, {0x5D4, 0x5D5}, {0x5E4, 0x5E5},
     {0x600, 0x603}, {0x605, 0x607}, {0x7A1, 0x7AF}, {0x7B0, 0x7B4},
-    {0x900, CAL_DFCO_EXIT_RPM}, {CAL_DFCO_EXIT_RPM + 2U, CAL_SIZE}};
+    {0x900, CAL_DFCO_EXIT_RPM}, {CAL_DFCO_EXIT_RPM + 2U, CAL_SYNC_RECOVERY_MS},
+    {CAL_IDLE_SPARK_RPM + 2U, CAL_SIZE}};
 const int NUM_STRUCTURAL_RANGES = sizeof(STRUCTURAL_RANGES)/sizeof(CalibrationRange);
 bool IsStructuralOffset(int offset) {
     for (const auto& r : STRUCTURAL_RANGES) if (offset >= r.start && offset < r.end) return true;

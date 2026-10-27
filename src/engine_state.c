@@ -2,16 +2,31 @@
 #include "lifecycle.h"
 void engine_state_update(u32 now, const Rotation *r, const u8 *c) {
     Controls *s = &ecu.control;
+    u16 window;
     /* Shared, undebounced no-load decision, including invalid-TPS rejection. */
     s->throttle_closed = (u8)(ecu.sensors.tps.quality == QUALITY_VALID &&
                              ecu.sensors.tps.value <= (s16)c[0x5E6] * 10);
     /* Both DFCO and idle use this cycle's coolant-dependent target. */
     s->idle_target = table1(c, 0x4D0, ecu.sensors.clt.value, 1);
+    window = get16(c + CAL_SYNC_RECOVERY_MS);
+    if (s->sync_recovering && (!s->key_on || now - s->sync_lost_at > window))
+        s->sync_recovering = 0;
     if (!s->key_on || r->state != ROT_VALID) {
+        if (s->key_on && window && s->mode == ENGINE_RUNNING) {
+            s->sync_recovering = 1;
+            s->sync_lost_at = now;
+        }
         s->mode = ENGINE_STOPPED;
         s->qualifying = 0;
-        s->running_at = now;
+        if (!s->sync_recovering)
+            s->running_at = now;
         return;
+    }
+    if (s->sync_recovering) {
+        /* Brief running sync loss: no cranking VE/advance, no new start. */
+        s->sync_recovering = 0;
+        if (s->mode == ENGINE_STOPPED)
+            s->mode = ENGINE_RUNNING;
     }
     if (s->mode == ENGINE_STOPPED)
         s->mode = ENGINE_CRANKING;

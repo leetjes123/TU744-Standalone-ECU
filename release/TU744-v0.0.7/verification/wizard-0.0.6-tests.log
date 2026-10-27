@@ -1,0 +1,79 @@
+'vswhere.exe' is not recognized as an internal or external command,
+operable program or batch file.
+[1/62] Building CXX object CMakeFiles\TuningWizard.dir\src\cal_defs.cpp.obj
+[2/62] Building CXX object CMakeFiles\TuningWizard.dir\src\theme.cpp.obj
+[3/62] Building CXX object CMakeFiles\TuningWizard.dir\src\calibration_safety.cpp.obj
+[4/62] Building CXX object CMakeFiles\TuningWizard.dir\src\cal_navigation.cpp.obj
+[5/62] Building CXX object CMakeFiles\TuningWizard.dir\src\cal_validate_generated.cpp.obj
+[6/62] Building CXX object CMakeFiles\TuningWizard.dir\src\serial.cpp.obj
+[7/62] Building CXX object CMakeFiles\TuningWizard.dir\src\protocol_codec.cpp.obj
+[8/62] Building CXX object CMakeFiles\TuningWizard.dir\src\calibration.cpp.obj
+[9/62] Building CXX object CMakeFiles\TuningWizard.dir\src\tune_transfer.cpp.obj
+[10/62] Building CXX object CMakeFiles\TuningWizard.dir\src\dtc_defs.cpp.obj
+[11/62] Building CXX object CMakeFiles\TuningWizard.dir\src\firmware_flash.cpp.obj
+[12/62] Building CXX object CMakeFiles\TuningWizard.dir\src\grid_paste.cpp.obj
+[13/62] Building CXX object CMakeFiles\TuningWizard.dir\src\help.cpp.obj
+[14/62] Building CXX object CMakeFiles\TuningWizard.dir\src\log_graphs.cpp.obj
+[15/62] Building CXX object CMakeFiles\TuningWizard.dir\src\main.cpp.obj
+[16/62] Building CXX object CMakeFiles\TuningWizard.dir\src\dashboard.cpp.obj
+[17/62] Building CXX object CMakeFiles\TuningWizard.dir\src\protocol.cpp.obj
+[18/62] Building CXX object CMakeFiles\TuningWizard.dir\src\logging.cpp.obj
+[19/62] Building RC object CMakeFiles\TuningWizard.dir\src\resource.rc.res
+[20/62] Building CXX object CMakeFiles\TuningWizard.dir\src\autotune_log.cpp.obj
+[21/62] Building CXX object CMakeFiles\TuningWizard.dir\src\undo.cpp.obj
+[22/62] Building CXX object CMakeFiles\TuningWizard.dir\src\monitor_channels.cpp.obj
+[23/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\cal_defs.cpp.obj
+[24/62] Building CXX object CMakeFiles\TuningWizard.dir\src\storage.cpp.obj
+[25/62] Building CXX object CMakeFiles\TuningWizard.dir\src\autotune.cpp.obj
+[26/62] Building CXX object CMakeFiles\TuningWizard.dir\src\diagnostics.cpp.obj
+[27/62] Building CXX object CMakeFiles\TuningWizard.dir\src\app.cpp.obj
+[28/62] Building CXX object CMakeFiles\TuningWizard.dir\src\diagnostics_ui.cpp.obj
+[29/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\theme.cpp.obj
+[30/62] Building CXX object CMakeFiles\TuningWizard.dir\src\logviewer.cpp.obj
+[31/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\calibration_safety.cpp.obj
+[32/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\cal_validate_generated.cpp.obj
+[33/62] Building CXX object CMakeFiles\TuningWizard.dir\src\tooltips.cpp.obj
+[34/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\cal_navigation.cpp.obj
+[35/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\calibration.cpp.obj
+[36/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\protocol_codec.cpp.obj
+[37/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\serial.cpp.obj
+[38/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\dtc_defs.cpp.obj
+[39/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\protocol.cpp.obj
+[40/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\firmware_flash.cpp.obj
+[41/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\main.cpp.obj
+[42/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\tune_transfer.cpp.obj
+[43/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\help.cpp.obj
+[44/62] Building CXX object CMakeFiles\TuningWizard.dir\src\editor.cpp.obj
+[45/62] Building RC object CMakeFiles\TuningWizardPreview.dir\src\resource.rc.res
+[46/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\dashboard.cpp.obj
+[47/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\app.cpp.obj
+[48/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\diagnostics_ui.cpp.obj
+[49/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\monitor_channels.cpp.obj
+[50/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\autotune_log.cpp.obj
+[51/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\autotune.cpp.obj
+[52/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\storage.cpp.obj
+[53/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\diagnostics.cpp.obj
+[54/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\grid_paste.cpp.obj
+[55/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\undo.cpp.obj
+[56/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\logging.cpp.obj
+[57/62] Linking CXX executable bin\TuningWizard.exe
+[58/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\logviewer.cpp.obj
+[59/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\tooltips.cpp.obj
+[60/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\log_graphs.cpp.obj
+[61/62] Building CXX object CMakeFiles\TuningWizardPreview.dir\src\editor.cpp.obj
+[62/62] Linking CXX executable bin\TuningWizardPreview.exe
+Test project ~/Documents/TU744/wizard/build
+    Start 1: logging_and_graphs
+1/5 Test #1: logging_and_graphs ................   Passed    0.71 sec
+    Start 2: calibration_and_protocol_safety
+2/5 Test #2: calibration_and_protocol_safety ...   Passed    0.22 sec
+    Start 3: generated_definitions
+3/5 Test #3: generated_definitions .............   Passed    0.23 sec
+    Start 4: diagnostic_definitions
+4/5 Test #4: diagnostic_definitions ............   Passed    0.10 sec
+    Start 5: neutral_interface
+5/5 Test #5: neutral_interface .................   Passed    0.57 sec
+
+100% tests passed, 0 tests failed out of 5
+
+Total Test time (real) =   2.64 sec

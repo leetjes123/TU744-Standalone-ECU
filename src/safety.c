@@ -39,8 +39,10 @@ void safety_inhibit(u16 reason, u32 now) SHARED {
 }
 void safety_conditions(u16 reasons, u32 now) {
     u16 lock = hal_lock();
-    /* Service, deadline and actuator faults require reset. Other conditions
-       recover only through this complete, coherent foreground evaluation. */
+    /* Service, deadline and actuator faults latch; only service_poll clears
+       a clean tool session's SERVICE/DEADLINE, others require reset. Other
+       conditions recover only through this complete, coherent foreground
+       evaluation. */
     reasons |= ecu.authority.inhibits & (INH_SERVICE | INH_DEADLINE | INH_OUTPUT | INH_BOARD);
     if (reasons)
         safety_inhibit(reasons, now);
@@ -180,6 +182,10 @@ u8 service_enter(u32 now) {
         ecu.iac.state == IAC_HOMING || ecu.authority.coil_active[0] || ecu.authority.coil_active[1]) {
         hal_unlock(lock);
         return 0;
+    }
+    if (!ecu.service) {
+        ecu.service_clean = 1;
+        ecu.service_prior_deadline = (u8)((ecu.authority.inhibits & INH_DEADLINE) != 0);
     }
     ecu.service = 1;
     safety_inhibit(INH_SERVICE, now);

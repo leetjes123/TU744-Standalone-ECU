@@ -50,6 +50,11 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
 /* Zero preserves the 200 RPM restart margin of existing schema-4 tunes. */
 #define CAL_DFCO_EXIT_RPM 0x93EU
 #define DFCO_EXIT_RPM_DEFAULT 200U
+/* A running engine whose sync returns within this many ms resumes RUNNING
+   with its original start time; zero treats every sync loss as a new start. */
+#define CAL_SYNC_RECOVERY_MS 0x96CU
+/* Idle spark correction only up to idle target + this RPM; zero = no limit. */
+#define CAL_IDLE_SPARK_RPM 0x96EU
 #define IAC_HOME_STEPS_DEFAULT 250U
 #define IAC_HOME_MS_PER_STEP 12U /* 10 ms step cadence plus scheduling margin */
 /* OEM stepper timing (0x40FA6/0x41040): a step call every 5th ~1 ms ADC
@@ -203,6 +208,9 @@ typedef struct {
        sets while the fan is requested so feedback cannot trim the preload. */
     s32 idle_settled_integral, idle_fan_floor;
     u8 idle_settled_valid, idle_fan_floor_valid;
+    /* Running sync loss awaiting recovery (CAL_SYNC_RECOVERY_MS). */
+    u8 sync_recovering;
+    u32 sync_lost_at;
 } Controls;
 typedef struct {
     u8 state, phase, previous_active, open_count, fault, response, pending;
@@ -258,6 +266,9 @@ typedef struct {
     volatile u32 vss_edge_stamp;
     u8 board_released;
     volatile u8 service, key_input, wideband_input;
+    /* Service session: engine stayed stopped/unsynced, and whether a
+       deadline was already latched before it (runtime, reset-only). */
+    u8 service_clean, service_prior_deadline;
 } Ecu;
 extern Ecu ecu;
 /* Worst observed timing since boot or the last protocol 2F reset. Bench
@@ -377,6 +388,7 @@ void storage_release(const void *owner);
 u8 storage_save(u32 now);
 void storage_poll(u32 now);
 u8 service_enter(u32 now);
+void service_poll(u32 now);
 u16 dtc_report_word(u8 event, u8 subtype);
 #define DTC_INGEST_NEW 1U
 #define DTC_INGEST_CLEAR 2U

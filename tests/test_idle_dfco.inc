@@ -148,3 +148,135 @@ static void test_idle_step_mode(void) {
         idle_dfco_pass(2100 + i * 10UL, (u16)(target - 400));
     CHECK(ecu.control.idle_position - start == 5);
 }
+/* A brief running sync loss resumes RUNNING with its original start time. */
+static void test_sync_recovery(void) {
+    u8 *c;
+    idle_dfco_setup(); c = ecu.cal.bytes[0];
+    ecu.control.running_at = 100;
+    /* Zero window: today's behaviour, a loss is a new start. */
+    idle_dfco_pass(5000, 2000);
+    ecu.rotation.state = ROT_UNSYNCED;
+    idle_dfco_pass(5010, 0);
+    CHECK(ecu.control.mode == ENGINE_STOPPED && ecu.control.running_at == 5010);
+    ecu.rotation.state = ROT_VALID;
+    idle_dfco_pass(5020, 2000);
+    CHECK(ecu.control.mode == ENGINE_CRANKING);
+    /* Inside the window: straight back to RUNNING, start time kept. */
+    idle_dfco_setup(); c = ecu.cal.bytes[0];
+    put16(c + CAL_SYNC_RECOVERY_MS, 500);
+    ecu.control.running_at = 100;
+    idle_dfco_pass(5000, 2000);
+    ecu.rotation.state = ROT_UNSYNCED;
+    idle_dfco_pass(5010, 0);
+    CHECK(ecu.control.mode == ENGINE_STOPPED && ecu.control.sync_recovering);
+    ecu.rotation.state = ROT_ACQUIRING;
+    idle_dfco_pass(5400, 0);
+    CHECK(ecu.control.mode == ENGINE_STOPPED && ecu.control.running_at == 100);
+    ecu.rotation.state = ROT_VALID;
+    idle_dfco_pass(5510, 2000);
+    CHECK(ecu.control.mode == ENGINE_RUNNING && ecu.control.running_at == 100);
+    CHECK(!ecu.control.sync_recovering && ecu.control.idle_mode != IDLE_CRANK);
+    /* Below cranking RPM on resync still drops to cranking. */
+    ecu.rotation.state = ROT_UNSYNCED;
+    idle_dfco_pass(6000, 0);
+    ecu.rotation.state = ROT_VALID;
+    idle_dfco_pass(6100, 300);
+    CHECK(ecu.control.mode == ENGINE_CRANKING);
+    /* Past the window: a new start. */
+    idle_dfco_setup(); c = ecu.cal.bytes[0];
+    put16(c + CAL_SYNC_RECOVERY_MS, 500);
+    ecu.control.running_at = 100;
+    idle_dfco_pass(5000, 2000);
+    ecu.rotation.state = ROT_UNSYNCED;
+    idle_dfco_pass(5010, 0);
+    idle_dfco_pass(5511, 0);
+    CHECK(!ecu.control.sync_recovering && ecu.control.running_at == 5511);
+    ecu.rotation.state = ROT_VALID;
+    idle_dfco_pass(5520, 2000);
+    CHECK(ecu.control.mode == ENGINE_CRANKING);
+    /* Key-off ends the recovery; a stopped or cranking loss never arms it. */
+    idle_dfco_setup(); c = ecu.cal.bytes[0];
+    put16(c + CAL_SYNC_RECOVERY_MS, 500);
+    ecu.rotation.state = ROT_UNSYNCED;
+    idle_dfco_pass(5010, 0);
+    ecu.control.key_on = 0;
+    idle_dfco_pass(5020, 0);
+    CHECK(!ecu.control.sync_recovering);
+    ecu.control.key_on = 1;
+    ecu.control.mode = ENGINE_CRANKING;
+    idle_dfco_pass(5030, 0);
+    CHECK(!ecu.control.sync_recovering);
+}
+/* Idle spark correction stops above idle target + the calibrated margin. */
+static void test_idle_spark_rpm(void) {
+    u8 *c;
+    idle_dfco_setup(); c = ecu.cal.bytes[0];
+    c[0x603] = 50; /* keep DFCO waiting */
+    idle_dfco_pass(1000, 2500);
+    CHECK(ecu.control.idle_mode == IDLE_FEEDBACK && ecu.control.idle_spark10 < 0);
+    put16(c + CAL_IDLE_SPARK_RPM, 300);
+    idle_dfco_pass(1010, 2500);
+    CHECK(ecu.control.idle_mode == IDLE_FEEDBACK && !ecu.control.idle_spark10);
+    idle_dfco_pass(1020, 1251); /* target 950 + 300 */
+    CHECK(!ecu.control.idle_spark10);
+    idle_dfco_pass(1030, 1250);
+    CHECK(ecu.control.idle_spark10 < 0);
+    idle_dfco_pass(1040, 800);
+    CHECK(ecu.control.idle_spark10 > 0);
+    put16(c + CAL_IDLE_SPARK_RPM, 3001);
+    CHECK(!cal_validate(c, &ecu.cal.error_offset) && ecu.cal.error_offset == CAL_IDLE_SPARK_RPM);
+    put16(c + CAL_IDLE_SPARK_RPM, 0);
+    put16(c + CAL_SYNC_RECOVERY_MS, 2001);
+    CHECK(!cal_validate(c, &ecu.cal.error_offset) && ecu.cal.error_offset == CAL_SYNC_RECOVERY_MS);
+}
+/* A clean tool session releases SERVICE and its own deadline. */
+static void service_pass(u32 now) {
+    ecu.foreground_stamp = now - 10U;
+    service_poll(now);
+}
+static void test_service_release(void) {
+    u32 now;
+    setup();
+    memset(fake_eeprom, 0xFF, 8192);
+    ecu.control.key_on = 1;
+    CHECK(storage_save(0));
+    CHECK(ecu.service && (ecu.authority.inhibits & INH_SERVICE));
+    safety_inhibit(INH_DEADLINE, 1); /* storage stall during the session */
+    service_pass(2);
+    CHECK(ecu.service); /* save still running */
+    for (now = 0; ecu.storage.phase && now < 1000; now++)
+        storage_poll(now);
+    CHECK(ecu.storage.result == 1);
+    /* Not on the pass straight after a stall. */
+    ecu.foreground_stamp = 900;
+    service_poll(1000);
+    CHECK(ecu.service);
+    service_pass(1010);
+    CHECK(!ecu.service && !(ecu.authority.inhibits & (INH_SERVICE | INH_DEADLINE)));
+    CHECK(ecu.iac.state == IAC_HOMING);
+    safety_conditions(INH_SYNC, 1020);
+    CHECK(ecu.authority.inhibits == INH_SYNC);
+    /* A deadline latched at runtime before the session stays latched. */
+    setup();
+    memset(fake_eeprom, 0xFF, 8192);
+    safety_inhibit(INH_DEADLINE, 0);
+    CHECK(storage_save(0));
+    for (now = 0; ecu.storage.phase && now < 1000; now++)
+        storage_poll(now);
+    service_pass(1010);
+    CHECK(!ecu.service && !(ecu.authority.inhibits & INH_SERVICE) &&
+          (ecu.authority.inhibits & INH_DEADLINE));
+    /* Rotation during the session keeps both latched until reset. */
+    setup();
+    memset(fake_eeprom, 0xFF, 8192);
+    CHECK(storage_save(0));
+    ecu.rotation.state = ROT_ACQUIRING;
+    service_pass(5);
+    ecu.rotation.state = ROT_UNSYNCED;
+    safety_inhibit(INH_DEADLINE, 6);
+    for (now = 0; ecu.storage.phase && now < 1000; now++)
+        storage_poll(now);
+    service_pass(1010);
+    CHECK(ecu.service && (ecu.authority.inhibits & (INH_SERVICE | INH_DEADLINE)) ==
+                             (INH_SERVICE | INH_DEADLINE));
+}
