@@ -143,6 +143,12 @@ most recent one: 1 no reply, 2 serial error, 3 echo mismatch, 4 bad frame,
 means noise on the K-line. Older Wizard versions could drop received samples
 while the window was visible; logs from them can show gaps that were not real.
 
+Two more columns record gaps directly: **Dropped Frames** (frames received but
+discarded because the Wizard could not keep up; should stay 0) and **Sample
+Gap** (seconds since the previous logged sample). A large Sample Gap together
+with a rising Link Failures means the ECU did not answer; with no new failures
+it means monitoring was paused, for example for an ECU read, write or save.
+
 Use **Channels** to search, enable traces, assign each trace to a graph, select
 full-log, visible-window or manual ranges, and change colors. **Graph configuration**
 controls graph names, adding/removing panels, grid lines, trace width and linked

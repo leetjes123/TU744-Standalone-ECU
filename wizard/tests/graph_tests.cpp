@@ -91,8 +91,13 @@ int main() {
     CHECK(close(log->recordingElapsed,1.25f));
     fflush(log->csvFile); rewind(log->csvFile);
     char line[4096]; CHECK(fgets(line,sizeof(line),log->csvFile));
-    const float expected[]={0,.4f,1,1.25f};
-    for(float t:expected) { CHECK(fgets(line,sizeof(line),log->csvFile)); CHECK(close(strtof(line,nullptr),t)); }
+    const float expected[]={0,.4f,1,1.25f}, gaps[]={0,.4f,.6f,.25f};
+    for(int row=0;row<4;++row) {
+        CHECK(fgets(line,sizeof(line),log->csvFile)); CHECK(close(strtof(line,nullptr),expected[row]));
+        const char* field=line;
+        for(int column=0;column<=SIG_SAMPLE_GAP;++column) field=strchr(field,',')+1;
+        CHECK(close(strtof(field,nullptr),gaps[row]));
+    }
     log->stopRecording();
     log->clear();
     for(int i=0;i<LOG_MAX_SAMPLES+10;++i) { mon.rpm=i; log->pushSample(mon,200+i*.05); }

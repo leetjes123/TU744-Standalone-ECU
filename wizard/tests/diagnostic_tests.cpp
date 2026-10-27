@@ -34,10 +34,13 @@ static void MonitorQueueTests() {
     for(size_t i=0;i<EcuProtocol::MONITOR_QUEUE_MAX+10;++i) ecu.monitorCycle();
     REQUIRE(ecu.drainMonitorSamples(batch)==EcuProtocol::MONITOR_QUEUE_MAX);
     REQUIRE(batch.back().data.rpm==uint16_t(calls));
+    // Each frame carries the drop count when it was queued: the overflow follows the oldest kept frame.
+    REQUIRE(batch.front().data.droppedFrames==0 && batch.back().data.droppedFrames==10);
     // Reconnect clears queue and link counters.
     ecu.monitorCycle(); ecu.clearMonitorUpdates(); REQUIRE(ecu.drainMonitorSamples(batch)==0);
     mode=1; ecu.monitorCycle(); ecu.clearMonitorUpdates(); mode=0; ecu.monitorCycle();
-    ecu.drainMonitorSamples(batch); REQUIRE(batch.size()==1 && batch[0].data.linkFailures==0);
+    ecu.drainMonitorSamples(batch);
+    REQUIRE(batch.size()==1 && batch[0].data.linkFailures==0 && batch[0].data.droppedFrames==0);
     MonitorData latest; ecu.monitorCycle(); ecu.monitorCycle();
     REQUIRE(ecu.consumeMonitorUpdate(latest) && latest.rpm==uint16_t(calls) && !ecu.consumeMonitorUpdate(latest));
     ecu.destroyThread();

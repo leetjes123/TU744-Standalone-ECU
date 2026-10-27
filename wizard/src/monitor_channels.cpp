@@ -59,6 +59,8 @@ const SignalDef SIGNAL_DEFS[SIG_COUNT] = {
     {"Crank Capture Overruns","count",IM_COL32(100,200,180,255),0,65535, "crank_capture_overruns", "Capture Overruns", "Capture overruns", "Crank capture buffer overruns since reset.", true},
     {"Link Failures","count",IM_COL32(255,110,160,255),0,65535, "link_failures", "Link Failures", "Monitor failures", "Live-frame requests that failed since connecting (Tuning Wizard side). A rising count with the engine running points to K-line noise; see Link Last Failure for the cause.", true},
     {"Link Last Failure","",IM_COL32(255,150,190,255),0,5, "link_last_failure", "Link Last Failure", "Monitor last failure", "Cause of the most recent failed live-frame request: 0 none, 1 no reply (timeout), 2 serial error (framing/parity/overrun, usually noise), 3 echo mismatch, 4 bad or corrupt frame, 5 frame failed validation.", true},
+    {"Dropped Frames","count",IM_COL32(255,90,90,255),0,65535, "dropped_frames", "Dropped Frames", "", "Frames received from the ECU but discarded because the Tuning Wizard could not keep up (queue full) since connecting. Should stay 0.", true},
+    {"Sample Gap","s",IM_COL32(255,200,120,255),0,20, "sample_gap", "Sample Gap", "", "Time since the previous logged sample. A large value marks a gap: failed requests (see Link Failures), dropped frames, or monitoring paused for an ECU read, write or save.", true},
 };
 
 namespace {
@@ -166,6 +168,8 @@ float MonitorSignalValue(int sig,const MonitorData& mon) {
     case SIG_CAPTURE_OVERRUNS: return mon.detailAvailable ? float(mon.captureOverruns) : NAN;
     case SIG_LINK_FAILURES: return float(mon.linkFailures);
     case SIG_LINK_LAST_FAILURE: return float(mon.linkLastFailure);
+    case SIG_DROPPED_FRAMES: return float(mon.droppedFrames);
+    case SIG_SAMPLE_GAP: return mon.sampleGap;
     default: return 0;
     }
 }

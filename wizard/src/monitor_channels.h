@@ -45,6 +45,8 @@ enum LogSignal {
     SIG_CAPTURE_OVERRUNS,
     // Wizard-side link health (Tuning Wizard 0.0.5+); not from the ECU.
     SIG_LINK_FAILURES, SIG_LINK_LAST_FAILURE,
+    // Tuning Wizard 0.0.6+: frames lost on the host side and the time since the previous row.
+    SIG_DROPPED_FRAMES, SIG_SAMPLE_GAP,
     SIG_COUNT
 };
 

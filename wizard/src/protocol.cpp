@@ -203,12 +203,14 @@ void EcuProtocol::monitorCycle() {
     sample.data.linkLastFailure=linkLastFailure;
     sample.receivedQpc=stamp.QuadPart;
     std::lock_guard<std::mutex> guard(sampleMutex);
-    if(sampleQueue.size()>=MONITOR_QUEUE_MAX) sampleQueue.pop_front();
+    if(sampleQueue.size()>=MONITOR_QUEUE_MAX) { sampleQueue.pop_front(); ++droppedTotal; }
+    sample.data.droppedFrames=droppedTotal;
     sampleQueue.push_back(sample);
 }
 static DWORD WINAPI MonitorThreadProc(LPVOID param) {
     EcuProtocol* ecu = (EcuProtocol*)param;
-
+    // Keep polling on time while the window is in the background.
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
     while (ecu->threadRunning) {
         if (ecu->threadPaused || !ecu->monitorActive || !ecu->port || !ecu->port->isOpen()) {
             Sleep(10);
@@ -281,4 +283,5 @@ void EcuProtocol::clearMonitorUpdates() {
     LeaveCriticalSection(&serialCS);
     std::lock_guard<std::mutex> guard(sampleMutex);
     sampleQueue.clear();
+    droppedTotal = 0;
 }

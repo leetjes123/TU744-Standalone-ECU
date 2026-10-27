@@ -18,6 +18,7 @@ struct LogState {
     int         writeIdx = 0;
     int         sampleCount = 0;
     double      sampleTimes[LOG_MAX_SAMPLES] = {};
+    double      lastSampleTime = -1;   // survives clear(); feeds the Sample Gap channel
     LogViewerState viewer;
     int viewerWriteIdx = -1, viewerSampleCount = -1;
 

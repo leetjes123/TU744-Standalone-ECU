@@ -40,6 +40,8 @@ struct MonitorData {
     // Host-side link health, filled in by the monitor thread (not sent by the ECU).
     uint32_t linkFailures=0;    // failed live-frame requests since connect
     uint8_t linkLastFailure=0;  // LinkFailure code of the most recent failure
+    uint32_t droppedFrames=0;   // received frames discarded by a full queue since connect
+    float sampleGap=0;          // seconds since the previous logged sample (set by the logger)
     float plannedDutyPercent() const { return pulseUs * float(rpm) / 600000.0f; }
     bool synced() const { return (state&1)!=0; }
     bool unsaved() const { return (flags&16)!=0; }
@@ -107,6 +109,7 @@ struct EcuProtocol {
     std::deque<MonitorSample> sampleQueue;
     uint32_t                linkFailureTotal = 0;   // monitor thread only
     uint8_t                 linkLastFailure = LINK_OK; // monitor thread only
+    uint32_t                droppedTotal = 0;       // guarded by sampleMutex
 
     void initThread();      // call once at startup (inits CS)
     void startMonitor();    // start background polling

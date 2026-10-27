@@ -28,9 +28,13 @@ void LogState::init() {
     enabled[SIG_STFT] = true;
 }
 
-void LogState::pushSample(const MonitorData& mon,double timeSeconds) {
+void LogState::pushSample(const MonitorData& sample,double timeSeconds) {
     if(timeSeconds<0 || !std::isfinite(timeSeconds)) timeSeconds=GetTickCount64()*.001;
     if(sampleCount) timeSeconds=std::max(timeSeconds,sampleTimes[(writeIdx+LOG_MAX_SAMPLES-1)%LOG_MAX_SAMPLES]+.000001);
+    // Gap to the previous accepted frame; Clear history does not hide it from the CSV.
+    MonitorData mon=sample;
+    mon.sampleGap=lastSampleTime<0 ? 0.0f : float(std::max(0.0,timeSeconds-lastSampleTime));
+    lastSampleTime=timeSeconds;
     sampleTimes[writeIdx]=timeSeconds;
     for (int s = 0; s < SIG_COUNT; s++)
         data[s][writeIdx] = getSignalValue((LogSignal)s, mon);
@@ -39,7 +43,7 @@ void LogState::pushSample(const MonitorData& mon,double timeSeconds) {
     writeIdx = (writeIdx + 1) % LOG_MAX_SAMPLES;
 
     if(recording && csvFile) {
-        if(recordingBaseTime<0) recordingBaseTime=timeSeconds;
+        if(recordingBaseTime<0) { recordingBaseTime=timeSeconds; mon.sampleGap=0; }
         recordingElapsed=float(timeSeconds-recordingBaseTime);
         writeCsvRow(mon);
     }
