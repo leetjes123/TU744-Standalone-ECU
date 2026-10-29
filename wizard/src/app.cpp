@@ -10,7 +10,7 @@ App gApp;
 #include "app_reused.inc"
 void App::init() {
     cal.clear(); ecu.setPort(&serial); ecu.initThread(); logState.init();
-    comPorts=SerialPort::enumerate(); loadRecentFiles(); loadAutotuneSettings(); openToolTab(OpenTab::AUTOTUNE); openToolTab(OpenTab::DIAGNOSTICS); openDashboardTab();
+    comPorts=SerialPort::enumerate(); loadRecentFiles(); loadAutotuneSettings(); loadDeveloperMode(); openToolTab(OpenTab::AUTOTUNE); openToolTab(OpenTab::DIAGNOSTICS); openDashboardTab();
 }
 void App::guardedClose() {
     if(ecuBusy()) { snprintf(statusLine,sizeof(statusLine),"Wait for the ECU operation to finish"); return; }
@@ -157,6 +157,15 @@ void App::update(float dt) {
         const MonitorData& m=monitorBatch.back().data;
         ecu.monitor=m; monitorLastUpdateTick=GetTickCount();
         if(ecuSynced && baselineGeneration!=m.generation) { ecuSynced=false; liveTuning=false; }
+        // In developer mode, read the knock fault cause once when the live flag rises:
+        // the ECU clears it when the engine stops.
+        const bool knockFault=m.knockAvailable && (m.knockFlags&16);
+        if(knockFault && !knockFaultSeen && developerMode) readKnockDetail(false,true);
+        knockFaultSeen=knockFault;
+    }
+    if(knockJobPolling && GetTickCount64()>=knockJobNextPoll) {
+        knockJobNextPoll=GetTickCount64()+500;
+        if(!readKnockDetail(true,true) || knockDetail.jobState!=1) knockJobPolling=false;
     }
     if(autotune.settings.autoApply) {
         const char* stop=nullptr;
@@ -210,6 +219,15 @@ void App::drawUI() {
             if(ImGui::MenuItem("Diagnostics")) openToolTab(OpenTab::DIAGNOSTICS);
             if(ImGui::MenuItem("Autotune")) openToolTab(OpenTab::AUTOTUNE);
             if(ImGui::MenuItem("Review calibration",nullptr,false,cal.loaded)) showReviewIssues=true;
+            if(developerMode && ImGui::MenuItem("Developer tools")) openToolTab(OpenTab::DEVELOPER);
+            ImGui::Separator();
+            if(ImGui::MenuItem("Developer mode",nullptr,&developerMode)) {
+                saveDeveloperMode();
+                if(developerMode) openToolTab(OpenTab::DEVELOPER);
+                else for(int i=0;i<numTabs;++i) if(tabs[i].type==OpenTab::DEVELOPER) tabs[i].open=false;
+            }
+            if(ImGui::IsItemHovered()) ImGui::SetTooltip("Adds the Developer tools tab: ECU timing health and the crank capture snapshot.");
+            ImGui::Separator();
             const char* names[]={"Workshop","High contrast","Color vision safe"};
             for(int i=0;i<3;++i) if(ImGui::MenuItem(names[i])) { uiTheme=UiTheme(i); ApplyUiTheme(uiTheme,S(1)); }
             ImGui::EndMenu();
@@ -319,7 +337,8 @@ void App::drawUI() {
             std::string label=t.type==OpenTab::TABLE?CalibrationTableLabel(ALL_TABLES[t.tableIndex].offset,ALL_TABLES[t.tableIndex].name):
                 t.type==OpenTab::SCALARS||t.type==OpenTab::FLAGS?(page?std::string(page->group)+(page->label[0]?" / "+std::string(page->label):""):t.categoryFilter):
                 t.type==OpenTab::DASHBOARD?"Dashboard":t.type==OpenTab::LOGGING?"Logging":
-                t.type==OpenTab::DIAGNOSTICS?"Diagnostics":t.type==OpenTab::AUTOTUNE?"Autotune":logViewers[t.logViewerIndex].tabLabel;
+                t.type==OpenTab::DIAGNOSTICS?"Diagnostics":t.type==OpenTab::AUTOTUNE?"Autotune":
+                t.type==OpenTab::DEVELOPER?"Developer":logViewers[t.logViewerIndex].tabLabel;
             label+="###tab"+std::to_string(i);
             if(ImGui::BeginTabItem(label.c_str(),&t.open,activeTab==i?ImGuiTabItemFlags_SetSelected:0)) {
                 if(activeTab==i) activeTab=-1;
@@ -345,6 +364,7 @@ void App::drawUI() {
                 if(t.type==OpenTab::LOG_VIEWER) DrawLogViewer(logViewers[t.logViewerIndex]);
                 if(t.type==OpenTab::DIAGNOSTICS) drawDiagnostics();
                 if(t.type==OpenTab::AUTOTUNE) drawAutotune();
+                if(t.type==OpenTab::DEVELOPER) drawDeveloper();
                 ImGui::EndTabItem();
             }
         }
@@ -494,6 +514,55 @@ static std::vector<std::string> Lines(const std::string& text) {
 void App::loadAutotuneSettings() {
     autotune.settings.parse(ReadText(AutotuneFilePath("tw_autotune.txt")));
     autotuneSettingsSeen=autotune.settings; autotuneSavedSettings=autotune.settings.serialize();
+}
+void App::loadDeveloperMode() {
+    developerMode=ReadText(AutotuneFilePath("tw_developer.txt")).rfind("1",0)==0;
+}
+void App::saveDeveloperMode() {
+    WriteTextAtomically(AutotuneFilePath("tw_developer.txt"),developerMode?"1\n":"0\n");
+}
+// One bounded exchange with the monitor paused, as for a firmware check.
+void App::readTimingHealth(bool clearMaxima) {
+    if(ecuBusy() || !serial.isOpen()) return;
+    if(!ecu.stopMonitor()) { snprintf(statusLine,sizeof(statusLine),"Could not pause monitoring for the timing health read"); return; }
+    ecu.clearMonitorUpdates();
+    TimingHealth health;
+    if(ecu.timingHealth(health,clearMaxima)) {
+        timingHealth=health; timingHealthValid=true; timingHealthAt=GetTickCount64();
+        snprintf(statusLine,sizeof(statusLine),clearMaxima?"Timing health read; maxima reset":"Timing health read");
+    } else snprintf(statusLine,sizeof(statusLine),"Timing health unavailable: the ECU did not answer command 2F 02");
+    if(!updateOnly) ecu.startMonitor();
+}
+bool App::readKnockDetail(bool withJob,bool quiet) {
+    if(ecuBusy() || !serial.isOpen()) return false;
+    if(!ecu.stopMonitor()) { snprintf(statusLine,sizeof(statusLine),"Could not pause monitoring for the knock read"); return false; }
+    ecu.clearMonitorUpdates();
+    KnockDetail detail;
+    const bool ok=ecu.knockDetail(detail,withJob);
+    if(ok) {
+        knockDetail=detail; knockDetailValid=true; knockDetailAt=GetTickCount64();
+        if(detail.fault) { knockFaultCapture=detail; knockFaultCaptured=true; knockFaultAt=knockDetailAt; }
+        if(!quiet) snprintf(statusLine,sizeof(statusLine),"Knock detail read");
+    } else snprintf(statusLine,sizeof(statusLine),"Knock detail unavailable: the ECU did not answer command %s",withJob?"35 03":"34");
+    if(!updateOnly) ecu.startMonitor();
+    return ok;
+}
+// Bench jobs run with the engine stopped and enter the ECU's service session;
+// the session ends by itself once the job has finished and the engine is stopped.
+void App::knockBenchJob(uint8_t action) {
+    if(ecuBusy() || !serial.isOpen()) return;
+    if(!ecu.stopMonitor()) { snprintf(statusLine,sizeof(statusLine),"Could not pause monitoring for the knock bench job"); return; }
+    ecu.clearMonitorUpdates();
+    const bool ok=ecu.knockJob(action);
+    KnockDetail detail;
+    if(ecu.knockDetail(detail,true)) { knockDetail=detail; knockDetailValid=true; knockDetailAt=GetTickCount64(); }
+    if(!updateOnly) ecu.startMonitor();
+    knockJobPolling=ok && action!=0;
+    knockJobNextPoll=GetTickCount64()+500;
+    if(action==0) snprintf(statusLine,sizeof(statusLine),ok?"Knock bench job stopped":"The ECU refused to stop the knock bench job");
+    else if(ok) snprintf(statusLine,sizeof(statusLine),action==2?"Knock self-test started":"Knock bench sampling started");
+    else snprintf(statusLine,sizeof(statusLine),"The ECU refused the knock bench job: it needs key on, engine stopped and not turning, "
+                  "a valid tune, no save in progress and no other tool session");
 }
 void App::saveAutotuneSettings() {
     const std::string text=autotune.settings.serialize();

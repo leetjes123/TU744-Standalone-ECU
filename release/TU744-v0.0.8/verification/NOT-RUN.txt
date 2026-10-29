@@ -1,0 +1,7 @@
+Not run or known failing for this package:
+- target simulations of the final binary (the run on the previous build passed; the final change only removed the idle speed condition and floor)
+- bench and engine validation of the cranking dwell, coil watchdog, stall recovery and the new idle settings
+- Tuning Wizard 0.0.7 against a real ECU (inhibit banner, live frame 5, developer tab)
+- Keil uVision native knock ADC completion (simulator-blocked in the installed version; the completion model passes)
+- Known failing, not caused by 0.0.8: tests/test_lifecycle_target.py expects wideband policy 0 to disable the wideband; the firmware has treated policy 0 as direct (trusted when the sample is valid) since 0.0.2
+- Known failing, not caused by 0.0.8: the synthetic fixture tune of tests/test_foreground_target.py fails validation (cal_valid 0, also on 0.0.5-0.0.7); foreground runs boot the release binary with --image instead

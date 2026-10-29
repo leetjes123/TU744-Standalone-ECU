@@ -11,11 +11,11 @@ static void MonitorQueueTests() {
     EcuProtocol ecu; ecu.initThread();
     int calls=0; int mode=0; // 0 valid frame, 1 no reply, 2 frame fails validation
     ecu.exchange=[&](const unsigned char* p,int,unsigned char* o,int cap,int) {
-        REQUIRE(p[0]==CMD_MONITOR && cap>=64);
+        REQUIRE(p[0]==CMD_MONITOR && cap>=72);
         if(mode==1) return -1;
-        memset(o,0,64); o[0]=mode==2?9:4; ++calls;
+        memset(o,0,72); o[0]=mode==2?9:5; ++calls;
         o[1]=(unsigned char)(calls>>8); o[2]=(unsigned char)calls; // rpm = call number
-        return 64;
+        return 72;
     };
     std::vector<MonitorSample> batch;
     ecu.monitorCycle(); mode=1; ecu.monitorCycle(); ecu.monitorCycle();

@@ -37,6 +37,10 @@ struct MonitorData {
     uint8_t idleMode=0, syncLossReason=0, syncLossTooth=0;
     float idleIntegral=0, idleSpark=0;
     uint16_t firstInhibit=0, captureResyncs=0, captureOverruns=0;
+    // Command 13 version 5 (firmware 0.0.8+): output trip source and per-event output faults.
+    bool outputDetailAvailable=false;
+    uint8_t tripSource=0, latchClears=0;
+    uint16_t coilTimeouts=0, injectorClamps=0, lateEvents=0;
     // Host-side link health, filled in by the monitor thread (not sent by the ECU).
     uint32_t linkFailures=0;    // failed live-frame requests since connect
     uint8_t linkLastFailure=0;  // LinkFailure code of the most recent failure
@@ -68,6 +72,42 @@ const char* IacStateName(int state);
 const char* IacFaultName(int fault);
 const char* IdleModeName(int mode);
 const char* SyncLossReasonName(int reason);
+const char* TripSourceName(int source);
+// Inhibit bit 0..8 (command 13 bytes 34..35): short name, and a hover text
+// with what blocks outputs and how it clears.
+const char* InhibitName(int bit);
+const char* InhibitDetail(int bit);
+bool InhibitLatches(int bit, bool firmwareBefore008);
+// Command 2F version 2: worst timing since reset and the first crank capture failure.
+struct TimingHealth {
+    uint16_t passMaxMs=0, intervalMaxMs=0, tickMaxMs=0, planAgeMaxMs=0, captureOverruns=0, lateEvents=0;
+    uint16_t captureReason=0, counter=0, expected=0, last=0, latest=0, irq=0, pec=0, dest=0, resyncs=0;
+    uint8_t head=0, tail=0, next=0, count=0;
+    uint16_t words[30]={};
+};
+bool DecodeTimingHealth(const unsigned char* data, int length, TimingHealth& out);
+const char* CaptureFailureName(int reason);
+// Lost crank edges in a capture snapshot: indices i where words[i-1]..words[i]
+// spans about two tooth periods (the 60-2 gap spans about three).
+std::vector<int> LostCaptureEdges(const TimingHealth& health, uint16_t* normalInterval = nullptr);
+// Command 34 (64 bytes) and 35 03 (86 bytes, with the bench job result): knock sensing detail.
+struct KnockDetail {
+    uint16_t mv=65535; uint8_t flags=0, retard=0;
+    uint16_t raw=0, sequence=0, hold=0, epoch=0, generation=0;
+    uint32_t stampMs=0, sampleAgeMs=0, count=0, lastEventAgeMs=0, normalCount=0, nullCount=0, testCount=0;
+    uint8_t source=0, type=0, offset=0, amplitude=0, reference=0, gain=0, gainCode=0;
+    uint8_t ratio=0, threshold=0, decision=0, scheduled=0, fault=0, nullStart=0;
+    uint16_t adcTimeouts=0, missedWindows=0, staleSamples=0, ceilingEvents=0;
+    bool job=false; uint8_t jobState=0, jobCompleted=0, jobFault=0;
+    uint16_t nullRaw=0, testRaw=0, gainRaw[7]={};
+};
+bool DecodeKnockDetail(const unsigned char* data, int length, KnockDetail& out);
+// Knock sensing fault 0..8 (command 34 byte 36): short name, and a hover text
+// with what the ECU measured and what to check.
+const char* KnockFaultName(int fault);
+const char* KnockFaultDetail(int fault);
+// Bench job state (command 35 03 byte 65).
+const char* KnockJobStateName(int state);
 struct EcuProtocol {
     SerialPort* port=nullptr;
     char versionString[64]={};
@@ -79,7 +119,13 @@ struct EcuProtocol {
     std::function<int(const unsigned char*,int,unsigned char*,int,int)> exchange;
     // Set once the ECU rejects a version 4 live request (firmware 0.0.2 or older).
     bool liveV4Unsupported=false;
-    void setPort(SerialPort* p) { port=p; liveV4Unsupported=false; }
+    // Set once the ECU rejects a version 5 live request (firmware 0.0.7 or older).
+    bool liveV5Unsupported=false;
+    void setPort(SerialPort* p) { port=p; liveV4Unsupported=false; liveV5Unsupported=false; }
+    bool timingHealth(TimingHealth&, bool clearMaxima);
+    bool knockDetail(KnockDetail&, bool withJob);
+    // Command 35: 0 stops a bench job, 1 starts engine-off sampling, 2 runs the self-test.
+    bool knockJob(uint8_t action);
     int transact(const unsigned char*, int, unsigned char*, int, int timeoutMs=500);
     bool getVersion();
     bool capabilities(Capabilities&);

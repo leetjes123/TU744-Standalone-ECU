@@ -110,6 +110,10 @@ static void DrawDashboardPreview() {
     const bool narrowband=strstr(GetCommandLineA(),"--narrowband")!=nullptr;
     if(narrowband) sample.measuredAfr=0;
     if(strstr(GetCommandLineA(),"--inhibits")) { sample.inhibits=0x14; sample.lossOfSyncCount=65535; sample.flags|=6; }
+    if(strstr(GetCommandLineA(),"--latched")) {
+        sample.inhibits=0x0120; sample.outputDetailAvailable=sample.detailAvailable=true;
+        sample.tripSource=3; sample.latchClears=1; sample.coilTimeouts=4; sample.lateEvents=2;
+    }
     const bool stale=strstr(GetCommandLineA(),"--stale")!=nullptr;
     auto* viewport=ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
@@ -170,6 +174,17 @@ static void InitDiagnosticPreview() {
     gApp.openToolTab(App::OpenTab::DIAGNOSTICS);
     if(strstr(GetCommandLineA(),"--empty")) { s.records.clear(); s.mil=false; }
     if(strstr(GetCommandLineA(),"--contrast")) { gApp.uiTheme=UiTheme::HighContrast; ApplyUiTheme(gApp.uiTheme,g_dpiScale); }
+    if(strstr(GetCommandLineA(),"--developer")) {
+        gApp.developerMode=true;
+        MonitorData& m=gApp.ecu.monitor;
+        m.valid=m.knockAvailable=m.outputDetailAvailable=m.detailAvailable=true; m.rpm=2400; m.knockFlags=2|16; m.knockMv=4995;
+        unsigned char d[86]={}; d[0]=1; d[1]=0x13; d[2]=0x83; d[3]=18; d[5]=0x03; d[6]=0xFF; d[16]=12;
+        d[20]=41; d[27]=4; d[28]=251; d[29]=38; d[30]=2; d[31]=0x4A; d[32]=105; d[33]=40; d[36]=7;
+        d[46]=1; d[54]=0x2F; d[58]=0x11; d[62]=0x10; d[63]=37; d[64]=1;
+        DecodeKnockDetail(d,86,gApp.knockDetail); gApp.knockDetailValid=true; gApp.knockDetailAt=GetTickCount64()-4000;
+        gApp.knockFaultCapture=gApp.knockDetail; gApp.knockFaultCaptured=true; gApp.knockFaultAt=GetTickCount64()-4000;
+        gApp.openToolTab(App::OpenTab::DEVELOPER);
+    }
 }
 static bool SaveDiagnosticPreview() {
     if(PreviewOption("--closed-loop-toggle") && (!closedLoopPreviewSawOff || !(gApp.cal.data[0x5D4]&0x20))) return false;
@@ -197,7 +212,7 @@ static bool SaveDiagnosticPreview() {
     g_pd3dDeviceContext->CopyResource(staging,buffer); buffer->Release();
     D3D11_MAPPED_SUBRESOURCE data;
     if(FAILED(g_pd3dDeviceContext->Map(staging,0,D3D11_MAP_READ,0,&data))) { staging->Release(); return false; }
-    const char* name=strstr(GetCommandLineA(),"--dashboard")?"dashboard.bmp":strstr(GetCommandLineA(),"--freeze")?"freeze-frame.bmp":strstr(GetCommandLineA(),"--empty")?"empty-diagnostics.bmp":"diagnostics.bmp";
+    const char* name=strstr(GetCommandLineA(),"--dashboard")?"dashboard.bmp":strstr(GetCommandLineA(),"--freeze")?"freeze-frame.bmp":strstr(GetCommandLineA(),"--empty")?"empty-diagnostics.bmp":strstr(GetCommandLineA(),"--developer")?"developer.bmp":"diagnostics.bmp";
     FILE* f=fopen(name,"wb");
     if(f) {
         BITMAPFILEHEADER file={}; BITMAPINFOHEADER info={};

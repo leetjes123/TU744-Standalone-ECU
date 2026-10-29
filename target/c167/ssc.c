@@ -87,7 +87,7 @@ void board_ssc_tick(void) {
     /* A normal drive phase also needs supervision if foreground stops before
        it can enter hold. Never interrupt a foreground SSC frame mid-byte. */
     if (owned == SSC_FREE && last_iac_command != 0x3FU &&
-        ((ecu.authority.inhibits & (INH_DEADLINE | INH_OUTPUT)) || ecu.service || !ecu.key_input)) {
+        ((ecu.authority.inhibits & INH_DEADLINE) || ecu.service || !ecu.key_input)) {
         hold.current = last_iac_command;
         hold.state = HOLD_IDLE;
         hold.enabled = 0;
@@ -110,10 +110,12 @@ void board_ssc_tick(void) {
             progress_clock = T7;
             progress_stamp = ecu.milliseconds;
         }
-        if (ecu.authority.inhibits & (INH_DEADLINE | INH_OUTPUT)) {
-            iac_hold_fail(&hold, 7);
-            iac_hold_stop(&hold);
-        } else if (ecu.service || !ecu.key_input) {
+        /* A stalled foreground (DEADLINE) ends the hold like a tool session:
+           bridges off, no driver fault. An output latch leaves it alone: the
+           OEM idle driver runs whatever the ignition/injection state (2BE0A
+           leaves SSC/P8.2 alone). Fault 7 is kept for real hold timing
+           failures (stopped T7, late service in iac_hold_watch). */
+        if ((ecu.authority.inhibits & INH_DEADLINE) || ecu.service || !ecu.key_input) {
             hold.off_needed = 1;
             iac_hold_stop(&hold);
         }

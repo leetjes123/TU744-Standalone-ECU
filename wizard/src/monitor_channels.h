@@ -47,6 +47,8 @@ enum LogSignal {
     SIG_LINK_FAILURES, SIG_LINK_LAST_FAILURE,
     // Tuning Wizard 0.0.6+: frames lost on the host side and the time since the previous row.
     SIG_DROPPED_FRAMES, SIG_SAMPLE_GAP,
+    // Firmware 0.0.8 live frame version 5; unavailable (NaN) on older firmware.
+    SIG_TRIP_SOURCE, SIG_LATCH_CLEARS, SIG_COIL_TIMEOUTS, SIG_INJECTOR_CLAMPS, SIG_LATE_EVENTS,
     SIG_COUNT
 };
 

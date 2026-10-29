@@ -46,9 +46,13 @@ void hal_cancel_all(void) {
     hal_cancel_fuel();
     hal_cancel_spark();
 }
+u8 fake_injector_late;
+u16 fake_crank_activity;
 u8 hal_injector_start(u8 ch, u16 ticks) {
     if (fake_irq)
         return 0;
+    if (fake_injector_late)
+        return 2;
     fake_injectors[ch] = 1;
     fake_injector_ticks[ch] = ticks;
     fake_starts++;
@@ -62,6 +66,14 @@ u8 hal_coil_start(u8 ch, u16 ticks) {
     fake_starts++;
     return 1;
 }
+void hal_injector_off(u8 ch) {
+    fake_injectors[ch] = 0;
+}
+u8 hal_outputs_off(void) {
+    return (u8)(!fake_coils[0] && !fake_coils[1] && !fake_injectors[0] && !fake_injectors[1] &&
+                !fake_injectors[2] && !fake_injectors[3]);
+}
+u16 hal_crank_activity(void) { return fake_crank_activity; }
 void hal_coil_off(u8 ch) {
     fake_coils[ch] = 0;
     ecu.authority.spark_draining &= (u8)~(1U << ch);

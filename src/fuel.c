@@ -68,6 +68,16 @@ void fuel_plan(u32 now, const Rotation *r, const u8 *c, EnginePlan *p) {
     p->dwell_feedback = c[CAL_DWELL_FEEDBACK];
     if (period <= (u32)p->dwell_us + 1000UL)
         p->dwell_us = period > 1500UL ? (u16)(period - 1000UL) : 0;
+    if (s->mode != ENGINE_RUNNING) {
+        /* Cranking: the angle-based charge start uses a tooth period that
+           stretches on compression; keep dwell x 1.5 under the 6.5 ms coil
+           watchdog (validated maximum CRANK_DWELL_MAX_US). */
+        u16 crank = get16(c + CAL_CRANK_DWELL_US);
+        if (!crank)
+            crank = CRANK_DWELL_DEFAULT_US;
+        if (p->dwell_us > crank)
+            p->dwell_us = crank;
+    }
     p->advance10 = (s16)((s16)table2_at(c, 0x100, &at_rpm, &at_load) * 5 - 200);
     p->advance10 = (s16)clamp32((s32)p->advance10 - (s32)table1(c, 0x510, in->iat.value, 0) * 5L +
                                     s->idle_spark10,

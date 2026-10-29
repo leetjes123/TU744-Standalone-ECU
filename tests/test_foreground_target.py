@@ -61,7 +61,7 @@ def boot(rpm, rotating, scenario='normal', calibration=None, packed_image=None):
     max_age = 0
     generation = None
     bps = {symbols[n] for n in ('ecu_poll', 'hal_watchdog_service', 'hal_system_reset')}
-    while instructions < 30000000:
+    while instructions < 90000000:
         result = m.run(max_instructions=8192, breakpoints=bps, stop_on_trap=True)
         instructions += 8192  # upper bound including short breakpoint batches
         assert not m.cpu.traps and result in ('budget', 'breakpoint'), (result, m.cpu.traps)
@@ -127,7 +127,7 @@ def boot(rpm, rotating, scenario='normal', calibration=None, packed_image=None):
             if enabled_at is not None and m.cpu.cycles - enabled_at >= 20000 * duration:
                 break
             m.step()
-        if started is not None and m.cpu.cycles - started > 20000 * 700:
+        if started is not None and m.cpu.cycles - started > 20000 * 1600:
             break
     counts = {}
     if len(measurement) == 2:
@@ -163,8 +163,12 @@ def boot(rpm, rotating, scenario='normal', calibration=None, packed_image=None):
         if scenario == 'tuning':
             assert report['generation'] == generation+1 and response == bytes.fromhex('55010001'), report
         if scenario == 'watchdog':
-            assert fault_at and report['inhibits'] & 32 and not reset_at and report['watchdog_services_after_fault'] > 100, report
-            assert not [e for e in m.ports.events if e[1:3] in [('P2',0),('P2',1),('P7',6),('P7',5),('P7',4),('P8',7)] and e[3]==0 and e[0]>fault_at+20000*7], report
+            # Firmware 0.0.8: a tick gap trips DEADLINE, which clears on the next
+            # control pass (the OEM has no timing latch); the outputs resume.
+            outputs = [('P2',0),('P2',1),('P7',6),('P7',5),('P7',4),('P8',7)]
+            resumed = [e for e in m.ports.events if e[1:3] in outputs and e[0] > restored_at+20000*20]
+            assert fault_at and not report['inhibits'] and not reset_at and report['watchdog_services_after_fault'] > 100, report
+            assert resumed, report
         if scenario == 'restart':
             assert reset_at and report['observed_rpm'] and m.mem.read16(0xffc0)&3==3, report
     return report

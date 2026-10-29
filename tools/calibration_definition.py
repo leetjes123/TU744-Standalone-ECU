@@ -204,6 +204,11 @@ def generate():
     table('IAT ignition retard', 0x510, 8, 'deg', temp, equation='X/2', decimals=1, high=30,
           category='Ignition', description='Subtracted from advance. Columns: inlet air temperature.')
     scalar('Cranking advance', 0x91A, 16, 'deg BTDC', -10, 20, 'X/10', 1, 'Ignition', True)
+    scalar('Cranking dwell limit', 0x976, 16, 'us', 0, 4000, category='Ignition',
+           description='Maximum coil dwell until the engine runs. Charge start is angle-based on a cranking '
+                       'tooth period that stretches on compression, so dwell x 1.5 must stay under the '
+                       '6.5 ms coil watchdog. 0 = 3500 us. Firmware 0.0.8 or later; live tunable.',
+           valid='0 or 1000..4000 us')
     scalar('Trigger reference offset', 0x605, 16, 'deg', 0, 359.9, 'X/10', 1, 'Ignition',
            description='Crank angle between the trigger reference and TDC cylinder 1. Verify with a timing light.')
     flag('Use CC9 dwell feedback', 0x93A, 0x01, 'Ignition',
@@ -225,10 +230,13 @@ def generate():
     scalar('Soft-cut maximum', 0x7B7, 8, '%', 0, 100, category='Rev limit and fuel cut',
            description='Cut fraction reached at the hard rev limit; rises linearly from 0 at the start RPM.')
     flag('Overrun fuel cut', 0x5D4, 0x02, ['Rev limit and fuel cut', 'Feature switches'],
-         'Cuts fuel on closed throttle above the entry RPM and idle target plus exit margin, with valid TPS and coolant at least 60 C. No MAP gate.')
+         'Cuts fuel on closed throttle above the entry RPM and idle target plus exit margin, with valid TPS and coolant at least the overrun minimum coolant (60 C by default). No MAP gate.')
     scalar('Overrun entry RPM', 0x5E9, 16, 'RPM', 0, 10000, category='Rev limit and fuel cut')
     scalar('Overrun exit margin', 0x93E, 16, 'RPM', 0, 2000, category='Rev limit and fuel cut',
            description='Resume fuel at idle target plus this margin. 0 keeps the legacy 200 RPM margin. Firmware 0.0.2 or later; live tunable.')
+    scalar('Overrun minimum coolant', 0x975, 8, 'C', 0, 150, category='Rev limit and fuel cut',
+           description='Overrun fuel cut only at or above this coolant temperature. 0 = 60 C (firmware '
+                       '0.0.7 and older behaviour). Firmware 0.0.8 or later; live tunable.')
     scalar('Overrun delay', 0x603, 8, 's', 0, 25.5, 'X/10', 1, 'Rev limit and fuel cut',
            description='Continuous eligibility before fuel cut. New basemap default 0.1 s; 0 means immediate.')
     scalar('Overboost cut MAP', 0x90E, 16, 'kPa', 100, 600, category=['Rev limit and fuel cut'],
@@ -282,6 +290,13 @@ def generate():
            description='Idle spark correction applies only up to idle target plus this margin, so '
                        'coasting above idle keeps normal advance. 0 = no limit (firmware 0.0.6 and older '
                        'behaviour). Firmware 0.0.7 or later; live tunable.')
+    scalar('Idle feedback RPM window', 0x970, 16, 'RPM', 0, 3000, category='Idle',
+           description='Idle feedback runs only below idle target plus this margin; above it the valve holds '
+                       'base position and closes slowly (dashpot), with or without overrun cut. 0 = no '
+                       'limit (firmware 0.0.7 behaviour). Firmware 0.0.8 or later; live tunable.')
+    scalar('Idle spark retard limit while falling', 0x974, 8, 'deg', 0, 20, 'X/2', 1, 'Idle',
+           description='While RPM is falling (more than 200 rpm/s), idle spark correction retards at most '
+                       'this much. 0 = no limit. Firmware 0.0.8 or later; live tunable.')
     scalar('Idle start duration', 0x5EE, 8, 's', 0, 25.5, 'X/10', 1, 'Idle')
     scalar('Closed throttle threshold', 0x5E6, 8, '%', 0, 20, category=['Idle', 'Rev limit and fuel cut'],
            description='Shared idle and overrun threshold, inclusive and without debounce. Invalid TPS disables both.')

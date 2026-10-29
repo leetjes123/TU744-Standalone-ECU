@@ -171,8 +171,9 @@ static void test_pending_injection(void) {
     queue_injection(0); ecu.authority.epoch++; finish_pair(32000);
     CHECK(!pending_injection[0].ready && !ecu.authority.injector_active[0]);
     queue_injection(0); finish_pair(37000);
-    CHECK((ecu.authority.inhibits & INH_DEADLINE) && !pending_injection[0].ready);
-    CHECK(PIN_INJ_1 && PIN_INJ_4 && !(CCM7 & 0xFFFU));
+    /* 0.0.8: a late queued start skips this event, no deadline latch. */
+    CHECK(!ecu.authority.inhibits && !pending_injection[0].ready && ecu.authority.late_events == 1);
+    CHECK(PIN_INJ_1 && PIN_INJ_4 && !(CCM7 & 0xF0FU)); /* pair 1 keeps its own event */
     queue_injection(0); safety_inhibit(INH_SYNC, 0);
     CHECK(!pending_injection[0].ready && !ecu.authority.injector_active[0]);
     queue_injection(0); cut = ecu.authority.plan; cut.fuel_cut = CUT_REV;
@@ -299,9 +300,58 @@ static void test_rotation_boundaries(void) {
     }
 }
 
+/* 0.0.8: per-event output faults lose that event only. */
+static void test_output_faults(void) {
+    u16 epoch;
+    /* Coil watchdog: that coil off, its stored fire dropped, no latch. */
+    charge_first_coil(); watchdog0_isr();
+    CHECK(PIN_COIL_A && !ecu.authority.coil_active[0] && !ecu.authority.inhibits);
+    CHECK(fire_stage[0].mode == STAGE_NONE && !fire_pending[0] && !(CCM5 & 15U));
+    CHECK(ecu.authority.coil_timeouts == 1 && ecu.authority.coil_timeout_run[0] == 1);
+    /* The third trip in a row on one coil while running latches. */
+    charge_first_coil(); ecu.authority.coil_timeout_run[0] = 2; watchdog0_isr();
+    CHECK((ecu.authority.inhibits & INH_OUTPUT) && ecu.authority.trip_source == TRIP_COIL_WATCHDOG);
+    CHECK(PIN_COIL_A && PIN_COIL_B);
+    /* Not while cranking, and a normal fire resets the run. */
+    charge_first_coil(); ecu.control.mode = ENGINE_CRANKING;
+    ecu.authority.coil_timeout_run[0] = 2; watchdog0_isr();
+    CHECK(!ecu.authority.inhibits && !ecu.authority.coil_timeout_run[0]);
+    charge_first_coil(); ecu.authority.coil_timeout_run[0] = 2;
+    if (!active_fire_timed[0]) {
+        T0 = active_fire_counter[0]; T1 = captured_value = (u16)(T0 * period_value);
+        spark0_isr();
+    }
+    T1 = CC0; spark0_isr();
+    CHECK(PIN_COIL_A && !ecu.authority.coil_timeout_run[0]);
+    /* Injector end already passed at the start edge: closed now, counted. */
+    setup(); board_schedule(0);
+    T7 = (u16)(CC30 + 2000U); PIN_INJ_1 = PIN_INJ_4 = 0;
+    injector0_isr(); injector1_isr();
+    CHECK(PIN_INJ_1 && PIN_INJ_4 && !ecu.authority.inhibits && ecu.authority.late_events == 2);
+    CHECK(!injector_phase[0] && !ecu.authority.injector_active[0] && !ecu.authority.injector_active[1]);
+    /* A pulse over the compare limit is clamped and counted. */
+    setup(); ecu.rotation.normal = period_value = 2000; ecu.authority.plan.pulse_us = 30000;
+    board_schedule(0);
+    CHECK(!ecu.authority.inhibits && ecu.authority.injector_clamps >= 1);
+    CHECK((u16)(injector_end[0] - CC30) == INJECTOR_MAX_TICKS);
+    /* Cranking: skip a charge whose fire, 1.5x stretched, is past 6 ms. */
+    setup(); ecu.control.mode = ENGINE_CRANKING; oem.dwell[0] = 3750;
+    epoch = ecu.authority.epoch;
+    fire_stage[0].mode = STAGE_COARSE; fire_stage[0].epoch = epoch;
+    T1 = 1000; fire_stage[0].predicted = (u16)(T1 + 6000U);
+    charge(0, 0, epoch);
+    CHECK(PIN_COIL_A && !ecu.authority.coil_active[0] && ecu.authority.late_events == 1);
+    fire_stage[0].predicted = (u16)(T1 + 4000U);
+    charge(0, 0, epoch);
+    CHECK(!PIN_COIL_A && ecu.authority.coil_active[0]);
+    /* Read-back used by the stall recovery. */
+    setup(); CHECK(hal_outputs_off());
+    charge_first_coil(); CHECK(!hal_outputs_off());
+    safety_inhibit(INH_OUTPUT, 0); CHECK(hal_outputs_off());
+}
 int main(void) {
     test_ignition(); test_injection(); test_pending_injection(); test_fine_and_reschedule();
-    test_charge_revocation(); test_feedback_policy();
+    test_charge_revocation(); test_feedback_policy(); test_output_faults();
     test_split(); test_rotation_boundaries();
     printf("PASS %u staged-output/decoder assertions\n", checks);
     return 0;

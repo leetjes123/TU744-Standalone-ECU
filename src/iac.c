@@ -72,8 +72,10 @@ void iac_disable(void) {
         ecu.iac.state = ecu.iac.fault ? IAC_FAULT : IAC_UNKNOWN;
 }
 static u8 recovery_permitted(void) {
+    /* An output latch alone does not stop idle control (OEM 2BE0A leaves
+       the IAC driver running); a foreground deadline still waits. */
     return (u8)(ecu.cal.valid && ecu.board_released && !ecu.service && !ecu.iac.off_pending &&
-                !(ecu.authority.inhibits & (INH_DEADLINE | INH_OUTPUT)));
+                !(ecu.authority.inhibits & INH_DEADLINE));
 }
 /* Drop a latched driver fault once the hold session has released the bus.
    last_fault, fault_count and the DTC monitor history keep the evidence. */

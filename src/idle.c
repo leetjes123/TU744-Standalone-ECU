@@ -1,9 +1,9 @@
 #include "control.h"
 void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
     Controls *s = &ecu.control;
-    u16 base, start, duration, maximum, fan_steps, spark_rpm;
+    u16 base, start, duration, maximum, fan_steps, spark_rpm, limit;
     u32 age;
-    u8 mode, ix;
+    u8 mode, ix, close_to_target;
     s32 error, p, change, output;
     u16 fraction;
     AxisAt at_clt;
@@ -13,6 +13,17 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
     start = table1_at(c, 0x500, &at_clt, 0);
     duration = (u16)c[0x5EE] * 100U;
     age = now - s->running_at;
+    /* Feedback only near target. Coasting down from high RPM holds base and
+       closes as a dashpot, whatever the DFCO or coolant state, instead of
+       integrating the valve shut against a load it will lose at idle. */
+    limit = get16(c + CAL_IDLE_FEEDBACK_RPM);
+    close_to_target = (u8)(!limit || (s32)r->rpm < (s32)s->idle_target + limit);
+    if (now - s->idle_rpm_at >= 100UL) {
+        /* Falling: more than 20 rpm lower than 100 ms ago (200 rpm/s). */
+        s->idle_falling = (u8)((u32)r->rpm + 20UL < s->idle_rpm_ref);
+        s->idle_rpm_ref = r->rpm;
+        s->idle_rpm_at = now;
+    }
     if (s->mode == ENGINE_CRANKING)
         mode = IDLE_CRANK;
     else if (s->mode != ENGINE_RUNNING || ecu.sensors.tps.quality != QUALITY_VALID ||
@@ -22,7 +33,7 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
         mode = IDLE_CATCH;
     else if (!s->throttle_closed)
         mode = IDLE_OFF;
-    else if (s->dfco)
+    else if (s->dfco || !close_to_target)
         mode = IDLE_RETURN;
     else
         mode = IDLE_FEEDBACK;
@@ -37,8 +48,11 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
         error = 0;
     /* Steps mode moves only by the interval step; the hidden PI gains stay inert. */
     p = c[0x5D8] == 0U ? 0L : error * get16(c + 0x630) / 10000L;
-    if (s->idle_mode != mode || s->previous_generation != ecu.cal.generation) {
-        /* Track the realizable output on entry and on live gain/map changes. */
+    if (mode == IDLE_FEEDBACK && s->idle_mode != mode) {
+        /* Entry: the integral starts from base position. */
+        s->idle_integral = 0;
+    } else if (s->idle_mode != mode || s->previous_generation != ecu.cal.generation) {
+        /* Track the realizable output on mode change and live gain/map changes. */
         s->idle_integral =
             clamp32(((s32)s->idle_position + fan_steps - s->idle_fan_steps - base - p) * 1000L,
                     -220000L, 220000L);
@@ -61,6 +75,11 @@ void idle_update(u32 now, u16 dt, const Rotation *r, const u8 *c) {
             fraction = axis_fraction(c + 0x610, 8, (s16)error, 1, &ix);
             s->idle_spark10 =
                 (s16)((s32)lerp(c[0x620 + ix], c[0x621 + ix], fraction) * 5L - 200L);
+            /* RPM already falling: limit retard so it does not drive an
+               undershoot below target. */
+            if (s->idle_falling && c[CAL_IDLE_RETARD_FALLING] &&
+                s->idle_spark10 < -(s16)c[CAL_IDLE_RETARD_FALLING] * 5)
+                s->idle_spark10 = (s16)(-(s16)c[CAL_IDLE_RETARD_FALLING] * 5);
         }
         if (c[0x5D8] != 2 && ecu.iac.state == IAC_READY) {
             change = error * get16(c + 0x632) / 100L * (s32)dt / 1000L;

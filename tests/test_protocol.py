@@ -23,7 +23,7 @@ def exchange(payload):
 
 lib.bridge_reset()
 client=Client(exchange)
-assert client.identity() == 'TU744 0.0.6'
+assert client.identity() == 'TU744 0.0.8'
 assert client.capabilities()['exact_dtc_parity'] is False
 assert client.storage() == dict(calibration_storage='eeprom', eeprom_bytes=8192,
                                calibration_copies=2, history_copies=2)
@@ -228,7 +228,12 @@ v4 = exchange(b'')
 assert len(v3) == 44 and v3[0] == 3 and len(v4) == 64 and v4[0] == 4, v4.hex()
 assert v4[1:40] == v3[1:40]
 assert v4[44:64] == bytes(20), v4.hex()
-assert exchange(b'') == b'' and exchange(b'') == b''
+# Command 13 version 5 (firmware 0.0.8) appends the output trip source, latch
+# clears and output event counters; versions 3 and 4 are unchanged.
+v5 = exchange(bytes([0x13, 5]))
+assert len(v5) == 72 and v5[0] == 5 and v5[1:64] == v4[1:64], v5.hex()
+assert v5[64:72] == bytes(8), v5.hex()
+assert exchange(bytes([0x13, 6])) == b'' and exchange(bytes([0x13, 3])) == b''
 lib.bridge_iac_detail()
 v4 = exchange(b'')
 assert v4[44] == 255 and v4[45] == 2 and v4[46] == 0 and v4[47] == 7  # target saturates

@@ -53,6 +53,7 @@ void limits_update(u32 now, const Rotation *r, const u8 *c, EnginePlan *p) {
     Controls *s = &ecu.control;
     Sensors *in = &ecu.sensors;
     u16 threshold, exit_rpm;
+    s16 min_clt;
     u8 method, eligible;
     p->fuel_cut = p->spark_cut = 0;
     p->soft_fuel = p->soft_spark = 0;
@@ -103,9 +104,10 @@ void limits_update(u32 now, const Rotation *r, const u8 *c, EnginePlan *p) {
     }
     exit_rpm = get16(c + CAL_DFCO_EXIT_RPM);
     exit_rpm = (u16)(s->idle_target + (exit_rpm ? exit_rpm : DFCO_EXIT_RPM_DEFAULT));
+    min_clt = c[CAL_DFCO_MIN_CLT] ? (s16)c[CAL_DFCO_MIN_CLT] : DFCO_MIN_CLT_DEFAULT;
     eligible =
         (u8)((c[0x5D4] & CFG_DFCO) && s->mode == ENGINE_RUNNING &&
-             s->throttle_closed && in->clt.quality == QUALITY_VALID && in->clt.value >= 60 &&
+             s->throttle_closed && in->clt.quality == QUALITY_VALID && in->clt.value >= min_clt &&
              r->rpm > exit_rpm && (s->dfco || r->rpm > get16(c + 0x5E9)));
     if (!eligible) {
         s->dfco = 0;

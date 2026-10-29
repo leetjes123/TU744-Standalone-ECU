@@ -37,13 +37,20 @@ void safety_inhibit(u16 reason, u32 now) SHARED {
         0;
     hal_unlock(lock);
 }
+/* An inhibit with the check that tripped it, for the live frame. */
+void safety_trip(u16 reason, u8 source, u32 now) SHARED {
+    u16 lock = hal_lock();
+    ecu.authority.trip_source = source;
+    safety_inhibit(reason, now);
+    hal_unlock(lock);
+}
 void safety_conditions(u16 reasons, u32 now) {
     u16 lock = hal_lock();
-    /* Service, deadline and actuator faults latch; only service_poll clears
-       a clean tool session's SERVICE/DEADLINE, others require reset. Other
-       conditions recover only through this complete, coherent foreground
-       evaluation. */
-    reasons |= ecu.authority.inhibits & (INH_SERVICE | INH_DEADLINE | INH_OUTPUT | INH_BOARD);
+    /* Service, board and output-driver faults latch: service_poll clears a
+       clean tool session, latch_poll an output latch after a stall, others
+       need a reset. DEADLINE and every other condition recover only through
+       this complete, coherent foreground evaluation. */
+    reasons |= ecu.authority.inhibits & INH_LATCHED;
     if (reasons)
         safety_inhibit(reasons, now);
     if (!reasons && ecu.authority.inhibits)
@@ -77,16 +84,37 @@ static u8 permitted(u8 spark) SHARED {
                 ecu.milliseconds - ecu.authority.plan.stamp <= ecu.authority.plan.max_age_ms &&
                 !(spark ? ecu.authority.plan.spark_cut : ecu.authority.plan.fuel_cut));
 }
-/* Soft-cut accounting and pair start; hal_lock held, admission checked. */
+static void late_event(void) SHARED {
+    if (ecu.authority.late_events != 65535U)
+        ecu.authority.late_events++;
+}
+/* Soft-cut accounting and pair start; hal_lock held, admission checked.
+   Like the OEM, a pulse longer than one compare range is clamped and a late
+   start skips this event; only a refused driver latches. */
 static u8 injector_start_pair(u8 pair, u16 ticks) SHARED {
-    u8 ch = (u8)(pair * 2U);
+    u8 ch = (u8)(pair * 2U), first, second = 0;
     ecu.authority.fuel_accumulator[pair] += ecu.authority.plan.soft_fuel;
     if (ecu.authority.fuel_accumulator[pair] >= 100) {
         ecu.authority.fuel_accumulator[pair] -= 100;
         return 0;
     }
-    if (!hal_injector_start(ch, ticks) || !hal_injector_start((u8)(ch + 1), ticks)) {
-        safety_inhibit(INH_OUTPUT, ecu.milliseconds);
+    if (ticks > INJECTOR_MAX_TICKS) {
+        ticks = INJECTOR_MAX_TICKS;
+        if (ecu.authority.injector_clamps != 65535U)
+            ecu.authority.injector_clamps++;
+    }
+    first = hal_injector_start(ch, ticks);
+    if (first == 1U) {
+        second = hal_injector_start((u8)(ch + 1), ticks);
+        if (second != 1U)
+            hal_injector_off(ch);
+    }
+    if (!first || (first == 1U && !second)) {
+        safety_trip(INH_OUTPUT, TRIP_INJECTOR_REFUSED, ecu.milliseconds);
+        return 0;
+    }
+    if (second != 1U) {
+        late_event();
         return 0;
     }
     ecu.authority.injector_active[ch] = ecu.authority.injector_active[ch + 1] = 1;
@@ -148,7 +176,7 @@ u8 coil_admit(u8 ch, u16 epoch, u16 dwell_us) SHARED {
     }
     result = hal_coil_start(ch, us_ticks(dwell_us));
     if (result != 1U) {
-        if (!result) safety_inhibit(INH_OUTPUT, ecu.milliseconds);
+        if (!result) safety_trip(INH_OUTPUT, TRIP_COIL_REFUSED, ecu.milliseconds);
         hal_unlock(lock);
         return 0;
     }
@@ -161,9 +189,29 @@ void injector_done(u8 ch) SHARED {
     if (ch < 4)
         ecu.authority.injector_active[ch] = 0;
 }
+/* Coil watchdog, after the board dropped that coil's stages: the coil is
+   switched off, losing at most this spark. Repeated trips on one coil
+   while running mean a stuck driver or an overheating coil and latch
+   INH_OUTPUT. No OEM reference: the ROM has no dwell timeout (CC9 dwell
+   regulator 38BDC..38D5C); this latch only protects the hardware. */
+void coil_timeout(u8 ch) SHARED {
+    u16 lock = hal_lock();
+    if (ch < 2) {
+        hal_coil_off(ch);
+        ecu.authority.coil_active[ch] = 0;
+        if (ecu.authority.coil_timeouts != 65535U)
+            ecu.authority.coil_timeouts++;
+        if (ecu.control.mode != ENGINE_RUNNING)
+            ecu.authority.coil_timeout_run[ch] = 0;
+        else if (++ecu.authority.coil_timeout_run[ch] >= COIL_WATCHDOG_LATCH)
+            safety_trip(INH_OUTPUT, TRIP_COIL_WATCHDOG, ecu.milliseconds);
+    }
+    hal_unlock(lock);
+}
 void coil_done(u8 ch) SHARED {
     u16 lock = hal_lock();
     if (ch < 2) {
+        ecu.authority.coil_timeout_run[ch] = 0;
         if (ch == 0U && ecu.authority.coil_active[ch] &&
             ecu.authority.coil_epoch[ch] == ecu.authority.epoch &&
             ecu.rotation.state == ROT_VALID && !ecu.authority.inhibits) {
@@ -183,10 +231,8 @@ u8 service_enter(u32 now) {
         hal_unlock(lock);
         return 0;
     }
-    if (!ecu.service) {
+    if (!ecu.service)
         ecu.service_clean = 1;
-        ecu.service_prior_deadline = (u8)((ecu.authority.inhibits & INH_DEADLINE) != 0);
-    }
     ecu.service = 1;
     safety_inhibit(INH_SERVICE, now);
     hal_unlock(lock);

@@ -45,9 +45,9 @@ void ecu_tick_elapsed(u16 elapsed_ms) SHARED {
     if (!ecu.authority.inhibits && clamp16(now - ecu.authority.plan.stamp) > timing_health.plan_age_max_ms)
         timing_health.plan_age_max_ms = clamp16(now - ecu.authority.plan.stamp);
     if (elapsed_ms > 3U)
-        safety_inhibit(INH_DEADLINE, now);
+        safety_trip(INH_DEADLINE, TRIP_TICK_GAP, now);
     if (now - ecu.foreground_stamp > 50UL)
-        safety_inhibit(INH_DEADLINE, now);
+        safety_trip(INH_DEADLINE, TRIP_FOREGROUND_GAP, now);
     if (!ecu.authority.inhibits && now - ecu.authority.plan.stamp > ecu.authority.plan.max_age_ms)
         safety_inhibit(INH_STALE, now);
 }
@@ -61,6 +61,7 @@ void controls_update(u32 now, const Rotation *r) {
     s->key_on = ecu.key_input;
     if (s->key_on && !s->previous_key) {
         s->prime_until = now + (u32)c[0x5EC] * 100UL;
+        ecu.authority.latch_clears = 0; /* new key cycle */
         iac_home(now);
     } else if (!s->key_on && s->previous_key) {
         s->prime_until = now;
@@ -101,9 +102,8 @@ void controls_update(u32 now, const Rotation *r) {
     knock_update(now, r, c);
 }
 /* End a finished tool session (save, knock bench, refused update). If the
-   engine stayed stopped and unsynced throughout, its storage stalls caused
-   any deadline, so SERVICE and that deadline clear without a reset. A
-   deadline latched before the session, or any rotation, keeps the latch. */
+   engine stayed stopped and unsynced throughout, SERVICE and a deadline from
+   its storage stalls clear without a reset; any rotation keeps SERVICE. */
 void service_poll(u32 now) {
     u16 lock, cleared;
     if (!ecu.service)
@@ -116,7 +116,7 @@ void service_poll(u32 now) {
         ecu.iac.off_pending || now - ecu.foreground_stamp > 50UL)
         return;
     lock = hal_lock();
-    cleared = (u16)(INH_SERVICE | (ecu.service_prior_deadline ? 0U : INH_DEADLINE));
+    cleared = (u16)(INH_SERVICE | INH_DEADLINE);
     ecu.service = 0;
     ecu.authority.inhibits &= (u16)~cleared;
     ecu.authority.epoch++;
@@ -124,6 +124,43 @@ void service_poll(u32 now) {
     hal_unlock(lock);
     if (ecu.control.key_on)
         iac_home(now);
+}
+/* Stall recovery for an output latch (INH_OUTPUT: repeated coil watchdog
+   or a refused driver). The OEM has no such latch (its only output
+   shutdowns are the immobilizer 82DC=FFFF and run-permission 2BE0A), so
+   once the engine has stopped the latch clears: sync lost, 0 rpm, no crank
+   interrupt for LATCH_CLEAR_QUIET_MS and every output read back off. At
+   most LATCH_CLEARS_PER_KEY times per key cycle; trip_source keeps the
+   check that tripped it and latch_clears counts the recoveries. */
+void latch_poll(u32 now) {
+    Controls *s = &ecu.control;
+    Authority *a = &ecu.authority;
+    u16 activity = hal_crank_activity(), lock;
+    if (!(a->inhibits & INH_OUTPUT) || ecu.service || activity != s->latch_activity ||
+        ecu.rotation.state != ROT_UNSYNCED || ecu.rotation.rpm) {
+        s->latch_activity = activity;
+        s->latch_quiet_at = now;
+        return;
+    }
+    if (now - s->latch_quiet_at < LATCH_CLEAR_QUIET_MS || a->latch_clears >= LATCH_CLEARS_PER_KEY)
+        return;
+    lock = hal_lock();
+    if (a->coil_active[0] || a->coil_active[1] || a->injector_active[0] || a->injector_active[1] ||
+        a->injector_active[2] || a->injector_active[3] || !hal_outputs_off()) {
+        /* Drive everything off now; verify again on the next pass. */
+        hal_cancel_all();
+        a->coil_active[0] = a->coil_active[1] = 0;
+        a->injector_active[0] = a->injector_active[1] = a->injector_active[2] =
+            a->injector_active[3] = 0;
+        hal_unlock(lock);
+        return;
+    }
+    a->inhibits &= (u16)(0xFFFFU ^ INH_OUTPUT);
+    a->coil_timeout_run[0] = a->coil_timeout_run[1] = 0;
+    a->latch_clears++;
+    a->epoch++;
+    a->generation++;
+    hal_unlock(lock);
 }
 void ecu_poll(void) {
     u32 now, finished;
@@ -135,8 +172,9 @@ void ecu_poll(void) {
     hal_unlock(lock);
     cal_poll(now);
     if (now - ecu.foreground_stamp > 50UL)
-        safety_inhibit(INH_DEADLINE, now);
+        safety_trip(INH_DEADLINE, TRIP_FOREGROUND_GAP, now);
     service_poll(now);
+    latch_poll(now);
     fault_set(FAULT_CAL, ecu.cal.valid ? 0 : 1, now);
     power_poll(now);
     if (now - ecu.control.last_control >= 10UL) {
@@ -189,8 +227,8 @@ void ecu_poll(void) {
     /* A running foreground cannot mask a stopped interrupt clock by repeatedly
        feeding the watchdog. At most one service per observed clock advance. */
     if (now != ecu.watchdog_stamp && finished - now <= 50UL) {
-        /* An output/deadline latch keeps outputs inhibited until reset; it
-           must not itself cause a running ECU reset. The watchdog supervises
+        /* An output latch keeps outputs inhibited until latch_poll or a
+           reset; it must not itself cause a running ECU reset. The watchdog supervises
            clock and bounded foreground progress, including while latched.
            A stuck clock, stuck foreground or repeatedly overlong pass still
            cannot feed it. NOR service has its own bounded SRAM worker. */

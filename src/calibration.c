@@ -162,6 +162,15 @@ u8 cal_validate(const u8 *c, u16 *error) {
         return fail(error, CAL_SYNC_RECOVERY_MS);
     if (get16(c + CAL_IDLE_SPARK_RPM) > 3000U)
         return fail(error, CAL_IDLE_SPARK_RPM);
+    if (get16(c + CAL_IDLE_FEEDBACK_RPM) > 3000U)
+        return fail(error, CAL_IDLE_FEEDBACK_RPM);
+    if (c[CAL_IDLE_RETARD_FALLING] > 40U)
+        return fail(error, CAL_IDLE_RETARD_FALLING);
+    if (c[CAL_DFCO_MIN_CLT] > 150U)
+        return fail(error, CAL_DFCO_MIN_CLT);
+    if (get16(c + CAL_CRANK_DWELL_US) &&
+        (get16(c + CAL_CRANK_DWELL_US) < 1000U || get16(c + CAL_CRANK_DWELL_US) > 4000U))
+        return fail(error, CAL_CRANK_DWELL_US);
     if (c[0x5D9] != 5 || c[0x5DA] != 6)
         return fail(error, 0x5D9); /* fixed development IAC waveform */
     if (get16(c + CAL_IDLE_STEP_MS) < 20 || get16(c + CAL_IDLE_STEP_MS) > 1000)
@@ -248,7 +257,7 @@ static const u16 structural_ranges[][2] = {
     {0x460, 0x480}, {0x550, 0x5B4}, {0x5D4, 0x5D5}, {0x5E4, 0x5E5},
     {0x600, 0x603}, {0x605, 0x607}, {0x7A1, 0x7AF}, {0x7B0, 0x7B4},
     {0x900, CAL_DFCO_EXIT_RPM}, {CAL_DFCO_EXIT_RPM + 2U, CAL_SYNC_RECOVERY_MS},
-    {CAL_IDLE_SPARK_RPM + 2U, CAL_SIZE}};
+    {CAL_CRANK_DWELL_US + 2U, CAL_SIZE}};
 /* A commit is two steps so a running tuning write can place each between
    control releases (each is several ms; together they exceeded the plan age).
    Only the foreground protocol writes staging, and it waits between steps. */

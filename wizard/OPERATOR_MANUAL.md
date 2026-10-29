@@ -123,6 +123,92 @@ sync-loss cause of **Noise edge** or **Capture missed edge** points to electrica
 interference on the crank or stepper wiring. With older firmware the Wizard
 falls back to the 44-byte frame and these values show as unavailable.
 
+### Output inhibits (Tuning Wizard 0.0.7)
+
+A coloured banner at the top of the dashboard always shows whether the ECU
+lets fuel and spark through:
+
+- **OUTPUTS ENABLED** (green): no inhibit is active. Cuts such as the rev
+  limiter or overrun fuel cut still apply.
+- **OUTPUTS WAITING - engine stopped** (amber): only crank sync or key/power,
+  which is normal with the engine stopped.
+- **OUTPUTS INHIBITED** (amber): one or more conditions. Each clears by
+  itself when its cause is gone.
+- **OUTPUTS INHIBITED - LATCHED** (red): at least one inhibit stays until its
+  clear condition is met.
+
+Each active inhibit is a chip under the banner, red if it is latched and
+amber if it is a condition. Hover a chip for what it blocks, how it clears
+and the live detail the ECU reports. That detail includes the last sync-loss
+cause, the check that tripped an output latch or deadline, and the automatic
+latch clears in this key cycle. The engine status panel shows the same chips,
+and the bottom monitor row lists the inhibit names on every tab.
+
+| Inhibit | Type | Clears |
+|---|---|---|
+| Crank sync | condition | when sync returns |
+| Calibration | condition | after a valid tune is written |
+| Sensor | condition | when the sensor reads valid |
+| Stale plan | condition | on the next control pass |
+| Service | latched | when the tool session ends with the engine stopped, else key-off/on |
+| Deadline | condition (latched before firmware 0.0.8) | on the next control pass |
+| Key off / power | condition | key on |
+| Board | latched | flash the release firmware |
+| Output driver | latched | automatically after 1 s stopped with all outputs off, at most 3 times per key cycle; else key-off/on |
+
+With firmware 0.0.8 the Wizard requests the 72-byte version 5 frame. The
+engine status panel then also shows output events since ECU reset: coil
+watchdog trips, clamped injector pulses and late events. Each of these costs
+one spark or one injection, not a latch. With firmware 0.0.7 the Wizard falls
+back to version 4 and these show as unavailable. Tuning Wizard 0.0.7 adds the
+log columns Output Trip Source, Output Latch Clears, Coil Watchdog Trips,
+Clamped Injector Pulses and Late Output Events.
+
+### Developer mode
+
+**View > Developer mode** (remembered between sessions) adds the
+**Developer** tab. Nothing in it changes the tune.
+
+- **Live output health** lists the inhibit mask, the first inhibit since
+  reset, the last trip source, the latch clears, the output event counters
+  and crank capture resyncs and overruns.
+- **Read timing health** reads command `2F 02`. It shows the worst main loop
+  pass, the gap between passes, the tick service gap and plan age, and the
+  first crank capture failure since ECU reset.
+- **Read and reset maxima** does the same and then resets the maxima.
+
+For a missed crank edge (sync-loss cause *Capture missed edge*), the tab
+shows the 30 capture times of the failed block. It marks the interval that
+spans two tooth periods and states how many teeth before the block end the
+edge was lost. If no interval is doubled, the edge was lost in the re-arm
+window at the block end. Monitoring pauses for the read.
+
+**Knock sensing** shows why the dashboard's *Knock Sensor Fault* is on. The
+ECU does not store a knock fault code, and it clears the fault when the
+engine stops. With developer mode on, the Wizard therefore reads the cause
+(command `34`) as soon as the live fault flag appears and keeps it as *Last
+captured fault* until the Wizard closes. Hover the fault for what it means:
+
+| Fault | Meaning |
+|---|---|
+| ADC conversion | the knock ADC conversion did not complete (ECU input) |
+| Stale sample | no fresh knock sample while knock sensing was active |
+| Measurement window | a knock window could not be opened or closed on time |
+| Reference | adapted reference or divisor is zero (calibration) |
+| Null level | the knock IC's null measurement is out of tolerance |
+| Test pulse | the knock IC's test pulse did not raise the reading |
+| Signal at rail | the signal read 0 or full scale repeatedly: open or shorted sensor circuit |
+| Null drift | the null level drifted faster than the OEM limit |
+
+**Read knock detail** reads the current values: level, adapted reference,
+gain, ratio and threshold, detections, retard and error counters. With the
+engine stopped and the key on, **Run self-test** runs three null/test-pulse
+pairs and seven gain measurements on the knock IC and ends by itself.
+**Bench sampling** samples the sensor until **Stop job**, so you can tap the
+block near the sensor and watch the raw level. Fuel and spark stay off while
+a bench job runs and are released when it has ended. The gain measurements
+need a controlled sensor stimulus to interpret, so no pass limit is applied.
+
 CSV logs from 0.0.3 add these columns: Idle Valve Target, Idle Valve State,
 Idle Valve Fault, Idle Valve Last Fault, Idle Valve Recoveries, Idle Valve Fault
 Count, Idle Driver Response, Idle Control Mode, Idle Integral, Idle Spark

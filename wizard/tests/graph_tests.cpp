@@ -128,6 +128,7 @@ int main() {
     CHECK(parsed.log.columns[SIG_RPM+1][0]==1234 && parsed.log.columns[SIG_RPM+1][1]==2345);
     CHECK(!std::isfinite(parsed.log.columns[SIG_KNOCK_MV+1][0]));
     CHECK(!std::isfinite(parsed.log.columns[SIG_IAC_STATE+1][0])); // 0.0.2 firmware: no detail
+    CHECK(!std::isfinite(parsed.log.columns[SIG_COIL_TIMEOUTS+1][0])); // before 0.0.8: no output detail
     CHECK(parsed.signals[SIG_STFT].visible);
     // Firmware 0.0.3 idle/sync detail is logged in its own columns.
     csv=fopen(path,"w"); CHECK(csv);

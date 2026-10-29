@@ -97,6 +97,94 @@ void Status(const char* label, bool active, bool fresh, bool warning=false) {
     ImGui::Dummy(ImVec2(width,h)); ImGui::SameLine();
 }
 
+const ImU32 kLatchRed = IM_COL32(196,40,40,255);
+const ImU32 kConditionAmber = IM_COL32(205,120,20,255);
+const ImU32 kEnabledGreen = IM_COL32(40,140,70,255);
+
+// Hover text for one inhibit: what it blocks, how it clears, and the live
+// detail the ECU reports for it.
+void InhibitTooltip(const MonitorData& m, int bit) {
+    const bool latched=InhibitLatches(bit,!m.outputDetailAvailable);
+    ImGui::BeginTooltip();
+    ImGui::PushTextWrapPos(ImGui::GetFontSize()*36);
+    ImGui::Text("%s inhibit (bit %d, 0x%04X)",InhibitName(bit),bit,1u<<bit);
+    ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(latched?kLatchRed:kConditionAmber),"%s",
+        latched?"LATCHED - stays until its clear condition":"CONDITION - clears by itself when the cause is gone");
+    ImGui::Separator();
+    ImGui::TextUnformatted(InhibitDetail(bit));
+    if(bit==0 && m.detailAvailable && m.lossOfSyncCount)
+        ImGui::Text("Last sync loss: %s at tooth %u (%u loss%s since ECU reset)",SyncLossReasonName(m.syncLossReason),
+                    m.syncLossTooth,m.lossOfSyncCount,m.lossOfSyncCount==1?"":"es");
+    if((bit==5 || bit==8) && m.outputDetailAvailable)
+        ImGui::Text("Trip source: %s",TripSourceName(m.tripSource));
+    if(bit==8 && m.outputDetailAvailable)
+        ImGui::Text("Automatic clears this key cycle: %u of 3   |   Coil watchdog trips since reset: %u",
+                    m.latchClears,m.coilTimeouts);
+    if(m.detailAvailable && m.firstInhibit)
+        ImGui::TextDisabled("First inhibit since ECU reset: 0x%04X",m.firstInhibit);
+    ImGui::PopTextWrapPos();
+    ImGui::EndTooltip();
+}
+
+// One filled chip per active inhibit; red when latched, amber for a condition.
+void InhibitChips(const MonitorData& m) {
+    for(int bit=0;bit<16;++bit) {
+        if(!(m.inhibits&(1u<<bit))) continue;
+        const bool latched=InhibitLatches(bit,!m.outputDetailAvailable);
+        char label[64]; snprintf(label,sizeof(label),"%s%s",bit<9?InhibitName(bit):"Unknown bit",latched?"  (latched)":"");
+        const ImVec2 pad(D(10),D(5));
+        const ImVec2 text=ImGui::CalcTextSize(label);
+        const ImVec2 size(text.x+pad.x*2,text.y+pad.y*2);
+        if(ImGui::GetCursorPosX()>ImGui::GetStyle().WindowPadding.x && ImGui::GetContentRegionAvail().x<size.x) ImGui::NewLine();
+        const ImVec2 p=ImGui::GetCursorScreenPos();
+        ImGui::PushID(bit);
+        ImGui::InvisibleButton("inhibit",size);
+        const bool hovered=ImGui::IsItemHovered();
+        ImGui::PopID();
+        auto* draw=ImGui::GetWindowDrawList();
+        draw->AddRectFilled(p,ImVec2(p.x+size.x,p.y+size.y),latched?kLatchRed:kConditionAmber,D(4));
+        if(hovered) draw->AddRect(p,ImVec2(p.x+size.x,p.y+size.y),IM_COL32(255,255,255,255),D(4),0,D(2));
+        draw->AddText(ImVec2(p.x+pad.x,p.y+pad.y),IM_COL32(255,255,255,255),label);
+        if(hovered) {
+            if(bit<9) InhibitTooltip(m,bit);
+            else ImGui::SetTooltip("Unknown inhibit bit %d: update the Tuning Wizard.",bit);
+        }
+        ImGui::SameLine(0,D(6));
+    }
+    ImGui::NewLine();
+}
+
+// Always-visible output status at the top of the dashboard.
+void InhibitBanner(const MonitorData& m, bool fresh) {
+    if(!fresh) return;
+    bool latched=false;
+    for(int bit=0;bit<16;++bit) if((m.inhibits&(1u<<bit)) && (bit>=9 || InhibitLatches(bit,!m.outputDetailAvailable))) latched=true;
+    const bool waiting=m.inhibits && !latched && m.rpm==0 && !(m.inhibits&~0x0041u);
+    const ImU32 color=!m.inhibits?kEnabledGreen:latched?kLatchRed:kConditionAmber;
+    ImGui::PushStyleColor(ImGuiCol_ChildBg,ImGui::ColorConvertU32ToFloat4(color&0x40FFFFFFu));
+    ImGui::PushStyleColor(ImGuiCol_Border,ImGui::ColorConvertU32ToFloat4(color));
+    ImGui::PushStyleVar(ImGuiStyleVar_ChildBorderSize,D(2));
+    if(ImGui::BeginChild("Output inhibits",ImVec2(0,0),ImGuiChildFlags_Borders|ImGuiChildFlags_AutoResizeY)) {
+        if(largeInstrumentFont && instrumentFont) ImGui::PushFont(instrumentFont);
+        ImGui::TextColored(ImGui::ColorConvertU32ToFloat4(color|0xFF000000u),"%s",
+            !m.inhibits?"OUTPUTS ENABLED":waiting?"OUTPUTS WAITING - engine stopped":
+            latched?"OUTPUTS INHIBITED - LATCHED":"OUTPUTS INHIBITED");
+        if(largeInstrumentFont && instrumentFont) ImGui::PopFont();
+        if(!m.inhibits) ImGui::TextDisabled("Fuel and spark are permitted. Cuts (rev limit, overrun) still apply.");
+        else {
+            ImGui::TextDisabled("Fuel and spark are blocked by the reasons below. Hover a reason for details.");
+            InhibitChips(m);
+        }
+        if(m.outputDetailAvailable && (m.coilTimeouts || m.injectorClamps || m.latchClears))
+            ImGui::TextDisabled("Since ECU reset: %u coil watchdog trip%s, %u clamped injector pulse%s, %u automatic latch clear%s this key cycle",
+                m.coilTimeouts,m.coilTimeouts==1?"":"s",m.injectorClamps,m.injectorClamps==1?"":"s",
+                m.latchClears,m.latchClears==1?"":"s");
+    }
+    ImGui::EndChild();
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(2);
+}
+
 void Trend(const LogState* log, LogSignal signal, const char* title, bool fresh) {
     ImGui::TextDisabled("%s",title);
     const ImVec2 p=ImGui::GetCursorScreenPos();
@@ -151,8 +239,8 @@ void DrawDashboard(const MonitorData& m,bool connected,bool monitoring,float age
         if(m.unsaved()) ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram),"Unsaved tune in ECU RAM");
         if(m.flags&32) ImGui::TextUnformatted("Saving tune - monitoring may pause");
         if(!m.synced()) ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram),"Crank sync not acquired");
-        if(m.inhibits) ImGui::TextColored(ImGui::GetStyleColorVec4(ImGuiCol_PlotHistogram),"Outputs inhibited (0x%04X) - see engine status",m.inhibits);
     }
+    InhibitBanner(m,fresh);
     const float width=ImGui::GetContentRegionAvail().x;
     const int columns=width>=D(850)?3:width>=D(550)?2:1;
     char value[96];
@@ -227,6 +315,12 @@ void DrawDashboard(const MonitorData& m,bool connected,bool monitoring,float age
         ImGui::SameLine(); ImGui::Text("Knock Retard (requested) %.2f deg",m.knockRetard);
         Status("Knock detected",m.knockFlags&1,true,true);
         Status("Knock Sensor Fault",m.knockFlags&16,true,true);
+        if(ImGui::IsItemHovered())
+            ImGui::SetTooltip("Knock sensing fault: knock control is suspended and its retard is held.\n"
+                              "The ECU does not store it as a fault code and clears it when the engine stops.\n"
+                              "The cause (for example signal at rail = open or shorted sensor circuit) is shown under\n"
+                              "View > Developer mode > Developer tab > Knock sensing; with developer mode on it is\n"
+                              "read automatically as soon as the fault appears.");
         Status("Knock control",m.knockFlags&4,true);
         Status("Knock monitor only",m.knockFlags&8,true);
     } else ImGui::TextDisabled("Knock data N/A");
@@ -248,11 +342,19 @@ void DrawDashboard(const MonitorData& m,bool connected,bool monitoring,float age
                                 m.iacFaultCount,m.iacRetries,m.iacRetries==1?"y":"ies");
     } else if(fresh) ImGui::TextDisabled("Idle valve and sync-loss detail need firmware 0.0.3");
     if(fresh && m.inhibits) {
-        const char* reasons[]={"Crank sync","Calibration","Sensor","Stale input","Service mode","Deadline","Power","Board","Output"};
-        ImGui::TextUnformatted("Output inhibits:");
-        for(int i=0;i<9;++i) if(m.inhibits&(1u<<i)) ImGui::BulletText("%s",reasons[i]);
-        if(m.inhibits&~0x1ffu) ImGui::BulletText("Unknown bits: 0x%04X",m.inhibits&~0x1ffu);
+        ImGui::TextUnformatted("Output inhibits (hover for details):");
+        InhibitChips(m);
     } else ImGui::TextDisabled("Output inhibits: %s",fresh?"none":"--");
+    if(fresh && m.outputDetailAvailable) {
+        ImGui::Text("Output events since ECU reset: %u coil watchdog trip%s, %u clamped injector pulse%s, %u late event%s",
+                    m.coilTimeouts,m.coilTimeouts==1?"":"s",m.injectorClamps,m.injectorClamps==1?"":"s",
+                    m.lateEvents,m.lateEvents==1?"":"s");
+        if(ImGui::IsItemHovered()) ImGui::SetTooltip("Each of these costs one spark or one injection, not a latch.\n"
+            "Coil watchdog: a charge reached 6.5 ms before its fire angle (often slow cranking).\n"
+            "Clamped pulse: an injector pulse longer than 24.8 ms.\n"
+            "Late event: a charge, injection or ignition segment serviced too late and skipped.");
+        if(m.tripSource) ImGui::TextDisabled("Last output trip: %s",TripSourceName(m.tripSource));
+    } else if(fresh) ImGui::TextDisabled("Output event counters need firmware 0.0.8");
     if(layout!=DashboardLayout::Compact && ImGui::CollapsingHeader("Recent engine trends / up to 200 accepted samples")) {
         Trend(history,SIG_RPM,"RPM / 0-8000",fresh);
         Trend(history,SIG_MAP,"MAP / 0-300 kPa",fresh);
@@ -280,7 +382,7 @@ void DrawDashboard(const MonitorData& m,bool connected,bool monitoring,float age
 }
 std::string InlineDashboardText(const MonitorData& m,bool fresh,float stoichAfr) {
     if(!fresh)
-        return "RPM -- | TPS -- | MAP -- | ECT -- | Battery -- | AFR -- | Mixture -- | VE -- | Ign Timing (base) -- | STFT -- | Trigger Sync -- | Sync Losses --";
+        return "RPM -- | TPS -- | MAP -- | ECT -- | Battery -- | AFR -- | Mixture -- | VE -- | Ign Timing (base) -- | STFT -- | Trigger Sync -- | Sync Losses -- | Outputs --";
 
     char afr[24]="--";
     const char* mixture="--";
@@ -297,10 +399,20 @@ std::string InlineDashboardText(const MonitorData& m,bool fresh,float stoichAfr)
         case 4: mixture="Rich"; break;
         }
     }
-    char text[512];
+    std::string inhibits="OK";
+    if(m.inhibits) {
+        inhibits="INHIBITED (";
+        bool first=true;
+        for(int bit=0;bit<16;++bit) if(m.inhibits&(1u<<bit)) {
+            if(!first) inhibits+=", ";
+            inhibits+=bit<9?InhibitName(bit):"unknown"; first=false;
+        }
+        inhibits+=")";
+    }
+    char text[640];
     snprintf(text,sizeof(text),
-             "RPM %u | TPS %.1f%% | MAP %u kPa | ECT %d C | Battery %.1f V | AFR %s | Mixture %s | VE %u%% | Ign Timing (base) %.1f deg | STFT %+.1f%% | Trigger Sync %s | Sync Losses %u%s",
+             "RPM %u | TPS %.1f%% | MAP %u kPa | ECT %d C | Battery %.1f V | AFR %s | Mixture %s | VE %u%% | Ign Timing (base) %.1f deg | STFT %+.1f%% | Trigger Sync %s | Sync Losses %u%s | Outputs %s",
              m.rpm,m.tps,m.kpa,m.clt,m.battery,afr,mixture,m.ve,m.advance,m.trimPercent,
-             m.synced()?"OK":"lost",m.lossOfSyncCount,m.lossOfSyncCount==65535?"+":"");
+             m.synced()?"OK":"lost",m.lossOfSyncCount,m.lossOfSyncCount==65535?"+":"",inhibits.c_str());
     return text;
 }

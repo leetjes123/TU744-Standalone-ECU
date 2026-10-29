@@ -55,6 +55,21 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
 #define CAL_SYNC_RECOVERY_MS 0x96CU
 /* Idle spark correction only up to idle target + this RPM; zero = no limit. */
 #define CAL_IDLE_SPARK_RPM 0x96EU
+/* Idle feedback only below idle target + this RPM; zero = no limit. Above
+   it idle holds base position and closes as a dashpot. */
+#define CAL_IDLE_FEEDBACK_RPM 0x970U
+/* 0x972..0x973 reserved. */
+/* Idle spark retard limit while RPM is falling, 0.5 deg; zero = no limit. */
+#define CAL_IDLE_RETARD_FALLING 0x974U
+/* Overrun fuel cut minimum coolant, deg C; zero keeps the former fixed 60. */
+#define CAL_DFCO_MIN_CLT 0x975U
+#define DFCO_MIN_CLT_DEFAULT 60
+/* Maximum dwell while not running, us; zero = CRANK_DWELL_DEFAULT_US. The
+   validated maximum keeps dwell x CRANK_SLOWDOWN under the coil watchdog. */
+#define CAL_CRANK_DWELL_US 0x976U
+#define CRANK_DWELL_DEFAULT_US 3500U
+#define CRANK_DWELL_MAX_US 4000U /* literal in cal_validate (wizard generator) */
+#define CRANK_FIRE_LIMIT_TICKS 7500UL /* 6.0 ms: the stretched fire limit */
 #define IAC_HOME_STEPS_DEFAULT 250U
 #define IAC_HOME_MS_PER_STEP 12U /* 10 ms step cadence plus scheduling margin */
 /* OEM stepper timing (0x40FA6/0x41040): a step call every 5th ~1 ms ADC
@@ -86,8 +101,29 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
 #define INH_POWER 0x0040U
 #define INH_BOARD 0x0080U
 #define INH_OUTPUT 0x0100U
+/* Latching inhibits (cleared by reset, service_poll or the stall recovery
+   in runtime.c). DEADLINE is a per-pass condition: the OEM has no timing
+   latch, only its hardware watchdog. */
+#define INH_LATCHED (INH_SERVICE | INH_OUTPUT | INH_BOARD)
 #define AUX_SHUTDOWN_INHIBITS (INH_CAL | INH_SERVICE | INH_DEADLINE | INH_POWER | INH_BOARD | INH_OUTPUT)
 #define CAL_TRANSACTION_MS 5000UL
+/* Check that last tripped INH_OUTPUT or INH_DEADLINE (Authority.trip_source,
+   live frame version 5). Codes 1..3 latch INH_OUTPUT; 4..5 are DEADLINE. */
+#define TRIP_NONE 0U
+#define TRIP_COIL_REFUSED 1U     /* hal_coil_start refused a charge (board/arguments) */
+#define TRIP_INJECTOR_REFUSED 2U /* hal_injector_start refused a pulse (board/arguments) */
+#define TRIP_COIL_WATCHDOG 3U    /* coil watchdog repeated while running */
+#define TRIP_TICK_GAP 4U         /* millisecond tick serviced > 3 ms late */
+#define TRIP_FOREGROUND_GAP 5U   /* foreground pass gap > 50 ms */
+/* Coil watchdog trips in a row on one coil while running before the latch. */
+#define COIL_WATCHDOG_LATCH 3U
+/* Stall recovery: a remaining latch clears after this long without crank
+   edges, at most LATCH_CLEARS_PER_KEY times per key cycle. */
+#define LATCH_CLEAR_QUIET_MS 1000UL
+#define LATCH_CLEARS_PER_KEY 3U
+/* Largest injector pulse a pair start accepts (hal_injector_start takes up
+   to 31250 ticks = 25 ms); a longer one is clamped and counted. */
+#define INJECTOR_MAX_TICKS 31000U
 #define CUT_REV 0x0001U
 #define CUT_DFCO 0x0002U
 #define CUT_FLOOD 0x0004U
@@ -167,6 +203,11 @@ typedef struct {
     volatile u16 feedback_missing[2], feedback_invalid[2], late_events;
     volatile s16 feedback_correction[2];
     volatile u8 spark_draining;
+    /* Per-event output faults handled without a latch (saturating), the
+       last trip check (TRIP_*), consecutive coil watchdog trips while
+       running and stall recoveries in this key cycle. */
+    volatile u16 coil_timeouts, injector_clamps;
+    volatile u8 trip_source, coil_timeout_run[2], latch_clears;
     /* Bumped by every write of inhibits, epoch or plan (safety.c). An
        injector ticket prepared under one generation is valid only in it. */
     volatile u16 generation;
@@ -211,6 +252,11 @@ typedef struct {
     /* Running sync loss awaiting recovery (CAL_SYNC_RECOVERY_MS). */
     u8 sync_recovering;
     u32 sync_lost_at;
+    /* Idle: RPM 100 ms ago for the falling test, and the stall recovery's
+       quiet period (no crank activity since latch_quiet_at). */
+    u16 idle_rpm_ref, latch_activity;
+    u32 idle_rpm_at, latch_quiet_at;
+    u8 idle_falling;
 } Controls;
 typedef struct {
     u8 state, phase, previous_active, open_count, fault, response, pending;
@@ -266,9 +312,8 @@ typedef struct {
     volatile u32 vss_edge_stamp;
     u8 board_released;
     volatile u8 service, key_input, wideband_input;
-    /* Service session: engine stayed stopped/unsynced, and whether a
-       deadline was already latched before it (runtime, reset-only). */
-    u8 service_clean, service_prior_deadline;
+    /* Service session: engine stayed stopped/unsynced throughout. */
+    u8 service_clean;
 } Ecu;
 extern Ecu ecu;
 /* Worst observed timing since boot or the last protocol 2F reset. Bench
@@ -298,9 +343,14 @@ void hal_cancel_all(void) SHARED;
 void hal_cancel_fuel(void) SHARED;
 void hal_cancel_spark(void) SHARED;
 void hal_revoke_spark(u8 lost_angle) SHARED;
-u8 hal_injector_start(u8 channel, u16 ticks) SHARED;
+u8 hal_injector_start(u8 channel, u16 ticks) SHARED; /* 0=fault, 1=started, 2=late skip */
 u8 hal_coil_start(u8 channel, u16 ticks) SHARED; /* 0=fault, 1=started, 2=late/revoked skip */
 void hal_coil_off(u8 channel) SHARED;
+void hal_injector_off(u8 channel) SHARED;
+/* 1 only when every coil and injector pin is off and no output compare is armed. */
+u8 hal_outputs_off(void) SHARED;
+/* Counts crank capture interrupts; it does not change while the crank is still. */
+u16 hal_crank_activity(void) SHARED;
 void hal_phase_arm(void) SHARED;
 void hal_phase_disarm(void) SHARED;
 void hal_aux(u8 pump, u8 fan, u8 boost, u8 gauge, u8 heaters, u8 mil);
@@ -358,6 +408,9 @@ u8 rotation_edge(u32 capture_ticks) SHARED;
 u8 rotation_block(volatile u16 SYSTEM_RAM *cap, u8 count, u32 last_stamp, u8 eligible, u32 *fastest) SHARED;
 void rotation_snapshot(Rotation *out);
 void safety_inhibit(u16 reason, u32 now) SHARED;
+void safety_trip(u16 reason, u8 source, u32 now) SHARED;
+void coil_timeout(u8 channel) SHARED;
+void latch_poll(u32 now);
 void safety_conditions(u16 reasons, u32 now);
 u8 safety_aux_permitted(void) SHARED;
 u8 safety_publish(const EnginePlan *plan) SHARED;

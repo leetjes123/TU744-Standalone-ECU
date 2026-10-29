@@ -44,6 +44,16 @@ struct App {
     bool diagnosticPopup=false, controllerPopup=false;
     char diagnosticSearch[128]={};
     int diagnosticFilter=0;
+    // Developer mode (View menu, remembered): ECU timing health and crank capture snapshot.
+    bool developerMode=false;
+    TimingHealth timingHealth;
+    bool timingHealthValid=false;
+    uint64_t timingHealthAt=0;
+    // Knock detail (command 34 / 35 03). The ECU clears its knock fault when the
+    // engine stops, so the first detail read after the live fault flag rises is kept.
+    KnockDetail knockDetail, knockFaultCapture;
+    bool knockDetailValid=false, knockFaultCaptured=false, knockFaultSeen=false, knockJobPolling=false;
+    uint64_t knockDetailAt=0, knockFaultAt=0, knockJobNextPoll=0;
     float elapsed=0;
     std::vector<MonitorSample> monitorBatch; // reused per UI frame
     UndoStack undo;
@@ -68,7 +78,7 @@ struct App {
         int tableIndex=-1;
         TableEditorState editorState;
         bool open=false;
-        enum SpecialType { TABLE, SCALARS, FLAGS, DASHBOARD, LOGGING, LOG_VIEWER, DIAGNOSTICS, AUTOTUNE } type=TABLE;
+        enum SpecialType { TABLE, SCALARS, FLAGS, DASHBOARD, LOGGING, LOG_VIEWER, DIAGNOSTICS, AUTOTUNE, DEVELOPER } type=TABLE;
         char categoryFilter[64]={};
         int logViewerIndex=0;
     } tabs[MAX_OPEN_TABS];
@@ -101,6 +111,12 @@ struct App {
     void beginDiagnostics(bool clear=false);
     void drawDiagnostics();
     void drawAutotune();
+    void drawDeveloper();
+    void readTimingHealth(bool clearMaxima);
+    bool readKnockDetail(bool withJob, bool quiet=false);
+    void knockBenchJob(uint8_t action);
+    void loadDeveloperMode();
+    void saveDeveloperMode();
     AutoTuneContext autotuneContext() const;
     void syncAutotune();
     int applyAutotuneProposals(bool automatic);

@@ -30,6 +30,7 @@ static void reply(const u8 *bytes, u8 length) {
     p->tx_length = (u16)(length + 3U);
 }
 #define LIVE_FRAME_V4_BYTES 64
+#define LIVE_FRAME_V5_BYTES 72
 static void status(u8 ok) {
     u8 value = ok ? 0 : 1;
     reply(&value, 1);
@@ -151,11 +152,13 @@ static void monitor(void) {
    autotune. Command 10 stays for older loggers. A bare request returns the
    44-byte version 3 frame unchanged for existing loggers; [13, 4] returns
    the 64-byte version 4 frame, which appends idle-actuator and
-   synchronization-loss detail. */
+   synchronization-loss detail; [13, 5] the 72-byte version 5 frame, which
+   adds the output trip source and per-event output faults. */
 static void live_frame(u8 version) {
-    u8 b[LIVE_FRAME_V4_BYTES];
+    u8 b[LIVE_FRAME_V5_BYTES];
     const Iac *iac = &ecu.iac; /* foreground-owned, like this handler */
-    u16 first_reason, resyncs, overruns;
+    u16 first_reason, resyncs, overruns, coil_timeouts, injector_clamps, late;
+    u8 trip_source, latch_clears;
     Controls *s = &ecu.control;
     Sensors *in = &ecu.sensors;
     const u8 *c = cal_active();
@@ -173,6 +176,11 @@ static void live_frame(u8 version) {
     first_reason = ecu.authority.first_reason;
     resyncs = timing_health.capture_resyncs;
     overruns = timing_health.capture_overruns;
+    trip_source = ecu.authority.trip_source;
+    latch_clears = ecu.authority.latch_clears;
+    coil_timeouts = ecu.authority.coil_timeouts;
+    injector_clamps = ecu.authority.injector_clamps;
+    late = ecu.authority.late_events;
     hal_unlock(lock);
     memset(b, 0, sizeof(b));
     b[0] = version;
@@ -238,7 +246,16 @@ static void live_frame(u8 version) {
     put16(b + 58, first_reason);
     put16(b + 60, resyncs);
     put16(b + 62, overruns);
-    reply(b, LIVE_FRAME_V4_BYTES);
+    if (version < 5) {
+        reply(b, LIVE_FRAME_V4_BYTES);
+        return;
+    }
+    b[64] = trip_source;
+    b[65] = latch_clears;
+    put16(b + 66, coil_timeouts);
+    put16(b + 68, injector_clamps);
+    put16(b + 70, late);
+    reply(b, LIVE_FRAME_V5_BYTES);
 }
 static void execute(void) {
     Protocol *p = &ecu.protocol;
@@ -263,8 +280,8 @@ static void execute(void) {
         live_frame(3);
         return;
     }
-    if (cmd == 0x13 && n == 2 && b[1] == 4) {
-        live_frame(4);
+    if (cmd == 0x13 && n == 2 && (b[1] == 4 || b[1] == 5)) {
+        live_frame(b[1]);
         return;
     }
     if (cmd == 0x34 && n == 1) {

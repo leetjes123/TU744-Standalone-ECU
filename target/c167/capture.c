@@ -9,8 +9,9 @@
 static volatile u16 sdata capture_buffer[3][30];
 static volatile u16 SYSTEM_RAM block_count[3], block_counter[3];
 static volatile u32 SYSTEM_RAM block_stamp[3];
-static volatile u8 SYSTEM_RAM capture_head, capture_tail, capture_failed, batch_enabled, capture_started,
+static volatile u8 SYSTEM_RAM capture_head, capture_tail, capture_fault, batch_enabled, capture_started,
                                 capture_resync;
+static volatile u16 SYSTEM_RAM crank_activity;
 static volatile u16 SYSTEM_RAM phase_counter, previous_counter, previous_capture, previous_period;
 static volatile u8 SYSTEM_RAM phase_tooth, phase_valid, block_tooth[3];
 volatile u16 capture_schedule_counter, capture_overruns, capture_blocks;
@@ -21,7 +22,7 @@ static void capture_arm(u8 slot, u16 count) {
     PECC6 = 0x0200U | count;
 }
 void board_capture_init(void) {
-    capture_head = capture_tail = capture_failed = batch_enabled = 0;
+    capture_head = capture_tail = capture_fault = batch_enabled = 0;
     capture_started = capture_resync = 0;
     capture_overruns = capture_blocks = 0;
     previous_counter = T0;
@@ -78,15 +79,26 @@ static void capture_failure_snapshot(u16 reason, u16 counter, u16 expected,
         timing_health.capture_words[i] = i < count ? capture_buffer[slot][i] : 0U;
     timing_health.capture_reason = reason; /* publish immutable snapshot last */
 }
-static void capture_latch(void) {
-    capture_failed = 1; CC15IE = 0; PECC6 = 0;
-    XP1IR = 1; /* the worker latches DEADLINE outside level 15 */
+u16 hal_crank_activity(void) SHARED { return crank_activity; }
+/* Lose this block's tooth relation and reacquire: discard the block,
+   reseed from T0 as at acquisition, and let the worker revoke angle before
+   it decodes anything newer. Sync then needs two consistent gaps. This is
+   also the response to a starved worker or an unseeded acquisition: the
+   OEM drops sync and resynchronizes (XP1 2B18C), it has no capture latch. */
+static void capture_restart(u8 slot, u8 fault) {
+    if (timing_health.capture_resyncs != 65535U) timing_health.capture_resyncs++;
+    capture_started = 0; batch_enabled = 0; phase_valid = 0;
+    if (fault) capture_fault = 1;
+    capture_resync = 1;
+    capture_arm(slot, 1);
+    XP1IR = 1;
 }
 void capture_isr(void) IRQ_HANDLER(0x1F) {
     u8 slot = capture_head, next = (u8)(slot + 1U), attempt, pending;
     u16 count = block_count[slot], captured, current, high, counter, distance, tooth;
     u32 stamp;
     board_knock_crank_seen();
+    crank_activity++;
     if (next == 3U) next = 0;
     counter = (u16)(previous_counter + count);
     current = T0;
@@ -105,7 +117,7 @@ void capture_isr(void) IRQ_HANDLER(0x1F) {
             capture_failure_snapshot(4U, current, counter, captured, slot, next, count);
             capture_overruns++;
             if (timing_health.capture_overruns != 65535U) timing_health.capture_overruns++;
-            capture_latch();
+            capture_restart(slot, 1);
             return;
         }
         counter = (u16)(current - pending);
@@ -118,17 +130,10 @@ void capture_isr(void) IRQ_HANDLER(0x1F) {
                                  current, counter, captured, slot, next, count);
         capture_overruns++;
         if (timing_health.capture_overruns != 65535U) timing_health.capture_overruns++;
-        if (next == capture_tail) { capture_latch(); return; } /* worker starved */
-        /* T0 counted an edge that no PEC transfer delivered (two edges within
-           one service latency). The hardware still works; only this block's
-           tooth relation is lost. Never decode it: discard it, reseed from T0
-           exactly as at acquisition, and let the worker revoke angle before
-           it decodes anything newer. Sync then needs two consistent gaps. */
-        if (timing_health.capture_resyncs != 65535U) timing_health.capture_resyncs++;
-        capture_started = 0; batch_enabled = 0; phase_valid = 0;
-        capture_resync = 1;
-        capture_arm(slot, 1);
-        XP1IR = 1;
+        /* Worker starved (queue full), or T0 counted an edge that no PEC
+           transfer delivered (two edges within one service latency). The
+           hardware still works; only the tooth relation is lost. */
+        capture_restart(slot, (u8)(next == capture_tail));
         return;
     }
     /* An edge pending in CC15 belongs to the next PEC buffer. It is not a
@@ -160,6 +165,10 @@ void capture_isr(void) IRQ_HANDLER(0x1F) {
     capture_blocks++;
     XP1IR = 1;
 }
+/* IEN=0 sections also stop PEC: two edges inside one lose a capture. Keep
+   them to a few register moves, far below a tooth period (166 us at
+   6000 rpm); safety_inhibit runs afterwards under hal_lock, which level 15
+   and PEC still preempt. Angle is already invalid when it runs. */
 static void capture_timeout(void) {
     u16 lock;
     if (!ecu.rotation.seen || hal_capture_clock() - ecu.rotation.last <= 250000UL) return;
@@ -167,10 +176,10 @@ static void capture_timeout(void) {
     ecu.rotation.state = ROT_UNSYNCED; ecu.rotation.rpm = 0;
     ecu.rotation.normal = 0; ecu.rotation.have_gap = ecu.rotation.seen = 0;
     ecu.rotation.epoch++; batch_enabled = 0; phase_valid = 0;
-    safety_inhibit(INH_SYNC, ecu.milliseconds);
     previous_counter = T0;
     capture_arm(capture_head, 1); /* discard an incomplete old block */
     hal_hard_unlock(lock);
+    safety_inhibit(INH_SYNC, ecu.milliseconds);
 }
 /* Angle is lost: no later edge may extend the old tooth relation. Without
    this a latched capture left the last rpm and ROT_VALID in place, so a
@@ -185,26 +194,22 @@ static void capture_rotation_lost(u8 reason) {
     ecu.rotation.state = ROT_UNSYNCED; ecu.rotation.rpm = 0;
     ecu.rotation.normal = 0; ecu.rotation.have_gap = ecu.rotation.seen = 0;
     ecu.rotation.epoch++; batch_enabled = 0; phase_valid = 0;
-    safety_inhibit(INH_SYNC, ecu.milliseconds);
     hal_hard_unlock(lock);
+    safety_inhibit(INH_SYNC, ecu.milliseconds);
 }
 static void capture_resynchronize(void) {
+    u8 fault;
     u16 lock = hal_hard_lock();
     capture_resync = 0;
+    fault = capture_fault; capture_fault = 0;
     capture_tail = capture_head; /* queued blocks straddle the lost edge */
     hal_hard_unlock(lock);
-    capture_rotation_lost(ROT_LOSS_CAPTURE);
+    capture_rotation_lost(fault ? ROT_LOSS_CAPTURE_FAULT : ROT_LOSS_CAPTURE);
 }
 void engine_work_isr(void) IRQ_HANDLER(0x41) {
     u8 slot, accepted;
     u16 count, lock;
     u32 fastest;
-    if (capture_failed) {
-        /* Raised by capture_isr at level 15, which never touches authority. */
-        safety_inhibit(INH_DEADLINE, ecu.milliseconds);
-        if (ecu.rotation.state != ROT_UNSYNCED || ecu.rotation.seen) capture_rotation_lost(ROT_LOSS_CAPTURE_FAULT);
-        return;
-    }
     if (capture_resync) capture_resynchronize();
     if (capture_tail == capture_head) { capture_timeout(); return; }
     slot = capture_tail; count = block_count[slot];

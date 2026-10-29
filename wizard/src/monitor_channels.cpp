@@ -61,6 +61,11 @@ const SignalDef SIGNAL_DEFS[SIG_COUNT] = {
     {"Link Last Failure","",IM_COL32(255,150,190,255),0,5, "link_last_failure", "Link Last Failure", "Monitor last failure", "Cause of the most recent failed live-frame request: 0 none, 1 no reply (timeout), 2 serial error (framing/parity/overrun, usually noise), 3 echo mismatch, 4 bad or corrupt frame, 5 frame failed validation.", true},
     {"Dropped Frames","count",IM_COL32(255,90,90,255),0,65535, "dropped_frames", "Dropped Frames", "", "Frames received from the ECU but discarded because the Tuning Wizard could not keep up (queue full) since connecting. Should stay 0.", true},
     {"Sample Gap","s",IM_COL32(255,200,120,255),0,20, "sample_gap", "Sample Gap", "", "Time since the previous logged sample. A large value marks a gap: failed requests (see Link Failures), dropped frames, or monitoring paused for an ECU read, write or save.", true},
+    {"Output Trip Source","",IM_COL32(255,80,80,255),0,5, "output_trip_source", "Trip Source", "", "Check that last tripped an output latch or deadline: 0 none, 1 coil start refused, 2 injector start refused, 3 coil watchdog repeated while running, 4 tick gap > 3 ms, 5 main loop gap > 50 ms. Firmware 0.0.8.", false},
+    {"Output Latch Clears","count",IM_COL32(255,140,80,255),0,3, "output_latch_clears", "Latch Clears", "", "Automatic output-latch clears after a stall in this key cycle (at most 3). Firmware 0.0.8.", true},
+    {"Coil Watchdog Trips","count",IM_COL32(255,110,60,255),0,65535, "coil_watchdog_trips", "Coil Timeouts", "", "Coil charges ended by the 6.5 ms watchdog since ECU reset; each loses one spark. Rising while cranking points to too much dwell for the cranking speed. Firmware 0.0.8.", false},
+    {"Clamped Injector Pulses","count",IM_COL32(240,200,80,255),0,65535, "clamped_injector_pulses", "Inj Clamps", "", "Injector pulses clamped to 24.8 ms since ECU reset. Firmware 0.0.8.", true},
+    {"Late Output Events","count",IM_COL32(220,160,120,255),0,65535, "late_output_events", "Late Events", "", "Charges, injections or ignition segments serviced too late and skipped since ECU reset. Firmware 0.0.8.", true},
 };
 
 namespace {
@@ -170,6 +175,11 @@ float MonitorSignalValue(int sig,const MonitorData& mon) {
     case SIG_LINK_LAST_FAILURE: return float(mon.linkLastFailure);
     case SIG_DROPPED_FRAMES: return float(mon.droppedFrames);
     case SIG_SAMPLE_GAP: return mon.sampleGap;
+    case SIG_TRIP_SOURCE: return mon.outputDetailAvailable ? float(mon.tripSource) : NAN;
+    case SIG_LATCH_CLEARS: return mon.outputDetailAvailable ? float(mon.latchClears) : NAN;
+    case SIG_COIL_TIMEOUTS: return mon.outputDetailAvailable ? float(mon.coilTimeouts) : NAN;
+    case SIG_INJECTOR_CLAMPS: return mon.outputDetailAvailable ? float(mon.injectorClamps) : NAN;
+    case SIG_LATE_EVENTS: return mon.outputDetailAvailable ? float(mon.lateEvents) : NAN;
     default: return 0;
     }
 }

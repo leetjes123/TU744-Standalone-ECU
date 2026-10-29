@@ -73,7 +73,7 @@ static void test_math_cal(void) {
             (i >= 0x600 && i < 0x603) || (i >= 0x605 && i < 0x607) ||
             (i >= 0x7A1 && i < 0x7AF) || (i >= 0x7B0 && i < 0x7B4) ||
             (i >= 0x900 && (i < CAL_DFCO_EXIT_RPM || i >= CAL_DFCO_EXIT_RPM + 2U) &&
-             (i < CAL_SYNC_RECOVERY_MS || i >= CAL_IDLE_SPARK_RPM + 2U)));
+             (i < CAL_SYNC_RECOVERY_MS || i >= CAL_CRANK_DWELL_US + 2U)));
         setup(); CHECK(cal_begin()); ecu.cal.bytes[1][i] ^= 1;
         if (!cal_validate(ecu.cal.bytes[1], &error)) continue;
         CHECK(cal_commit(0) == !protected_byte);
@@ -693,10 +693,12 @@ static void test_iac_recovery(void) {
     iac_service(30500);
     CHECK(ecu.iac.state == IAC_FAULT);
     ecu.service = 0;
-    ecu.authority.inhibits = INH_OUTPUT;
+    ecu.authority.inhibits = INH_DEADLINE;
     iac_service(30600);
     CHECK(ecu.iac.state == IAC_FAULT);
-    ecu.authority.inhibits = INH_SYNC; /* a sync loss alone never blocks recovery */
+    /* 0.0.8: neither a sync loss nor an output latch blocks recovery (the
+       OEM idle driver runs whatever the ignition/injection state). */
+    ecu.authority.inhibits = INH_SYNC | INH_OUTPUT;
     iac_service(30700);
     CHECK(ecu.iac.state == IAC_READY && ecu.iac.retries == 3);
 
@@ -1699,6 +1701,8 @@ int main(void) {
     test_sync_recovery();
     test_idle_spark_rpm();
     test_service_release();
+    test_idle_008();
+    test_latch_recovery();
     test_math_cal();
     test_rotation();
     test_rotation_block();

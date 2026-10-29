@@ -248,13 +248,31 @@ void hal_coil_off(u8 ch) SHARED {
     coil_phase[ch] = 0;
     ecu.authority.spark_draining &= (u8)~(1U << ch);
 }
+void hal_injector_off(u8 ch) SHARED {
+    switch (ch) {
+    case 0: CCM7 &= 0xF0FFU; CC30IR = 0; PIN_INJ_1 = 1; break;
+    case 1: CCM7 &= 0xFFF0U; CC28IR = 0; PIN_INJ_4 = 1; break;
+    case 2: CCM7 &= 0xFF0FU; CC29IR = 0; PIN_INJ_3 = 1; break;
+    default: CCM5 &= 0x0FFFU; CC23IR = 0; PIN_INJ_2 = 1; break;
+    }
+    if (ch < 4U) injector_phase[ch] = 0;
+}
+/* Pins read back from the port latches; coil, coil watchdog and injector
+   compares disarmed. Used by the stall recovery (latch_poll). */
+u8 hal_outputs_off(void) SHARED {
+    return (u8)(PIN_COIL_A && PIN_COIL_B && PIN_INJ_1 && PIN_INJ_2 && PIN_INJ_3 && PIN_INJ_4 &&
+                !(CCM0 & 0x00FFU) && !(CCM1 & 0x0F0FU) && !(CCM5 & 0xF0FFU) && !(CCM7 & 0x0FFFU));
+}
+/* 0 = refused (board or arguments), 1 = started, 2 = late: this event is
+   skipped. The OEM starts a late pulse at once without a fault
+   (kb/algorithms.yaml 1898); neither latches. */
 u8 hal_injector_start(u8 ch, u16 ticks) SHARED {
     /* Callers verified the start against the 32-bit capture clock moments
        ago (>= 64 ticks, at most 30000), so 16-bit T7 distance is exact here
        and avoids a masked clock read per channel. T7 counts with T1. */
     s16 remaining = (s16)(injection_at - T7);
-    if (!BOARD_RELEASED || ch > 3U || ticks < 25U || ticks > 31250U ||
-        remaining < 64 || remaining > 30000) return 0;
+    if (!BOARD_RELEASED || ch > 3U || ticks < 25U || ticks > 31250U) return 0;
+    if (remaining < 64 || remaining > 30000) return 2;
     injector_epoch[ch] = ecu.authority.epoch;
     injector_end[ch] = (u16)(injection_at + ticks);
     injector_phase[ch] = 1;
@@ -268,13 +286,13 @@ u8 hal_injector_start(u8 ch, u16 ticks) SHARED {
     default:
         CC23IR = 0; CC23 = injection_at; CCM5 = (CCM5 & 0x0FFFU) | 0x5000U; break;
     }
-    if ((s16)(injection_at - T7) <= 0) { hal_cancel_fuel(); return 0; }
+    if ((s16)(injection_at - T7) <= 0) { hal_injector_off(ch); return 2; }
     return 1;
 }
 /* Called with interrupts masked. Keep one future start per pair while its
    current pulse owns the compares. Re-admit with the current coherent plan
    after both end ISRs: cuts, freshness, epoch and soft-cut accounting still
-   pass through the shared safety owner. A late start is an explicit fault. */
+   pass through the shared safety owner. A late start skips this event. */
 static void injection_pending(u8 pair) {
     InjectionEvent *e = &pending_injection[pair];
     u8 ch = (u8)(pair * 2U);
@@ -283,7 +301,7 @@ static void injection_pending(u8 pair) {
     if (ecu.authority.inhibits || e->epoch != ecu.authority.epoch) return;
     injection_clock = e->clock; injection_at = e->at;
     if ((s32)(injection_clock - hal_capture_clock()) < 64L) {
-        safety_inhibit(INH_DEADLINE, ecu.milliseconds); return;
+        late_event(); return;
     }
     injector_admit(pair);
 }
@@ -298,7 +316,7 @@ void board_schedule(u32 captured) {
     if (ecu.rotation.state != ROT_VALID || ecu.authority.inhibits) return;
     now = hal_capture_clock(); reference = T7;
     if (now - captured > ecu.rotation.normal * 30UL) {
-        safety_inhibit(INH_DEADLINE, ecu.milliseconds); return;
+        late_event(); return; /* block delivered too late: skip its events */
     }
     reference = (u16)(reference - (u16)(now - captured));
     for (ch = 0; ch < 2; ch++) {
@@ -319,7 +337,12 @@ void board_schedule(u32 captured) {
         }
         if (!ecu.authority.inhibits && event_claim((u8)(ch + 2U), cycle)) {
             if (pending_injection[ch].ready) {
-                safety_inhibit(INH_DEADLINE, ecu.milliseconds);
+                /* The previous event never started: replace it. */
+                late_event();
+                pending_injection[ch].clock = captured + delay;
+                pending_injection[ch].at = (u16)(reference + (u16)delay);
+                pending_injection[ch].epoch = ecu.authority.epoch;
+                injection_pending(ch);
             } else if (!ecu.authority.injector_active[ch * 2U] &&
                        !ecu.authority.injector_active[ch * 2U + 1U]) {
                 /* Idle pair: what injection_pending would do with the
@@ -329,7 +352,7 @@ void board_schedule(u32 captured) {
                 injection_clock = captured + delay;
                 injection_at = (u16)(reference + (u16)delay);
                 if ((s16)(injection_at - T7) < 64)
-                    safety_inhibit(INH_DEADLINE, ecu.milliseconds);
+                    late_event();
                 else
                     injector_commit(ch, &ticket);
             } else {
@@ -375,6 +398,12 @@ static u16 dwell_ticks(u8 ch, u16 unit) {
         s32 corrected = (s32)ticks + dwell_state[ch].duration - dwell_base[ch];
         ticks = (u16)clamp32(corrected, 625L, 7500L);
     }
+    /* Not running: charge start is angle based on a cranking tooth period
+       that stretches on compression, so even a 1.5x later fire must come
+       before the 6.5 ms coil watchdog. The plan caps cranking dwell
+       (CAL_CRANK_DWELL_US); feedback correction must not extend it. */
+    if (ecu.control.mode != ENGINE_RUNNING && ticks > us_ticks(ecu.authority.plan.dwell_us))
+        ticks = us_ticks(ecu.authority.plan.dwell_us);
     /* Board admission bound: each coil must have an off interval before
        its following revolution. Standalone limit, not an OEM calibration. */
     if ((u32)ticks > (u32)unit * 464UL) ticks = (u16)(unit * 464U);
@@ -383,7 +412,17 @@ static u16 dwell_ticks(u8 ch, u16 unit) {
 /* Charge now: the ROM's CC6INT/CC4INT timed stage. Only the CC6 path hands
    the fire to charge time when FD1C.10 or FD1C.13 ask for it (38A80). */
 static void charge(u8 ch, u8 cc6, u16 epoch) {
-    u16 lock = hal_lock();
+    u16 lock = hal_lock(), ahead;
+    /* Not running: skip a charge whose stored angle fire, stretched 1.5x by
+       a compression slowdown, would come after 6 ms. The watchdog (6.5 ms)
+       would otherwise end it at an unknown angle. */
+    if (ecu.control.mode != ENGINE_RUNNING && fire_stage[ch].mode != STAGE_NONE &&
+        fire_stage[ch].epoch == ecu.authority.epoch) {
+        ahead = (u16)(fire_stage[ch].predicted - T1);
+        if (ahead < 0x8000U && (u32)ahead * 3UL > CRANK_FIRE_LIMIT_TICKS * 2UL) {
+            hal_unlock(lock); late_event(); return;
+        }
+    }
     if (cc6 && (oem.fd1c & 0x2400U)) {
         oem.fd1c &= ~0x2000U;
         time_fire[ch] = 1; time_fire_ticks[ch] = oem.f7fc;
@@ -463,7 +502,7 @@ void board_ignition_segment(u8 tooth, u32 stamp, u16 counter, u16 interval) {
     if (ecu.rotation.state != ROT_VALID || ecu.authority.inhibits) { oem_boundary_seen = 0; return; }
     now = hal_capture_clock();
     if (now - stamp > ecu.rotation.normal * 30UL) {
-        safety_inhibit(INH_DEADLINE, ecu.milliseconds); return;
+        oem_boundary_seen = 0; late_event(); return; /* skip this segment's sparks */
     }
     unit = (u16)(ecu.rotation.normal >> 3);
     if (!unit) return;
@@ -615,11 +654,15 @@ void dwell_feedback_isr(void) IRQ_HANDLER(0x19) {
     }
     hal_unlock(lock);
 }
+/* Start edge: install the end compare. A revoked pulse, or an end that has
+   already passed (late service), closes the injector now and ends only this
+   event; the caller drives the pin off. */
 static u8 injector_event(u8 ch) {
     if (injector_phase[ch] == 1U) {
         if (ecu.authority.inhibits || injector_epoch[ch] != ecu.authority.epoch ||
             ecu.authority.plan.fuel_cut || (s16)(injector_end[ch] - T7) <= 12) {
-            safety_inhibit(INH_OUTPUT, ecu.milliseconds); return 0;
+            if ((s16)(injector_end[ch] - T7) <= 12) late_event();
+            injector_phase[ch] = 0; injector_done(ch); return 0;
         }
         injector_phase[ch] = 2;
         return 1;
@@ -654,8 +697,21 @@ void injector3_isr(void) IRQ_HANDLER(0x37) {
     if (!injector_phase[3]) injection_pending(1);
     hal_unlock(lock);
 }
-void watchdog0_isr(void) IRQ_HANDLER(0x34) { safety_inhibit(INH_OUTPUT, ecu.milliseconds); }
-void watchdog1_isr(void) IRQ_HANDLER(0x35) { safety_inhibit(INH_OUTPUT, ecu.milliseconds); }
+/* Coil watchdog, 6.5 ms after charge start (hal_coil_start). The OEM has
+   no dwell timeout or ignition latch (its CC9 dwell regulator 38BDC..38D5C
+   only bounds the correction), so this ends only the late charge: the coil
+   switches off and its stored fire is dropped. coil_timeout latches only on
+   repeated trips while running. */
+static void watchdog_event(u8 ch) {
+    u16 lock = hal_lock();
+    fire_stage[ch].mode = STAGE_NONE; fire_pending[ch] = 0;
+    if (feedback_owner == ch) { CC9IE = 0; feedback_owner = 2; }
+    feedback_ready[ch] = 0;
+    coil_timeout(ch);
+    hal_unlock(lock);
+}
+void watchdog0_isr(void) IRQ_HANDLER(0x34) { watchdog_event(0); }
+void watchdog1_isr(void) IRQ_HANDLER(0x35) { watchdog_event(1); }
 void tach_isr(void) IRQ_HANDLER(0x3B) {
     u16 lock = hal_lock(); CCM6 &= 0x0FFFU; PIN_TACH = 0; tach_active = 0; hal_unlock(lock);
 }

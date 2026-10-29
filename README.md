@@ -9,9 +9,9 @@ It is a port of [WillItBoost/M744-Stand-Alone-ECU](https://github.com/WillItBoos
 reworked specifically for the PSA TU engine family (crank pattern, sensors,
 injectors, coils and idle stepper as fitted to the TU).
 
-> **Current release: TU744 v0.0.7** – see [`release/TU744-v0.0.7`](release/TU744-v0.0.7)
-> and its [release notes](release/TU744-v0.0.7/README.md).
-> When you connect, the ECU introduces itself as `TU744 0.0.7`.
+> **Current release: TU744 v0.0.8** – see [`release/TU744-v0.0.8`](release/TU744-v0.0.8)
+> and its [release notes](release/TU744-v0.0.8/README.md).
+> When you connect, the ECU introduces itself as `TU744 0.0.8`.
 
 > ⚠️ **Use at your own risk.** This is hobby software for off-road/motorsport use.
 > It has been tested in simulation, not proven on every car. Keep a backup of
@@ -24,7 +24,7 @@ injectors, coils and idle stepper as fitted to the TU).
 
 | Folder | What it is |
 | --- | --- |
-| [`release/TU744-v0.0.7`](release/TU744-v0.0.7) | **Ready-to-use files. Start here if you just want to flash your ECU.** |
+| [`release/TU744-v0.0.8`](release/TU744-v0.0.8) | **Ready-to-use files. Start here if you just want to flash your ECU.** |
 | [`basemaps/`](basemaps) | Starting tunes for a stock **TU5JP 1.6 8v** and **TU3JP 1.4 8v** (speed-density) |
 | [`flashing/`](flashing) | Flashing tools: `UploadViaDebug.exe` (+ `STAGE1/2/3` files), `FlashUpdate.exe`, `Hex2Bin.exe` |
 | [`wizard/`](wizard) | Tuning Wizard – a standalone tuning/logging program (source) |
@@ -33,13 +33,12 @@ injectors, coils and idle stepper as fitted to the TU).
 ### The release folder
 
 ```
-release/TU744-v0.0.7/
-├── firmware/      TU744_0.0.7_M95080.bin   ← the file you flash (basemap already inside)
-│                  TU744_0.0.7_M95080.hex   ← same firmware as HEX
-├── basemaps/      TU5JP_1.6_8v_speed_density_v0.0.6.bin
-│                  TU3JP_1.4_8v_speed_density_v0.0.6.bin
-├── wizard/        TuningWizard_0.0.6.exe, OPERATOR_MANUAL.md
-├── tools/         migrate_schema5.py (schema-4 tunes from 0.0.1)
+release/TU744-v0.0.8/
+├── firmware/      TU744_0.0.8_M95080.bin   ← the file you flash (basemap already inside)
+│                  TU744_0.0.8_M95080.hex   ← same firmware as HEX
+├── basemaps/      TU5JP_1.6_8v_speed_density_v0.0.8.bin
+│                  TU3JP_1.4_8v_speed_density_v0.0.8.bin
+├── wizard/        TuningWizard_0.0.7.exe, OPERATOR_MANUAL.md
 └── verification/  build manifests and test logs
 ```
 
@@ -49,11 +48,11 @@ The flashing tools are in the repository's [`flashing/`](flashing) folder.
 
 The firmware comes with a **basemap for the TU5JP 1.6 8v** already built in, so a
 stock TU5JP can start straight after flashing. The same map is in
-[`basemaps/TU5JP_1.6_8v_speed_density_v0.0.6.bin`](basemaps/TU5JP_1.6_8v_speed_density_v0.0.6.bin),
+[`basemaps/TU5JP_1.6_8v_speed_density_v0.0.8.bin`](basemaps/TU5JP_1.6_8v_speed_density_v0.0.8.bin),
 so you can always go back to it.
 
 For a **TU3JP 1.4 8v**, use
-[`basemaps/TU3JP_1.4_8v_speed_density_v0.0.6.bin`](basemaps/TU3JP_1.4_8v_speed_density_v0.0.6.bin).
+[`basemaps/TU3JP_1.4_8v_speed_density_v0.0.8.bin`](basemaps/TU3JP_1.4_8v_speed_density_v0.0.8.bin).
 Load it before the first start: **Open file**, **Write active tune**, then
 **Save tune to ECU flash** and switch the ignition off and on.
 
@@ -106,11 +105,11 @@ it in its **debug (boot) mode** and load a small helper program into it.
    loader, so the ECU can then receive firmware over the cable.
 4. **Switch off, remove the debug-mode connection, and switch on again.**
 5. **Run `FlashUpdate.exe`**, pick your cable's COM port and the file
-   **`firmware/TU744_0.0.7_M95080.bin`**, and let it finish. Don't disconnect
+   **`firmware/TU744_0.0.8_M95080.bin`**, and let it finish. Don't disconnect
    anything while it's writing.
    (Tuning Wizard can do the same: **ECU → Update firmware**.)
 6. Switch off and on again, then connect with the Wizard. The ECU
-   should report **`TU744 0.0.7`**.
+   should report **`TU744 0.0.8`**.
 
 `Hex2Bin.exe` converts a `.hex` file into a `.bin`. You only need it if you
 build the firmware yourself.
@@ -128,11 +127,17 @@ open the ECU or use debug mode again.
 
 ### 4. Set up the Tuning Wizard
 
-1. Run **`release/TU744-v0.0.7/wizard/TuningWizard_0.0.6.exe`** and connect to your
+1. Run **`release/TU744-v0.0.8/wizard/TuningWizard_0.0.7.exe`** and connect to your
    cable's COM port (19200 baud, 8N1).
 2. Select **ECU > Read calibration** to load the tune that is in the ECU.
 3. **Save file** to keep a copy on your PC before changing anything.
 4. The dashboard shows live data (rpm, temperatures, AFR, faults and so on).
+5. The banner at the top of the dashboard shows whether fuel and spark are
+   allowed. Green means enabled. Amber means blocked by a condition that clears
+   by itself (for example no crank signal yet). Red means latched. Hover a
+   reason for what it means and how it clears.
+6. For deeper troubleshooting, **View > Developer mode** adds a Developer tab
+   with ECU timing health and crank-signal capture details.
 
 More detail: the [operator manual](wizard/OPERATOR_MANUAL.md).
 

@@ -38,9 +38,12 @@ static void test_idle_dfco(void) {
     p = idle_dfco_pass(1000, 2500);
     CHECK(ecu.control.throttle_closed && !ecu.control.dfco && ecu.control.dfco_waiting);
     CHECK(ecu.control.idle_mode == IDLE_FEEDBACK && ecu.control.idle_spark10 < 0);
+    /* 0.0.8: feedback entry starts the integral from base position; the
+       P term already holds the output at the closed end, so it stays. */
     integral = ecu.control.idle_integral;
+    CHECK(integral == 0);
     p = idle_dfco_pass(1099, 2500);
-    CHECK(!ecu.control.dfco && ecu.control.idle_integral < integral);
+    CHECK(!ecu.control.dfco && ecu.control.idle_integral <= integral);
     p = idle_dfco_pass(1100, 2500);
     CHECK(ecu.control.dfco && (p.fuel_cut & CUT_DFCO) && !p.spark_cut);
     CHECK(ecu.control.idle_mode == IDLE_RETURN && !ecu.control.idle_spark10);
@@ -256,7 +259,8 @@ static void test_service_release(void) {
     CHECK(ecu.iac.state == IAC_HOMING);
     safety_conditions(INH_SYNC, 1020);
     CHECK(ecu.authority.inhibits == INH_SYNC);
-    /* A deadline latched at runtime before the session stays latched. */
+    /* 0.0.8: DEADLINE is a per-pass condition (the OEM has no timing
+       latch); a deadline from before the session clears with it. */
     setup();
     memset(fake_eeprom, 0xFF, 8192);
     safety_inhibit(INH_DEADLINE, 0);
@@ -264,9 +268,9 @@ static void test_service_release(void) {
     for (now = 0; ecu.storage.phase && now < 1000; now++)
         storage_poll(now);
     service_pass(1010);
-    CHECK(!ecu.service && !(ecu.authority.inhibits & INH_SERVICE) &&
-          (ecu.authority.inhibits & INH_DEADLINE));
-    /* Rotation during the session keeps both latched until reset. */
+    CHECK(!ecu.service && !(ecu.authority.inhibits & (INH_SERVICE | INH_DEADLINE)));
+    /* Rotation during the session keeps SERVICE until reset; the deadline
+       still clears on the next complete foreground evaluation. */
     setup();
     memset(fake_eeprom, 0xFF, 8192);
     CHECK(storage_save(0));
@@ -279,4 +283,105 @@ static void test_service_release(void) {
     service_pass(1010);
     CHECK(ecu.service && (ecu.authority.inhibits & (INH_SERVICE | INH_DEADLINE)) ==
                              (INH_SERVICE | INH_DEADLINE));
+    safety_conditions(0, 1020);
+    CHECK(ecu.authority.inhibits == INH_SERVICE);
+}
+/* Firmware 0.0.8: idle feedback only near target, entry from base, retard
+   limit while falling, DFCO coolant. */
+static void test_idle_008(void) {
+    u8 *c;
+    u16 base;
+    idle_dfco_setup(); c = ecu.cal.bytes[0];
+    c[0x5D4] = 0; /* no DFCO: coasting must still not use feedback */
+    put16(c + CAL_IDLE_FEEDBACK_RPM, 300);
+    idle_dfco_pass(1000, 2500);
+    CHECK(ecu.control.idle_mode == IDLE_RETURN && !ecu.control.idle_spark10);
+    base = ecu.control.idle_position;
+    idle_dfco_pass(1010, 2500); /* dashpot: one step per pass towards base */
+    CHECK(ecu.control.idle_position == base - 1U || ecu.control.idle_position == base);
+    idle_dfco_pass(1020, 1249); /* target 950 + 300, exclusive */
+    CHECK(ecu.control.idle_mode == IDLE_FEEDBACK && ecu.control.idle_integral <= 0);
+    /* Retard limit while falling: 2 deg at most (0.5 deg units). */
+    c[CAL_IDLE_RETARD_FALLING] = 4;
+    put16(c + 0x630, 500);
+    idle_dfco_pass(70000, 1240);
+    idle_dfco_pass(70100, 1240);
+    CHECK(!ecu.control.idle_falling && ecu.control.idle_spark10 < -20);
+    idle_dfco_pass(70200, 1200);
+    CHECK(ecu.control.idle_falling && ecu.control.idle_spark10 == -20);
+    /* DFCO coolant threshold: zero keeps 60 C, otherwise calibrated. */
+    idle_dfco_setup(); c = ecu.cal.bytes[0];
+    c[0x603] = 0;
+    ecu.sensors.clt.value = 45;
+    idle_dfco_pass(1000, 2500); CHECK(!ecu.control.dfco);
+    c[CAL_DFCO_MIN_CLT] = 40;
+    idle_dfco_pass(1010, 2500); CHECK(ecu.control.dfco);
+    c[CAL_DFCO_MIN_CLT] = 50;
+    idle_dfco_pass(1020, 2500); CHECK(!ecu.control.dfco);
+    /* Validation of the new fields. */
+    c[CAL_DFCO_MIN_CLT] = 151;
+    CHECK(!cal_validate(c, &ecu.cal.error_offset) && ecu.cal.error_offset == CAL_DFCO_MIN_CLT);
+    c[CAL_DFCO_MIN_CLT] = 0;
+    put16(c + CAL_CRANK_DWELL_US, 999);
+    CHECK(!cal_validate(c, &ecu.cal.error_offset) && ecu.cal.error_offset == CAL_CRANK_DWELL_US);
+    put16(c + CAL_CRANK_DWELL_US, CRANK_DWELL_MAX_US + 1U);
+    CHECK(!cal_validate(c, &ecu.cal.error_offset));
+    put16(c + CAL_CRANK_DWELL_US, CRANK_DWELL_MAX_US);
+    CHECK(cal_validate(c, &ecu.cal.error_offset));
+    c[CAL_IDLE_RETARD_FALLING] = 41;
+    CHECK(!cal_validate(c, &ecu.cal.error_offset) && ecu.cal.error_offset == CAL_IDLE_RETARD_FALLING);
+    c[CAL_IDLE_RETARD_FALLING] = 0;
+    put16(c + CAL_IDLE_FEEDBACK_RPM, 3001);
+    CHECK(!cal_validate(c, &ecu.cal.error_offset) && ecu.cal.error_offset == CAL_IDLE_FEEDBACK_RPM);
+}
+/* Firmware 0.0.8: an output latch clears after a stall, three times per
+   key cycle, and the live frame version 5 reports it. */
+static void test_latch_recovery(void) {
+    extern u16 fake_crank_activity;
+    static const u8 v5[] = {0xAA, 2, 0x13, 0x05, 0x1A};
+    u32 now = 1000;
+    u8 i;
+    setup();
+    ecu.rotation.state = ROT_UNSYNCED;
+    for (i = 0; i < LATCH_CLEARS_PER_KEY; i++) {
+        latch_poll(now - 10); /* every foreground pass polls */
+        safety_trip(INH_OUTPUT, TRIP_COIL_WATCHDOG, now);
+        latch_poll(now);
+        latch_poll(now + 980); /* quiet counts from the last edge */
+        CHECK(ecu.authority.inhibits & INH_OUTPUT);
+        fake_crank_activity++; /* an edge restarts the quiet period */
+        latch_poll(now + 1000);
+        latch_poll(now + 1999);
+        CHECK(ecu.authority.inhibits & INH_OUTPUT);
+        latch_poll(now + 2000);
+        CHECK(!(ecu.authority.inhibits & INH_OUTPUT) && ecu.authority.latch_clears == i + 1U);
+        now += 5000;
+    }
+    safety_trip(INH_OUTPUT, TRIP_COIL_WATCHDOG, now);
+    latch_poll(now); latch_poll(now + 5000);
+    CHECK((ecu.authority.inhibits & INH_OUTPUT) && ecu.authority.latch_clears == 3);
+    /* Not while the crank turns, and outputs must read back off first. */
+    ecu.authority.latch_clears = 0;
+    ecu.rotation.rpm = 100;
+    latch_poll(now + 6000); latch_poll(now + 8000);
+    CHECK(ecu.authority.inhibits & INH_OUTPUT);
+    ecu.rotation.rpm = 0;
+    fake_coils[0] = 1;
+    latch_poll(now + 9000); /* quiet since the 100 rpm pass at +8000 */
+    CHECK((ecu.authority.inhibits & INH_OUTPUT) && !fake_coils[0]);
+    latch_poll(now + 9010);
+    CHECK(!(ecu.authority.inhibits & INH_OUTPUT));
+    /* Live frame 5: trip source, clears, and the per-event counters. */
+    ecu.authority.coil_timeouts = 7; ecu.authority.injector_clamps = 2;
+    ecu.authority.late_events = 9;
+    feed(v5, sizeof(v5), now + 10020);
+    CHECK(ecu.protocol.tx[1] == 72 && ecu.protocol.tx[2] == 5);
+    CHECK(ecu.protocol.tx[2 + 64] == TRIP_COIL_WATCHDOG && ecu.protocol.tx[2 + 65] == 1);
+    CHECK(get16(ecu.protocol.tx + 2 + 66) == 7 && get16(ecu.protocol.tx + 2 + 68) == 2 &&
+          get16(ecu.protocol.tx + 2 + 70) == 9);
+    /* DEADLINE is a condition: the next evaluation clears it, OUTPUT stays. */
+    safety_trip(INH_OUTPUT, TRIP_COIL_REFUSED, now);
+    safety_trip(INH_DEADLINE, TRIP_FOREGROUND_GAP, now);
+    safety_conditions(0, now);
+    CHECK(ecu.authority.inhibits == INH_OUTPUT && ecu.authority.trip_source == TRIP_FOREGROUND_GAP);
 }

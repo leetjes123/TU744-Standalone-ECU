@@ -197,9 +197,16 @@ static void test_faults(void) {
     CHECK(hal_iac_hold_start(0x12));
     ecu.authority.inhibits = INH_DEADLINE;
     board_ssc_tick();
-    CHECK(hold.fault == 7 && tx_buffer == 0x3F);
+    CHECK(!hold.fault && tx_buffer == 0x3F); /* 0.0.8: bridges off, no fault 7 */
     complete(HOLD_SPI_TICKS, 0xC0);
     CHECK(owned == SSC_FREE);
+
+    /* An output latch alone leaves the hold running. */
+    setup();
+    CHECK(hal_iac_hold_start(0x12));
+    ecu.authority.inhibits = INH_OUTPUT;
+    board_ssc_tick();
+    CHECK(!hold.fault && hold.enabled && owned == SSC_HOLD);
 
     setup();
     CHECK(hal_iac_hold_start(0x12));
@@ -215,7 +222,7 @@ static void test_faults(void) {
     automatic_rx = 0;
     ecu.authority.inhibits = INH_DEADLINE;
     board_ssc_tick();
-    CHECK(owned == SSC_HOLD && tx_buffer == 0x3F && hold.fault == 7);
+    CHECK(owned == SSC_HOLD && tx_buffer == 0x3F && !hold.fault);
     complete(HOLD_SPI_TICKS, 0xC0);
     CHECK(last_iac_command == 0x3F && owned == SSC_FREE);
 

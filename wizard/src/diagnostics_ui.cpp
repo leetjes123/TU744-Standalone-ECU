@@ -196,6 +196,151 @@ void App::drawDiagnostics() {
         ImGui::EndPopup();
     }
 }
+void App::drawDeveloper() {
+    const bool connected=serial.isOpen();
+    const MonitorData& m=ecu.monitor;
+    Heading("Developer tools");
+    ImGui::TextDisabled("ECU TIMING HEALTH  /  CRANK CAPTURE  /  OUTPUT EVENTS  /  KNOCK SENSING");
+    ImGui::TextWrapped("Raw ECU internals for bench and engine investigation. Nothing here changes the tune.");
+    ImGui::SeparatorText("Live output health");
+    if(!m.valid) ImGui::TextDisabled("No live data.");
+    else if(!m.outputDetailAvailable) ImGui::TextDisabled("Output event counters need firmware 0.0.8 (live frame version 5).");
+    else if(ImGui::BeginTable("Output health",2,ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp)) {
+        auto row=[](const char* name,const char* value) {
+            ImGui::TableNextColumn(); ImGui::TextUnformatted(name); ImGui::TableNextColumn(); ImGui::TextUnformatted(value);
+        };
+        char v[96];
+        snprintf(v,sizeof(v),"0x%04X",m.inhibits); row("Inhibit mask",v);
+        snprintf(v,sizeof(v),"0x%04X",m.firstInhibit); row("First inhibit since reset",v);
+        row("Last trip source",TripSourceName(m.tripSource));
+        snprintf(v,sizeof(v),"%u of 3",m.latchClears); row("Output latch clears this key cycle",v);
+        snprintf(v,sizeof(v),"%u",m.coilTimeouts); row("Coil watchdog trips",v);
+        snprintf(v,sizeof(v),"%u",m.injectorClamps); row("Clamped injector pulses",v);
+        snprintf(v,sizeof(v),"%u",m.lateEvents); row("Late output events",v);
+        snprintf(v,sizeof(v),"%s at tooth %u",SyncLossReasonName(m.syncLossReason),m.syncLossTooth); row("Last sync loss",v);
+        snprintf(v,sizeof(v),"%u resyncs, %u overruns",m.captureResyncs,m.captureOverruns); row("Crank capture",v);
+        ImGui::EndTable();
+    }
+    ImGui::SeparatorText("Knock sensing (command 34, bench jobs command 35)");
+    if(m.valid && m.knockAvailable) {
+        const bool fault=m.knockFlags&16;
+        ImGui::TextColored(fault?amber:cyan,"Live: %s%s%s",fault?"KNOCK SENSING FAULT":"no knock sensing fault",
+                           (m.knockFlags&32)?"  /  bench job running":"",(m.knockFlags&4)?"  /  control active":"");
+    } else ImGui::TextDisabled("Live: knock data unavailable.");
+    ImGui::BeginDisabled(ecuBusy() || !connected);
+    if(ImGui::Button("Read knock detail",ImVec2(S(170),S(32)))) readKnockDetail(false);
+    ImGui::SameLine();
+    const bool stopped=m.valid && !m.rpm;
+    ImGui::BeginDisabled(!stopped || knockJobPolling);
+    if(ImGui::Button("Run self-test",ImVec2(S(140),S(32)))) knockBenchJob(2);
+    if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("Engine stopped, key on. Runs three null/test-pulse pairs and seven gain measurements\n"
+                          "on the knock IC, then ends by itself. Fuel and spark stay off during the job.");
+    ImGui::SameLine();
+    if(ImGui::Button("Bench sampling",ImVec2(S(150),S(32)))) knockBenchJob(1);
+    if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+        ImGui::SetTooltip("Engine stopped, key on. Samples the knock sensor continuously until stopped:\n"
+                          "tap the block near the sensor and watch the raw level. Fuel and spark stay off.");
+    ImGui::EndDisabled(); ImGui::SameLine();
+    ImGui::BeginDisabled(!(m.valid && (m.knockFlags&32)) && !knockJobPolling);
+    if(ImGui::Button("Stop job",ImVec2(S(100),S(32)))) knockBenchJob(0);
+    ImGui::EndDisabled();
+    ImGui::EndDisabled();
+    ImGui::TextWrapped("The ECU clears a knock sensing fault when the engine stops. With developer mode on, the Wizard reads "
+                       "the cause as soon as the live fault flag appears and keeps it below until the Wizard closes.");
+    if(knockFaultCaptured) {
+        const KnockDetail& f=knockFaultCapture;
+        ImGui::TextColored(amber,"Last captured fault: %s  (%.0f s ago)",KnockFaultName(f.fault),(GetTickCount64()-knockFaultAt)/1000.0);
+        if(ImGui::IsItemHovered()) ImGui::SetTooltip("%s",KnockFaultDetail(f.fault));
+        ImGui::TextDisabled("At capture: raw %u, %.3f V, reference %u, gain %u, ratio %u / threshold %u; "
+                            "ADC timeouts %u, missed windows %u, stale samples %u",
+                            f.raw,f.mv==65535?0.0:f.mv*.001,f.reference,f.gain,f.ratio,f.threshold,
+                            f.adcTimeouts,f.missedWindows,f.staleSamples);
+    }
+    if(knockDetailValid) {
+        const KnockDetail& k=knockDetail;
+        ImGui::TextDisabled("Detail read %.0f s ago",(GetTickCount64()-knockDetailAt)/1000.0);
+        if(ImGui::BeginTable("Knock detail",2,ImGuiTableFlags_RowBg|ImGuiTableFlags_SizingStretchProp)) {
+            auto row=[](const char* name,const char* value) {
+                ImGui::TableNextColumn(); ImGui::TextUnformatted(name); ImGui::TableNextColumn(); ImGui::TextUnformatted(value);
+            };
+            char v[128];
+            ImGui::TableNextColumn(); ImGui::TextUnformatted("Fault"); ImGui::TableNextColumn();
+            if(k.fault) ImGui::TextColored(amber,"%s (%u)",KnockFaultName(k.fault),k.fault); else ImGui::TextUnformatted("None");
+            if(ImGui::IsItemHovered()) ImGui::SetTooltip("%s",KnockFaultDetail(k.fault));
+            if(k.mv==65535) snprintf(v,sizeof(v),"raw %u, voltage unavailable",k.raw);
+            else snprintf(v,sizeof(v),"raw %u, %.3f V, sample age %u ms",k.raw,k.mv*.001,k.sampleAgeMs);
+            row("Last sample",v);
+            snprintf(v,sizeof(v),"%u (amplitude %u above offset %u)",k.reference,k.amplitude,k.offset); row("Adapted reference",v);
+            snprintf(v,sizeof(v),"index %u, code 0x%02X",k.gain,k.gainCode); row("Gain",v);
+            snprintf(v,sizeof(v),"ratio %u, threshold %u, %s",k.ratio,k.threshold,k.decision?"KNOCK":"no knock"); row("Last decision",v);
+            snprintf(v,sizeof(v),"%u detections; requested %.2f deg, scheduled %.2f deg",k.count,k.retard*.75,k.scheduled*.75);
+            row("Knock events and retard",v);
+            snprintf(v,sizeof(v),"%u normal, %u null, %u test-pulse",k.normalCount,k.nullCount,k.testCount); row("Samples",v);
+            snprintf(v,sizeof(v),"%u ADC timeouts, %u missed windows, %u stale samples, %u ceiling events",
+                     k.adcTimeouts,k.missedWindows,k.staleSamples,k.ceilingEvents);
+            row("Sensing errors since reset",v);
+            if(k.job) {
+                snprintf(v,sizeof(v),"%s, %u windows%s%s",KnockJobStateName(k.jobState),k.jobCompleted,
+                         k.jobFault?", fault: ":"",k.jobFault?KnockFaultName(k.jobFault):"");
+                row("Bench job",v);
+                snprintf(v,sizeof(v),"null %u, test pulse %u",k.nullRaw,k.testRaw); row("Self-test raw",v);
+                snprintf(v,sizeof(v),"%u %u %u %u %u %u %u",k.gainRaw[0],k.gainRaw[1],k.gainRaw[2],k.gainRaw[3],
+                         k.gainRaw[4],k.gainRaw[5],k.gainRaw[6]);
+                row("Gain measurements (raw)",v);
+            }
+            ImGui::EndTable();
+        }
+        if(k.job && k.jobState>=2)
+            ImGui::TextWrapped("Gain measurements need a controlled sensor stimulus to interpret; no pass limit is applied. "
+                               "Fuel and spark are released again once the job has ended with the engine stopped.");
+    } else ImGui::TextDisabled("%s",connected?"Knock detail not read yet.":"Disconnected.");
+    ImGui::SeparatorText("Timing health and crank capture snapshot (command 2F 02)");
+    ImGui::BeginDisabled(ecuBusy() || !connected);
+    if(ImGui::Button("Read timing health",ImVec2(S(180),S(32)))) readTimingHealth(false);
+    ImGui::SameLine();
+    if(ImGui::Button("Read and reset maxima",ImVec2(S(190),S(32)))) readTimingHealth(true);
+    ImGui::EndDisabled();
+    if(!timingHealthValid) { ImGui::TextDisabled("%s",connected?"Not read yet.":"Disconnected."); return; }
+    const TimingHealth& h=timingHealth;
+    ImGui::SameLine(); ImGui::TextDisabled("read %.0f s ago",(GetTickCount64()-timingHealthAt)/1000.0);
+    ImGui::Text("Worst main loop pass %u ms, gap between passes %u ms, tick service gap %u ms, plan age %u ms",
+                h.passMaxMs,h.intervalMaxMs,h.tickMaxMs,h.planAgeMaxMs);
+    ImGui::Text("Capture overruns %u, capture resyncs %u, late output events %u",h.captureOverruns,h.resyncs,h.lateEvents);
+    ImGui::Spacing();
+    ImGui::TextColored(h.captureReason?amber:cyan,"First capture failure: %s",CaptureFailureName(h.captureReason));
+    if(!h.captureReason) return;
+    ImGui::TextWrapped("The ECU keeps only the first failure since reset. A missed edge is detected when its block ends "
+                       "(tooth 1 or 31), so the edge may have been lost earlier in the block.");
+    ImGui::Text("T0 tooth counter %u, expected %u (difference %u); block of %u capture words",
+                h.counter,h.expected,uint16_t(h.counter-h.expected),h.count);
+    ImGui::TextDisabled("CC15 latest %u, last captured %u, CC15IC 0x%04X, PECC6 0x%04X, DSTP6 0x%04X, queue head %u tail %u next %u",
+                        h.latest,h.last,h.irq,h.pec,h.dest,h.head,h.tail,h.next);
+    uint16_t normal=0;
+    const std::vector<int> lost=LostCaptureEdges(h,&normal);
+    if(lost.empty())
+        ImGui::TextColored(amber,"No doubled interval in the block: the edge was lost in the re-arm window at the block end, or between blocks.");
+    for(int i:lost)
+        ImGui::TextColored(amber,"Edge lost between capture %d and %d: %d teeth before the block end.",i-1,i,h.count-1-i);
+    if(ImGui::BeginTable("Capture words",4,ImGuiTableFlags_RowBg|ImGuiTableFlags_Borders|ImGuiTableFlags_ScrollY,ImVec2(0,S(260)))) {
+        ImGui::TableSetupScrollFreeze(0,1);
+        ImGui::TableSetupColumn("#"); ImGui::TableSetupColumn("Capture (T1)"); ImGui::TableSetupColumn("Interval (ticks)");
+        ImGui::TableSetupColumn("x tooth period"); ImGui::TableHeadersRow();
+        for(int i=0;i<h.count;++i) {
+            const bool flagged=std::find(lost.begin(),lost.end(),i)!=lost.end();
+            ImGui::TableNextRow(); ImGui::TableNextColumn(); ImGui::Text("%d",i);
+            ImGui::TableNextColumn(); ImGui::Text("%u",h.words[i]);
+            ImGui::TableNextColumn();
+            if(i) {
+                const uint16_t interval=uint16_t(h.words[i]-h.words[i-1]);
+                if(flagged) ImGui::TextColored(amber,"%u",interval); else ImGui::Text("%u",interval);
+                ImGui::TableNextColumn();
+                if(normal) ImGui::Text("%.2f",double(interval)/normal); else ImGui::TextDisabled("--");
+            } else { ImGui::TextDisabled("--"); ImGui::TableNextColumn(); ImGui::TextDisabled("--"); }
+        }
+        ImGui::EndTable();
+    }
+}
 void App::drawAutotune() {
     const ImVec4 good(.38f,.86f,.50f,1), bad(1,.45f,.42f,1), violet(.72f,.55f,1,1);
     auto& s=autotune.settings;

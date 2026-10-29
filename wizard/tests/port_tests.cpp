@@ -138,7 +138,58 @@ int main() {
             return actual(data,n,out,cap,timeout);
         };
         CHECK(old.readMonitor(m) && m.valid && m.knockAvailable && !m.detailAvailable && old.liveV4Unsupported);
-        CHECK(old.readMonitor(m) && v4Requests==1 && v3Requests==2);
+        CHECK(old.readMonitor(m) && v4Requests==2 && v3Requests==2); /* [13,5] then [13,4], once */
+    }
+    // Firmware 0.0.8 version 5 frame: output trip source and per-event output faults.
+    reset(); CHECK(ecu.readMonitor(m) && m.outputDetailAvailable && m.detailAvailable && !ecu.liveV5Unsupported);
+    {
+        unsigned char v5Frame[72]={}; v5Frame[0]=5; v5Frame[64]=3; v5Frame[65]=2;
+        v5Frame[66]=0x01; v5Frame[67]=0x02; v5Frame[69]=7; v5Frame[71]=9;
+        CHECK(DecodeMonitor(v5Frame,72,m) && m.outputDetailAvailable && m.detailAvailable);
+        CHECK(m.tripSource==3 && m.latchClears==2 && m.coilTimeouts==0x102 && m.injectorClamps==7 && m.lateEvents==9);
+        CHECK(!DecodeMonitor(v5Frame,64,m)); v5Frame[0]=4; CHECK(!DecodeMonitor(v5Frame,72,m));
+        CHECK(InhibitLatches(8,false) && !InhibitLatches(5,false) && InhibitLatches(5,true) && !InhibitLatches(0,false));
+        CHECK(!strcmp(InhibitName(8),"Output driver") && strstr(InhibitDetail(5),"0.0.8"));
+    }
+    // Firmware 0.0.7 rejects [13,5]; the Wizard keeps version 4 detail.
+    {
+        int v5Requests=0;
+        EcuProtocol old; old.exchange=[&](const unsigned char* data,int n,unsigned char* out,int cap,int timeout) {
+            if(n==2 && data[0]==0x13 && data[1]==5) { ++v5Requests; out[0]=1; return 1; }
+            return actual(data,n,out,cap,timeout);
+        };
+        CHECK(old.readMonitor(m) && m.detailAvailable && !m.outputDetailAvailable && old.liveV5Unsupported);
+        CHECK(old.readMonitor(m) && v5Requests==1 && !old.liveV4Unsupported);
+    }
+    // Timing health (command 2F 02) from the firmware, and the lost-edge finder.
+    {
+        TimingHealth health; CHECK(ecu.timingHealth(health,true) && health.captureReason==0);
+        TimingHealth h; h.captureReason=2; h.count=30;
+        for(int i=0,t=0;i<30;++i,++t) { if(i==12) ++t; h.words[i]=uint16_t(1000*t); }
+        uint16_t normal=0; auto lost=LostCaptureEdges(h,&normal);
+        CHECK(normal==1000 && lost.size()==1 && lost[0]==12);
+        h.words[29]=uint16_t(h.words[28]+3000); lost=LostCaptureEdges(h);   // the gap is not a lost edge
+        CHECK(lost.size()==1);
+    }
+    // Knock detail (command 34) and bench job status (35 03) from the firmware, and the decoder.
+    {
+        KnockDetail k; CHECK(ecu.knockDetail(k,false) && !k.job && k.fault==0);
+        CHECK(ecu.knockDetail(k,true) && k.job && k.jobState==0);
+        unsigned char d[86]={}; d[0]=1; d[1]=0x01; d[2]=0x2C; d[3]=16; d[5]=0x03; d[6]=0xFF;
+        d[29]=40; d[36]=7; d[43]=0; d[44]=3; d[64]=1; d[65]=3; d[66]=13; d[67]=7; d[72]=0x01; d[73]=0x02; d[84]=0x7F;
+        CHECK(!DecodeKnockDetail(d,63,k) && DecodeKnockDetail(d,64,k) && !k.job && k.fault==7 && k.mv==300 && k.raw==1023);
+        CHECK(k.reference==40 && k.adcTimeouts==3 && (k.flags&16));
+        CHECK(DecodeKnockDetail(d,86,k) && k.job && k.jobState==3 && k.jobCompleted==13 && k.jobFault==7);
+        CHECK(k.gainRaw[0]==0x102 && k.gainRaw[6]==0x7F00);
+        d[64]=2; CHECK(!DecodeKnockDetail(d,86,k)); d[0]=2; CHECK(!DecodeKnockDetail(d,64,k));
+        CHECK(!strcmp(KnockFaultName(7),"Signal at rail") && strstr(KnockFaultDetail(7),"open or shorted"));
+        CHECK(!strcmp(KnockFaultName(0),"None") && !strcmp(KnockJobStateName(3),"Finished with a fault"));
+        int jobRequests=0;
+        EcuProtocol bench; bench.exchange=[&](const unsigned char* data,int n,unsigned char* r,int,int) {
+            if(n==2 && data[0]==0x35 && data[1]<3) { ++jobRequests; r[0]=data[1]==1?1:0; return 1; }   // 1 = refused
+            return -1;
+        };
+        CHECK(bench.knockJob(2) && bench.knockJob(0) && !bench.knockJob(1) && jobRequests==3);
     }
     unsigned char out[128],cmd[]={0x13},packet[10]; CHECK(BuildRequestPacket(cmd,1,packet,10)==4);
     CHECK(packet[0]==0xaa && packet[3]==0x14);
