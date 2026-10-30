@@ -119,4 +119,34 @@ static void test_knock(void) {
     ecu.cal.bytes[0][CAL_KNOCK_MANUAL_GAIN] = 1;
     knock_update(0, &ecu.rotation, cal_active());
     CHECK(knock.mode == KNOCK_CONTROL && knock.gain == 2 && knock_config.manual_gain);
+    /* 0.0.8: the stopped-engine sample is dropped when cranking starts, so
+       the stale check cannot fault knock sensing 150 ms into every start
+       (log nieuwedag.csv: fault exactly 149 ms after first sync). */
+    setup();
+    ecu.cal.bytes[0][CAL_KNOCK_MODE] = KNOCK_CONTROL;
+    put16(ecu.cal.bytes[0] + CAL_KNOCK_STALE_MS, 150);
+    ecu.control.mode = ENGINE_STOPPED;
+    ecu.adc[15].seen = 1; ecu.adc[15].raw = 900; ecu.adc[15].stamp = 1000;
+    knock_update(1000, &ecu.rotation, cal_active());
+    CHECK(knock.valid && knock.source == 1 && !knock.fault);
+    ecu.rotation.state = ROT_VALID; ecu.control.mode = ENGINE_CRANKING;
+    knock_update(1010, &ecu.rotation, cal_active());
+    CHECK(!knock.valid && !knock.fault);
+    knock_update(1300, &ecu.rotation, cal_active());
+    CHECK(!knock.fault && !knock.stale_samples);
+    /* Faulted sensing under knock control: the full retard limit applies
+       and is reported; outside knock-control conditions none. */
+    cfg = knock_fixture(); knock.retard = 2; knock.fault = KNOCK_FAULT_RAIL;
+    knock.fallback = 1;
+    CHECK(knock_advance(20) == 4 && knock.scheduled == 16);
+    knock_monitor(packet, 0); CHECK(packet[3] == 16 && (packet[2] & 16));
+    knock.fallback = 0;
+    CHECK(knock_advance(20) == 18);
+    knock.mode = KNOCK_MONITOR; knock.fallback = 1;
+    CHECK(knock_advance(20) == 20);
+    /* A stopped engine clears fault, retard and fallback. */
+    knock.mode = KNOCK_CONTROL; ecu.control.mode = ENGINE_STOPPED;
+    ecu.rotation.state = ROT_UNSYNCED;
+    knock_update(2000, &ecu.rotation, cal_active());
+    CHECK(!knock.fault && !knock.fallback && !knock.retard);
 }

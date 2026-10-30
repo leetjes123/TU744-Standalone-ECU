@@ -62,7 +62,7 @@ static const ScalarDef scalarDefs[] = {
 {"Acceleration TPS-rate threshold", "Fuel - acceleration", 1878, CellType::U8, "%/s", 1.0f, 0.0f, 0, 255, "Enrichment starts when the TPS rate exceeds this. Offset 0x756. ECU accepts 0..255 %/s."},
 {"Acceleration qualification time", "Fuel - acceleration", 1880, CellType::U8, "ms", 10.0f, -10.0f, 0, 490, "TPS rate must stay above the threshold this long. Offset 0x758. ECU accepts 0..490 ms."},
 {"Acceleration decay", "Fuel - acceleration", 2314, CellType::U16BE, "ms", 1.0f, 0.0f, 10, 5000, "Offset 0x90A. ECU accepts 10..5000 ms."},
-{"Required fuel per 720 degrees", "Injectors", 1503, CellType::U16BE, "us", 1.0f, 0.0f, 1, 20000, "Pulsewidth at 100% VE, 100 kPa (speed-density) and 0 C inlet air, per engine cycle. Paired injection splits it into two events. Offset 0x5DF. ECU accepts 1..20000 us."},
+{"Required fuel per 720 degrees", "Injectors", 1503, CellType::U16BE, "us", 1.0f, 0.0f, 1, 60000, "Pulsewidth at 100% VE, 100 kPa (speed-density) and 0 C inlet air, per engine cycle. Paired injection splits it into two events. Offset 0x5DF. ECU accepts 1..60000 us."},
 {"Maximum injector duty", "Injectors", 2255, CellType::U8, "%", 1.0f, 0.0f, 10, 95, "Offset 0x8CF. ECU accepts 10..95 %."},
 {"Injection phase", "Injectors", 2328, CellType::U16BE, "deg", 0.1f, 0.0f, 0, 162, "Only multiples of 6 degrees are accepted. The paired event is 180 degrees later. Offset 0x918. ECU accepts 0..162 deg."},
 {"Cranking advance", "Ignition", 2330, CellType::S16BE, "deg BTDC", 0.1f, 0.0f, -10, 20, "Offset 0x91A. ECU accepts -10..20 deg BTDC."},

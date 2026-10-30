@@ -18,6 +18,7 @@ void engine_state_update(u32 now, const Rotation *r, const u8 *c) {
         }
         s->mode = ENGINE_STOPPED;
         s->qualifying = 0;
+        s->dip_recovering = 0;
         if (!s->sync_recovering)
             s->running_at = now;
         return;
@@ -31,6 +32,11 @@ void engine_state_update(u32 now, const Rotation *r, const u8 *c) {
     if (s->mode == ENGINE_STOPPED)
         s->mode = ENGINE_CRANKING;
     if (s->mode == ENGINE_RUNNING && r->rpm < get16(c + CAL_CRANK_RPM)) {
+        /* A dip of an established engine that keeps sync is not a new start:
+           cranking fuel and advance help it catch, but it returns to RUNNING
+           as soon as it is back at the running threshold, with its original
+           start time (no second after-start or start-catch). */
+        s->dip_recovering = (u8)(now - s->running_at >= ENGINE_DIP_RUN_MS);
         s->mode = ENGINE_CRANKING;
         s->qualifying = 0;
     }
@@ -40,7 +46,14 @@ void engine_state_update(u32 now, const Rotation *r, const u8 *c) {
                 s->qualifying = 1;
                 s->qualify_at = now;
             }
-            if (now - s->qualify_at >= get16(c + CAL_RUN_MS)) {
+            /* Qualification rejects a brief cranking spike. At twice the
+               threshold the engine is plainly running: stop cranking fuel
+               now instead of carrying it through the start flare. */
+            if (s->dip_recovering) {
+                s->mode = ENGINE_RUNNING;
+                s->qualifying = s->dip_recovering = 0;
+            } else if (now - s->qualify_at >= get16(c + CAL_RUN_MS) ||
+                       (u32)r->rpm >= 2UL * get16(c + CAL_RUN_RPM)) {
                 s->mode = ENGINE_RUNNING;
                 s->running_at = now;
                 s->qualifying = 0;

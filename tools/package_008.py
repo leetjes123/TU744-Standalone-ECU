@@ -2,7 +2,7 @@
 
 Run tools/package_ecu.py first (it writes release/TU744-v0.0.8/firmware),
 with basemaps/TU5JP_1.6_8v_speed_density_v0.0.8.bin as the built-in tune.
-The package carries Tuning Wizard 0.0.7 from build/wizard-0.0.7 and both
+The package carries Tuning Wizard 0.0.8 from build/wizard-0.0.8 and both
 0.0.8 basemaps (TU5JP 1.6 built in, TU3JP 1.4 to load with the Wizard).
 """
 from pathlib import Path
@@ -13,7 +13,7 @@ from artifacts import verify_firmware
 
 ROOT = Path(__file__).resolve().parents[1]
 VERSION = '0.0.8'
-WIZARD = '0.0.7'
+WIZARD = '0.0.8'
 BASEMAPS = '0.0.8'
 OUT = ROOT/f'release/TU744-v{VERSION}'
 verify_firmware(ROOT,ROOT/'build/stock-95080','stock-95080')
@@ -34,10 +34,11 @@ files = {
 }
 logs=[f'firmware-{VERSION}-native',f'firmware-{VERSION}-stock-native',f'keil-{VERSION}-stock-95080',
       f'wizard-{WIZARD}-tests',f'wizard-{WIZARD}-smoke']
-not_run=['target simulations of the final binary (the run on the previous build passed; the final change only removed the idle speed condition and floor)',
-         'bench and engine validation of the cranking dwell, coil watchdog, stall recovery and the new idle settings',
-         'Tuning Wizard 0.0.7 against a real ECU (inhibit banner, live frame 5, developer tab)',
+not_run=['target simulations not repeated on the 2026-10-30 binary: audit, faults, reset, flash, firmware update, knock boot, foreground and uVision (OEM scheduler, scheduler regressions, output closure, fuel, knock and protocol passed)',
+         'bench and engine validation of the 2026-10-30 changes: injection window and late start, rpm dip and start flare, deadline pump/heater behaviour, knock fallback retard',
+         'Tuning Wizard 0.0.8 against a real ECU (live frame 6 and its log channels)',
          'Keil uVision native knock ADC completion (simulator-blocked in the installed version; the completion model passes)',
+         'Known failing, not caused by 0.0.8: tests/test_iac_hold.py still expects the 250-tick hold-late bound; HOLD_LATE_TICKS is 1250 since 0.0.5, which stops build.py oem before test_protocol.py (run on its own, it passes)',
          'Known failing, not caused by 0.0.8: tests/test_lifecycle_target.py expects wideband policy 0 to disable the wideband; the firmware has treated policy 0 as direct (trusted when the sample is valid) since 0.0.2',
          'Known failing, not caused by 0.0.8: the synthetic fixture tune of tests/test_foreground_target.py fails validation (cal_valid 0, also on 0.0.5-0.0.7); foreground runs boot the release binary with --image instead']
 for name in logs:
@@ -47,7 +48,8 @@ for name in logs:
     assert not any(m in text for m in ('Traceback','Assertion failed','FAIL')), name
     files[f'build/{name}.log']=f'verification/{name}.log'
 # Files from earlier packages that this one replaces.
-for stale in ['verification/simulations-0.0.8.log']:
+for stale in ['verification/simulations-0.0.8.log','wizard/TuningWizard_0.0.7.exe',
+              'verification/wizard-0.0.7-tests.log','verification/wizard-0.0.7-smoke.log']:
     if (OUT/stale).exists(): (OUT/stale).unlink()
 for source,destination in files.items():
     target=OUT/destination; target.parent.mkdir(parents=True,exist_ok=True)

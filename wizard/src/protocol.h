@@ -41,6 +41,11 @@ struct MonitorData {
     bool outputDetailAvailable=false;
     uint8_t tripSource=0, latchClears=0;
     uint16_t coilTimeouts=0, injectorClamps=0, lateEvents=0;
+    // Command 13 version 6 (firmware 0.0.8+): full-range oxygen input (oxygenMv
+    // above 1275 mV), enrichment-adjusted target AFR and the knock fallback.
+    bool v6Available=false;
+    float adjustedTargetAfr=0;
+    bool knockFallback=false;
     // Host-side link health, filled in by the monitor thread (not sent by the ECU).
     uint32_t linkFailures=0;    // failed live-frame requests since connect
     uint8_t linkLastFailure=0;  // LinkFailure code of the most recent failure
@@ -121,7 +126,9 @@ struct EcuProtocol {
     bool liveV4Unsupported=false;
     // Set once the ECU rejects a version 5 live request (firmware 0.0.7 or older).
     bool liveV5Unsupported=false;
-    void setPort(SerialPort* p) { port=p; liveV4Unsupported=false; liveV5Unsupported=false; }
+    // Set once the ECU rejects a version 6 live request (firmware without live frame 6).
+    bool liveV6Unsupported=false;
+    void setPort(SerialPort* p) { port=p; liveV4Unsupported=false; liveV5Unsupported=false; liveV6Unsupported=false; }
     bool timingHealth(TimingHealth&, bool clearMaxima);
     bool knockDetail(KnockDetail&, bool withJob);
     // Command 35: 0 stops a bench job, 1 starts engine-off sampling, 2 runs the self-test.

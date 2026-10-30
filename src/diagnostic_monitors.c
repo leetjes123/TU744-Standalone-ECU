@@ -339,13 +339,19 @@ static void crank_events(DiagnosticMonitors *m, OemDtcState *events, const u8 *c
     loss = (u8)(m->rotation_seeded && r.losses != m->previous_losses);
     epoch_change = (u8)(m->rotation_seeded && r.epoch != m->previous_rotation_epoch);
     if (!ecu.key_input) {
-        m->crank_pending = m->crank_was_valid = 0;
+        m->crank_pending = m->crank_was_valid = m->crank_running = m->crank_lost = 0;
         ingest(m, events, cal, 0x0DU, MONITOR_UNKNOWN, 0);
         ingest(m, events, cal, 0x4AU, MONITOR_UNKNOWN, 0);
     } else {
-        if (loss || (epoch_change && m->crank_was_valid && r.state != ROT_VALID))
+        /* Sync lost from a RUNNING engine is a fault; a stall passes through
+           cranking (below the cranking re-entry rpm) first and is not. */
+        if (r.state == ROT_VALID)
+            m->crank_lost = 0;
+        else if (m->crank_was_valid && m->crank_running)
+            m->crank_lost = 1;
+        if (loss || (epoch_change && m->crank_lost))
             m->crank_pending = cal[CAL_DTC_FAIL_COUNT] ? cal[CAL_DTC_FAIL_COUNT] : 3U;
-        failed = (u8)(m->crank_pending || (m->crank_was_valid && r.state != ROT_VALID));
+        failed = (u8)(m->crank_pending || m->crank_lost);
         ingest(m, events, cal, 0x0DU,
                failed ? MONITOR_FAIL : (r.state == ROT_VALID ? MONITOR_PASS : MONITOR_UNKNOWN),
                4U);
@@ -355,6 +361,7 @@ static void crank_events(DiagnosticMonitors *m, OemDtcState *events, const u8 *c
             m->crank_pending--;
         if (r.state == ROT_VALID)
             m->crank_was_valid = 1;
+        m->crank_running = (u8)(r.state == ROT_VALID && ecu.control.mode == ENGINE_RUNNING);
     }
     m->previous_losses = r.losses;
     m->previous_rotation_epoch = r.epoch;

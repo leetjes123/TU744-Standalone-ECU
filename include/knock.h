@@ -59,6 +59,7 @@ typedef struct {
     u8 reference, gain, gain_code, ratio, threshold, decision, recent;
     u8 retard, scheduled, qualified, good_count, rail_count;
     u8 bench, null_bad, test_bad, last_normal, drift_bad;
+    u8 fallback; /* faulted sensing under knock-control conditions: full retard */
 } KnockState;
 extern KnockState knock;
 extern KnockConfig knock_config;
@@ -79,6 +80,7 @@ void knock_details(u8 *out, u32 now);
 u8 knock_job(u8 command, u32 now);
 void knock_job_status(u8 *out, u32 now);
 s16 knock_advance(s16 base);
+u8 knock_fallback_active(void);
 u16 knock_mv(u16 raw);
 /* Register-free detector, for unchanged-ROM differential tests. */
 void knock_detect(KnockState *s, const KnockConfig *cfg, u8 raw);

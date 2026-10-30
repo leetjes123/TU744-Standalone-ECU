@@ -280,7 +280,7 @@ COPYRIGHT Copyright (C) 2012-2018 ARM Ltd and ARM Germany GmbH. All rights reser
 FLASHWORKER.obj,FWUPDATE.obj,START167.obj,TRAPS.obj,acceleration.obj,auxiliary.obj,calibration.obj,diagnostic_monitors.obj,engine_state.obj,faults.obj,fuel.obj,iac.obj,iac_hold.obj,idle.obj,knock.obj,lambda.obj,math.obj,oem_adc.obj,oem_cadence.obj,oem_coolant.obj,oem_diagnostics.obj,oem_digital.obj,oem_dtc.obj,oem_dtc_config.obj,oem_dtc_records.obj,oem_history.obj,oem_history_codec.obj,oem_history_owner.obj,oem_ignition.obj,oem_inputs.obj,oem_mil.obj,oem_readiness.obj,oem_rotation.obj,oem_runtime.obj,oem_timing.obj,oem_voltage.obj,oem_vss.obj,oem_vss_input.obj,power.obj,protocol.obj,rotation.obj,runtime.obj,safety.obj,sensors.obj,storage.obj,vehicle.obj,wideband.obj,board.obj,capture.obj,engine_outputs.obj,flash_cal.obj,fw_update.obj,knock_hw.obj,main.obj,ssc.obj TO TU5JP PRINT(TU5JP.m66) CLASSES (FCODE (0X0-0XDFFF,0X10000-0X4FFFF), FCONST (0X0-0XDFFF,0X10000-0X4FFFF), HCONST (0X0-0XDFFF,0X10000-0X4FFFF), XCONST (0X0-0XDFFF,0X10000-0X4FFFF), ICODE (0X0-0XDFFF), NCONST (0X4000-0X7FFF), NDATA (0X380000-0X383FFF), NDATA0 (0X380000-0X383FFF), FDATA (0X380000-0X383FFF), FDATA0 (0X380000-0X383FFF), HDATA (0X380000-0X383FFF), HDATA0 (0X380000-0X383FFF), XDATA (0X380000-0X383FFF), XDATA0 (0X380000-0X383FFF), SDATA (0XF600-0XF7FF), SDATA0 (0XF600-0XF7FF), IDATA (0XF600-0XFDFF), IDATA0 (0XF600-0XFDFF)) CINITTAB (0X10000-0X4FFFF)
 
 
-Program Size: data=14378(near=14378) const=4113(near=3987) code=120692
+Program Size: data=14396(near=14396) const=4119(near=3987) code=121960
 L166 RUN COMPLETE.  0 WARNING(S),  0 ERROR(S)
 
 OBJECT TO HEX FILE CONVERTER OH166 V4.8.0.0

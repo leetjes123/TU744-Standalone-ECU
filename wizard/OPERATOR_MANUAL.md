@@ -164,6 +164,25 @@ back to version 4 and these show as unavailable. Tuning Wizard 0.0.7 adds the
 log columns Output Trip Source, Output Latch Clears, Coil Watchdog Trips,
 Clamped Injector Pulses and Late Output Events.
 
+### Live frame 6 (Tuning Wizard 0.0.8)
+
+With the current firmware 0.0.8 the Wizard requests the 76-byte version 6
+frame and falls back to version 5 on an earlier build. It adds:
+
+- **O2 Sensor Voltage** over the full 0-5 V range (version 5 and older stop
+  at 1275 mV, which hid a wideband's raw signal).
+- **AFR Target - Enrichment Adjusted**: the target AFR divided by warm-up,
+  after-start and acceleration enrichment, the mixture the fuel model really
+  asks for. Compare the measured AFR with this, not with AFR Target, while
+  the engine warms up.
+- **Knock Fallback Retard**: knock control is selected but knock sensing is
+  faulted, so the full knock retard limit applies wherever knock control
+  would be active. It also shows on the dashboard.
+
+Injector pulse width and ignition timing now show the latest calculated
+plan even while an inhibit blocks the outputs; before, they froze at the
+last delivered value.
+
 ### Developer mode
 
 **View > Developer mode** (remembered between sessions) adds the

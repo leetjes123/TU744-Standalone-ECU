@@ -120,6 +120,24 @@ static void test_injection(void) {
     CHECK(!ecu.authority.injector_active[0] && !(CCM7 & 0xF0FU));
     setup(); board_schedule(0); safety_inhibit(INH_SYNC, 0);
     CHECK(PIN_INJ_1 && PIN_INJ_4 && !(CCM7 & 0xFFFU));
+    /* 0.0.8: a deadline disarms starts not yet begun ... */
+    setup(); board_schedule(0); safety_inhibit(INH_DEADLINE, 0);
+    CHECK(PIN_INJ_1 && PIN_INJ_4 && !(CCM7 & 0xFFFU) && !injector_phase[0]);
+    CHECK(!ecu.authority.injector_active[0] && !ecu.authority.injector_active[1]);
+    /* ... but an open pulse keeps its end compare and closes on time. */
+    setup(); board_schedule(0);
+    T7 = CC30; PIN_INJ_1 = PIN_INJ_4 = 0; injector0_isr(); injector1_isr();
+    CHECK(injector_phase[0] == 2 && CC30 == 15250);
+    safety_inhibit(INH_DEADLINE, 0);
+    CHECK(!PIN_INJ_1 && !PIN_INJ_4 && injector_phase[0] == 2 && (CCM7 & 0xF0FU));
+    CHECK(ecu.authority.injector_active[0] && ecu.authority.injector_active[1]);
+    T7 = CC30; PIN_INJ_1 = PIN_INJ_4 = 1; injector0_isr(); injector1_isr();
+    CHECK(!ecu.authority.injector_active[0] && !(CCM7 & 0xF0FU) && !injector_phase[0]);
+    /* Any other reason still closes an open pulse at once. */
+    setup(); board_schedule(0);
+    T7 = CC30; PIN_INJ_1 = PIN_INJ_4 = 0; injector0_isr(); injector1_isr();
+    safety_inhibit(INH_DEADLINE | INH_SYNC, 0);
+    CHECK(PIN_INJ_1 && PIN_INJ_4 && !(CCM7 & 0xFFFU) && !ecu.authority.injector_active[0]);
 }
 static void queue_injection(u32 origin) {
     setup();
@@ -171,9 +189,21 @@ static void test_pending_injection(void) {
     queue_injection(0); ecu.authority.epoch++; finish_pair(32000);
     CHECK(!pending_injection[0].ready && !ecu.authority.injector_active[0]);
     queue_injection(0); finish_pair(37000);
-    /* 0.0.8: a late queued start skips this event, no deadline latch. */
+    /* 0.0.8: a late queued start goes out at once (OEM), 128 ticks ahead,
+       its window shortened by the delay; counted, no deadline latch. */
+    CHECK(!ecu.authority.inhibits && !pending_injection[0].ready && ecu.authority.late_events == 1);
+    CHECK(injector_phase[0] == 1 && injector_phase[1] == 1 && ecu.authority.injector_active[0]);
+    CHECK(CC30 == 37128U && CC28 == CC30 && (u16)(injector_end[0] - CC30) == 25000U);
+    CHECK(injection_window == 28125U - 128U);
+    /* A start delayed past its whole window is skipped: it would overrun
+       the pair's next event. */
+    queue_injection(0); finish_pair(37000UL + 28000UL);
     CHECK(!ecu.authority.inhibits && !pending_injection[0].ready && ecu.authority.late_events == 1);
     CHECK(PIN_INJ_1 && PIN_INJ_4 && !(CCM7 & 0xF0FU)); /* pair 1 keeps its own event */
+    /* A late start keeps only what remains of its window. */
+    queue_injection(0); finish_pair(37000UL + 5000UL);
+    CHECK(ecu.authority.late_events == 1 && ecu.authority.injector_active[0]);
+    CHECK((u16)(injector_end[0] - CC30) == 28125U - 5128U && ecu.authority.injector_clamps == 1);
     queue_injection(0); safety_inhibit(INH_SYNC, 0);
     CHECK(!pending_injection[0].ready && !ecu.authority.injector_active[0]);
     queue_injection(0); cut = ecu.authority.plan; cut.fuel_cut = CUT_REV;
@@ -329,6 +359,16 @@ static void test_output_faults(void) {
     injector0_isr(); injector1_isr();
     CHECK(PIN_INJ_1 && PIN_INJ_4 && !ecu.authority.inhibits && ecu.authority.late_events == 2);
     CHECK(!injector_phase[0] && !ecu.authority.injector_active[0] && !ecu.authority.injector_active[1]);
+    /* 0.0.8: a pulse longer than the pair's injection interval (one
+       revolution less 1/16) is shortened so it ends before the next event:
+       400-tick teeth -> 24000-tick revolution -> 22500-tick window. */
+    setup(); ecu.authority.plan.dwell_us = 0;
+    ecu.rotation.normal = period_value = 400; ecu.authority.plan.pulse_us = 20000;
+    board_schedule(0);
+    CHECK(!ecu.authority.inhibits && injector_phase[0] == 1);
+    CHECK((u16)(injector_end[0] - CC30) == 22500U && (u16)(injector_end[1] - CC28) == 22500U);
+    CHECK((u16)(injector_end[2] - CC29) == 22500U);
+    CHECK(ecu.authority.injector_clamps == 2); /* once per pair, both pairs due */
     /* A pulse over the compare limit is clamped and counted. */
     setup(); ecu.rotation.normal = period_value = 2000; ecu.authority.plan.pulse_us = 30000;
     board_schedule(0);

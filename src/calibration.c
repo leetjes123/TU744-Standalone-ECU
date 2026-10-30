@@ -96,7 +96,10 @@ u8 cal_validate(const u8 *c, u16 *error) {
         return fail(error, 0x5E2);
     a = get16(c + 0x5DB);
     b = get16(c + 0x5DD);
-    if (a < 1500 || a > 10000 || b < 1000 || b >= a || get16(c + 0x5DF) > 20000 ||
+    /* Required fuel up to the 60000 us demand cap of fuel_plan: small
+       injectors on a large cylinder need more than the former 20000 (1.4 TU3
+       at 105 cc/min: ~23 ms). Every fuel scaling saturates before that cap. */
+    if (a < 1500 || a > 10000 || b < 1000 || b >= a || get16(c + 0x5DF) > 60000U ||
         !get16(c + 0x5DF))
         return fail(error, 0x5DB);
     if (get16(c + 0x7B0) >= get16(c + 0x7B2) || get16(c + 0x7B2) > 1023 ||

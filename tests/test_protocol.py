@@ -233,7 +233,12 @@ assert v4[44:64] == bytes(20), v4.hex()
 v5 = exchange(bytes([0x13, 5]))
 assert len(v5) == 72 and v5[0] == 5 and v5[1:64] == v4[1:64], v5.hex()
 assert v5[64:72] == bytes(8), v5.hex()
-assert exchange(bytes([0x13, 6])) == b'' and exchange(bytes([0x13, 3])) == b''
+# Command 13 version 6 (firmware 0.0.8) appends the full-range oxygen input
+# voltage, the enrichment-adjusted target AFR and the knock fallback flag.
+v6 = exchange(bytes([0x13, 6]))
+assert len(v6) == 76 and v6[0] == 6 and v6[1:72] == v5[1:72], v6.hex()
+assert v6[74] == v6[12] and v6[75] == 0, v6.hex()  # stopped: target unadjusted
+assert exchange(bytes([0x13, 7])) == b'' and exchange(bytes([0x13, 3])) == b''
 lib.bridge_iac_detail()
 v4 = exchange(b'')
 assert v4[44] == 255 and v4[45] == 2 and v4[46] == 0 and v4[47] == 7  # target saturates

@@ -46,7 +46,7 @@ void auxiliary_update(u32 now, const Rotation *r, const u8 *c) {
     fan_apply(now, c);
     s->pump = (u8)(s->key_on && !ecu.service && ecu.cal.valid && ecu.board_released &&
                    ((s32)(s->prime_until - now) > 0 || r->state == ROT_VALID) &&
-                   !(ecu.authority.inhibits & (INH_DEADLINE | INH_OUTPUT)));
+                   !(ecu.authority.inhibits & INH_OUTPUT));
     s->boost = 0;
     if ((c[0x5D4] & CFG_BOOST) && s->mode == ENGINE_RUNNING && in->map.quality == QUALITY_VALID &&
         in->tps.quality == QUALITY_VALID && in->tps.value > 100 &&

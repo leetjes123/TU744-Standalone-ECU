@@ -38,7 +38,7 @@ release/TU744-v0.0.8/
 │                  TU744_0.0.8_M95080.hex   ← same firmware as HEX
 ├── basemaps/      TU5JP_1.6_8v_speed_density_v0.0.8.bin
 │                  TU3JP_1.4_8v_speed_density_v0.0.8.bin
-├── wizard/        TuningWizard_0.0.7.exe, OPERATOR_MANUAL.md
+├── wizard/        TuningWizard_0.0.8.exe, OPERATOR_MANUAL.md
 └── verification/  build manifests and test logs
 ```
 
@@ -127,7 +127,7 @@ open the ECU or use debug mode again.
 
 ### 4. Set up the Tuning Wizard
 
-1. Run **`release/TU744-v0.0.8/wizard/TuningWizard_0.0.7.exe`** and connect to your
+1. Run **`release/TU744-v0.0.8/wizard/TuningWizard_0.0.8.exe`** and connect to your
    cable's COM port (19200 baud, 8N1).
 2. Select **ECU > Read calibration** to load the tune that is in the ECU.
 3. **Save file** to keep a copy on your PC before changing anything.

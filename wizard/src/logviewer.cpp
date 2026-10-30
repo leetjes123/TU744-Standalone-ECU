@@ -147,9 +147,9 @@ bool ParseLogFile(const char* path, LogViewerState& lv) {
             for (int colIdx = 0; colIdx < numCols; ++colIdx) {
                 if (!ParseLogNumber(fields[colIdx], parsed[colIdx])) {
                     const int channel=FindMonitorChannel(out.columnNames[colIdx]);
-                    // Knock, 0.0.3 idle/sync and 0.0.8 output detail are unavailable from older firmware.
+                    // Knock, 0.0.3 idle/sync, 0.0.8 output and 0.0.8 frame-6 detail are unavailable from older firmware.
                     const bool optional=(channel>=SIG_KNOCK_MV && channel<=SIG_KNOCK_FAULT) ||
-                                        (channel>=SIG_IAC_TARGET && channel<=SIG_LATE_EVENTS);
+                                        (channel>=SIG_IAC_TARGET && channel<=SIG_KNOCK_FALLBACK);
                     const bool missing=fields[colIdx].empty() || !_stricmp(fields[colIdx].c_str(),"nan");
                     if(colIdx!=timeColIdx && optional && missing) parsed[colIdx]=NAN;
                     else { rowValid = false; break; }

@@ -58,6 +58,11 @@ void fuel_plan(u32 now, const Rotation *r, const u8 *c, EnginePlan *p) {
         pw += dead;
     p->requested_us = (u16)(pw > 65535UL ? 65535UL : pw);
     period = r->rpm ? 60000000UL / r->rpm : 0;
+    /* rpm is measured once per revolution and lags a fast rise; the last
+       tooth period (T1 ticks, 0.8 us, 60 per revolution) is fresher. Limit
+       duty on the shorter revolution so a pulse fits the next event. */
+    if (r->normal && r->normal * 48UL < period)
+        period = r->normal * 48UL;
     limit = period * c[0x8CF] / 100UL;
     if (limit > 25000UL)
         limit = 25000UL;

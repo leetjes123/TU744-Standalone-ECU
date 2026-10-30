@@ -31,6 +31,7 @@ static void reply(const u8 *bytes, u8 length) {
 }
 #define LIVE_FRAME_V4_BYTES 64
 #define LIVE_FRAME_V5_BYTES 72
+#define LIVE_FRAME_V6_BYTES 76
 static void status(u8 ok) {
     u8 value = ok ? 0 : 1;
     reply(&value, 1);
@@ -153,9 +154,13 @@ static void monitor(void) {
    44-byte version 3 frame unchanged for existing loggers; [13, 4] returns
    the 64-byte version 4 frame, which appends idle-actuator and
    synchronization-loss detail; [13, 5] the 72-byte version 5 frame, which
-   adds the output trip source and per-event output faults. */
+   adds the output trip source and per-event output faults; [13, 6] the
+   76-byte version 6 frame, which adds the full-range oxygen input voltage,
+   the enrichment-adjusted target AFR and the knock fallback state.
+   Pulse width and advance (all versions) are the plan computed by the last
+   control pass, so they stay current while an inhibit refuses publication. */
 static void live_frame(u8 version) {
-    u8 b[LIVE_FRAME_V5_BYTES];
+    u8 b[LIVE_FRAME_V6_BYTES];
     const Iac *iac = &ecu.iac; /* foreground-owned, like this handler */
     u16 first_reason, resyncs, overruns, coil_timeouts, injector_clamps, late;
     u8 trip_source, latch_clears;
@@ -163,13 +168,12 @@ static void live_frame(u8 version) {
     Sensors *in = &ecu.sensors;
     const u8 *c = cal_active();
     Rotation r;
-    EnginePlan plan;
     u16 lock, inhibits, generation;
+    u32 enrichment;
     u32 now;
     s32 v;
     lock = hal_lock();
     r = ecu.rotation;
-    plan = ecu.authority.plan;
     now = ecu.milliseconds;
     inhibits = ecu.authority.inhibits;
     generation = ecu.cal.generation;
@@ -197,8 +201,8 @@ static void live_frame(u8 version) {
     b[12] = s->target_afr;
     put16(b + 13, monitor_applied_trim());
     put16(b + 15, s->ve);
-    put16(b + 17, plan.pulse_us);
-    put16(b + 19, (u16)plan.advance10);
+    put16(b + 17, s->plan_pulse_us);
+    put16(b + 19, (u16)s->plan_advance10);
     b[21] = s->warmup;
     b[22] = s->afterstart;
     b[23] = (u8)(s->ae_percent > 255U ? 255U : s->ae_percent);
@@ -213,7 +217,7 @@ static void live_frame(u8 version) {
                  (s->mode == ENGINE_RUNNING ? 4 : 0) | (s->dfco ? 8 : 0) |
                  (monitor_trim_enabled() ? 16 : 0) | (s->fan ? 32 : 0) | (s->pump ? 64 : 0) |
                  (s->launch ? 128 : 0));
-    b[32] = (u8)((s->rev_limited ? 1 : 0) | (plan.fuel_cut ? 2 : 0) | (plan.spark_cut ? 4 : 0) |
+    b[32] = (u8)((s->rev_limited ? 1 : 0) | (s->plan_fuel_cut ? 2 : 0) | (s->plan_spark_cut ? 4 : 0) |
                  (vehicle.antilag ? 8 : 0) | (ecu.cal.dirty ? 16 : 0) |
                  (ecu.storage.phase ? 32 : 0) | (ecu.diagnostics.mil_output ? 64 : 0) |
                  (ecu.cal.staging ? 128 : 0));
@@ -255,7 +259,21 @@ static void live_frame(u8 version) {
     put16(b + 66, coil_timeouts);
     put16(b + 68, injector_clamps);
     put16(b + 70, late);
-    reply(b, LIVE_FRAME_V5_BYTES);
+    if (version < 6) {
+        reply(b, LIVE_FRAME_V5_BYTES);
+        return;
+    }
+    put16(b + 72, in->oxygen_mv);
+    /* The running fuel model multiplies warm-up, after-start and
+       acceleration enrichment on top of the VE cell, so the mixture it aims
+       for is the target AFR divided by them. Cranking VE replaces the cell. */
+    enrichment = (u32)s->warmup * s->afterstart * s->ae_percent;
+    v = s->target_afr;
+    if (s->mode == ENGINE_RUNNING && enrichment)
+        v = (s32)((u32)s->target_afr * 1000000UL / enrichment);
+    b[74] = (u8)(v > 255 ? 255 : v);
+    b[75] = (u8)(knock_fallback_active() ? 1U : 0U);
+    reply(b, LIVE_FRAME_V6_BYTES);
 }
 static void execute(void) {
     Protocol *p = &ecu.protocol;
@@ -280,7 +298,7 @@ static void execute(void) {
         live_frame(3);
         return;
     }
-    if (cmd == 0x13 && n == 2 && (b[1] == 4 || b[1] == 5)) {
+    if (cmd == 0x13 && n == 2 && b[1] >= 4 && b[1] <= 6) {
         live_frame(b[1]);
         return;
     }

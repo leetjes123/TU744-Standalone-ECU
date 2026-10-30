@@ -97,12 +97,43 @@ static void test_rotation(void) {
     CHECK(ecu.rotation.state == ROT_VALID);
     CHECK(ecu.rotation.rpm == 1000);
     CHECK(ecu.rotation.tooth == 0);
+    ecu.control.mode = ENGINE_RUNNING;
     stamp += 2500;
     rotation_edge(stamp);
     CHECK(ecu.rotation.state == ROT_UNSYNCED);
     CHECK(ecu.authority.inhibits & INH_SYNC);
     CHECK(ecu.rotation.losses == 1 && ecu.rotation.loss_reason == ROT_LOSS_IRREGULAR);
     CHECK(ecu.rotation.loss_tooth == 0);
+}
+static u32 synchronize(u32 stamp);
+/* 0.0.8: a stopping crank drops sync without counting a loss; acquisition
+   never counts; a speed-up (noise-like short tooth) still counts. */
+static void test_rotation_stall_losses(void) {
+    u32 stamp;
+    u16 tooth;
+    setup();
+    stamp = synchronize(0);
+    ecu.control.mode = ENGINE_CRANKING; /* below the cranking re-entry rpm */
+    for (tooth = 0; tooth < 15; tooth++)
+        rotation_edge(stamp += 1250);
+    rotation_edge(stamp += 2500);
+    CHECK(ecu.rotation.state == ROT_UNSYNCED && !ecu.rotation.losses);
+    CHECK(ecu.rotation.loss_reason == ROT_LOSS_NONE && (ecu.authority.inhibits & INH_SYNC));
+    setup();
+    rotation_edge(0);
+    rotation_edge(1250); rotation_edge(2500);
+    rotation_edge(2500 + 3750); /* first gap: acquiring */
+    CHECK(ecu.rotation.state == ROT_ACQUIRING);
+    rotation_edge(6250 + 1250); rotation_edge(7500 + 2500);
+    CHECK(ecu.rotation.state == ROT_UNSYNCED && !ecu.rotation.losses);
+    setup();
+    stamp = synchronize(0);
+    ecu.control.mode = ENGINE_CRANKING;
+    for (tooth = 0; tooth < 15; tooth++)
+        rotation_edge(stamp += 1250);
+    rotation_edge(stamp += 700);
+    CHECK(ecu.rotation.state == ROT_UNSYNCED && ecu.rotation.losses == 1);
+    CHECK(ecu.rotation.loss_reason == ROT_LOSS_IRREGULAR);
 }
 static u32 synchronize(u32 stamp) {
     u16 rev, tooth;
@@ -1123,6 +1154,30 @@ static void test_closed_loop_pulse_width(void) {
     ecu.control.trim_q16 = 81920L;
     fuel_plan(105, &r, c, &p);
     CHECK(p.requested_us == 3975 && p.pulse_us == 1000);
+    /* 0.0.8: the duty limit uses the fresher tooth period when the
+       per-revolution rpm lags a fast rise (log nieuwedag.csv: plan at
+       <= 2794 rpm delivered at ~3269 rpm, 103% duty). 88% of a 2794 rpm
+       revolution allows 18.9 ms; the tooth period of 382 ticks (3272 rpm)
+       limits it to 88% of 382 x 48 us = 16.1 ms. */
+    c[0x8CF] = 88;
+    put16(c + 0x5DF, 20000);
+    ecu.sensors.map.value = 200; /* 20000 us request plus dead time */
+    ecu.control.trim_q16 = 65536L;
+    r.rpm = p.rpm = 2794;
+    fuel_plan(106, &r, c, &p);
+    CHECK(p.requested_us > 20000 && p.pulse_us == 60000000UL / 2794 * 88 / 100);
+    r.normal = 382;
+    fuel_plan(107, &r, c, &p);
+    CHECK(p.pulse_us == 382UL * 48UL * 88UL / 100UL);
+    r.normal = 1000; /* slower tooth than the revolution: revolution governs */
+    fuel_plan(108, &r, c, &p);
+    CHECK(p.pulse_us == 60000000UL / 2794 * 88 / 100);
+    /* 0.0.8: required fuel up to the 60000 us demand cap is accepted. */
+    setup(); c = ecu.cal.bytes[0];
+    put16(c + 0x5DF, 23000); CHECK(cal_validate(c, &i));
+    put16(c + 0x5DF, 60000); CHECK(cal_validate(c, &i));
+    put16(c + 0x5DF, 60001); CHECK(!cal_validate(c, &i) && i == 0x5DB);
+    put16(c + 0x5DF, 0); CHECK(!cal_validate(c, &i));
 }
 static void test_storage(void) {
     u32 now, cut;
@@ -1699,6 +1754,8 @@ int main(void) {
     test_idle_dfco();
     test_idle_step_mode();
     test_sync_recovery();
+    test_engine_state_009();
+    test_live_frame_v6();
     test_idle_spark_rpm();
     test_service_release();
     test_idle_008();
@@ -1716,6 +1773,7 @@ int main(void) {
     test_iac_resync();
     test_iac_recovery();
     test_rotation_loss_reason();
+    test_rotation_stall_losses();
     test_fan_preload();
     test_fan_reserve();
     test_controls();

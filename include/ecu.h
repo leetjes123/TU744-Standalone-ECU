@@ -53,6 +53,9 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
 /* A running engine whose sync returns within this many ms resumes RUNNING
    with its original start time; zero treats every sync loss as a new start. */
 #define CAL_SYNC_RECOVERY_MS 0x96CU
+/* A running engine that dips below CAL_CRANK_RPM after this long keeps its
+   start time and returns to RUNNING at CAL_RUN_RPM without qualification. */
+#define ENGINE_DIP_RUN_MS 1000UL
 /* Idle spark correction only up to idle target + this RPM; zero = no limit. */
 #define CAL_IDLE_SPARK_RPM 0x96EU
 /* Idle feedback only below idle target + this RPM; zero = no limit. Above
@@ -105,7 +108,9 @@ typedef char check_u32[(sizeof(u32) == 4) ? 1 : -1];
    in runtime.c). DEADLINE is a per-pass condition: the OEM has no timing
    latch, only its hardware watchdog. */
 #define INH_LATCHED (INH_SERVICE | INH_OUTPUT | INH_BOARD)
-#define AUX_SHUTDOWN_INHIBITS (INH_CAL | INH_SERVICE | INH_DEADLINE | INH_POWER | INH_BOARD | INH_OUTPUT)
+/* DEADLINE is excluded: one late tick must not drop the fuel pump or the
+   wideband heater supply (log nieuwedag.csv: pump off with the deadline). */
+#define AUX_SHUTDOWN_INHIBITS (INH_CAL | INH_SERVICE | INH_POWER | INH_BOARD | INH_OUTPUT)
 #define CAL_TRANSACTION_MS 5000UL
 /* Check that last tripped INH_OUTPUT or INH_DEADLINE (Authority.trip_source,
    live frame version 5). Codes 1..3 latch INH_OUTPUT; 4..5 are DEADLINE. */
@@ -252,6 +257,13 @@ typedef struct {
     /* Running sync loss awaiting recovery (CAL_SYNC_RECOVERY_MS). */
     u8 sync_recovering;
     u32 sync_lost_at;
+    /* Cranking re-entered from an established RUNNING engine (rpm dip). */
+    u8 dip_recovering;
+    /* The plan computed by the last control pass, published or not, for the
+       live frame: an inhibit refuses publication, which froze these fields. */
+    u16 plan_pulse_us;
+    s16 plan_advance10;
+    u16 plan_fuel_cut, plan_spark_cut;
     /* Idle: RPM 100 ms ago for the falling test, and the stall recovery's
        quiet period (no crank activity since latch_quiet_at). */
     u16 idle_rpm_ref, latch_activity;
@@ -341,6 +353,8 @@ u16 hal_lock(void) SHARED;
 void hal_unlock(u16 state) SHARED;
 void hal_cancel_all(void) SHARED;
 void hal_cancel_fuel(void) SHARED;
+/* Disarm injector starts not yet begun; open pulses end at their compare. */
+void hal_revoke_fuel(void) SHARED;
 void hal_cancel_spark(void) SHARED;
 void hal_revoke_spark(u8 lost_angle) SHARED;
 u8 hal_injector_start(u8 channel, u16 ticks) SHARED; /* 0=fault, 1=started, 2=late skip */

@@ -54,8 +54,8 @@ Generating Code...
 'vswhere.exe' is not recognized as an internal or external command,
 operable program or batch file.
 PASS 901 non-blocking sensor/fault journal assertions
-PASS 467 audit-fix regression assertions
-PASS 3169107 assertions
+PASS 473 audit-fix regression assertions
+PASS 3169159 assertions
 test_ssc.c
 iac_hold.c
 Generating Code...
@@ -71,5 +71,4 @@ oem_ignition.c
 Generating Code...
 'vswhere.exe' is not recognized as an internal or external command,
 operable program or batch file.
-PASS 3146704 staged-output/decoder assertions
-
+PASS 3146733 staged-output/decoder assertions

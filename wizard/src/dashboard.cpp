@@ -316,11 +316,19 @@ void DrawDashboard(const MonitorData& m,bool connected,bool monitoring,float age
         Status("Knock detected",m.knockFlags&1,true,true);
         Status("Knock Sensor Fault",m.knockFlags&16,true,true);
         if(ImGui::IsItemHovered())
-            ImGui::SetTooltip("Knock sensing fault: knock control is suspended and its retard is held.\n"
+            ImGui::SetTooltip("Knock sensing fault: knock control is suspended and the full knock retard limit applies\n"
+                              "(see Knock fallback retard; firmware without live frame 6 holds the retard instead).\n"
                               "The ECU does not store it as a fault code and clears it when the engine stops.\n"
                               "The cause (for example signal at rail = open or shorted sensor circuit) is shown under\n"
                               "View > Developer mode > Developer tab > Knock sensing; with developer mode on it is\n"
                               "read automatically as soon as the fault appears.");
+        if(m.v6Available) {
+            Status("Knock fallback retard",m.knockFallback,true,true);
+            if(ImGui::IsItemHovered())
+                ImGui::SetTooltip("Knock sensing is faulted while knock control is selected, so the ECU applies\n"
+                                  "the full knock retard limit wherever knock control would be active.\n"
+                                  "Firmware 0.0.8, live frame 6.");
+        }
         Status("Knock control",m.knockFlags&4,true);
         Status("Knock monitor only",m.knockFlags&8,true);
     } else ImGui::TextDisabled("Knock data N/A");

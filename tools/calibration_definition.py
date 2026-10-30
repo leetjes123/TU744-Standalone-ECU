@@ -188,7 +188,7 @@ def generate():
            valid='0..490 ms')
     scalar('Acceleration decay', 0x90A, 16, 'ms', 10, 5000, category='Fuel - acceleration')
     # ---- Injectors
-    scalar('Required fuel per 720 degrees', 0x5DF, 16, 'us', 1, 20000, category='Injectors',
+    scalar('Required fuel per 720 degrees', 0x5DF, 16, 'us', 1, 60000, category='Injectors',
            description='Pulsewidth at 100% VE, 100 kPa (speed-density) and 0 C inlet air, per engine cycle. '
                        'Paired injection splits it into two events.')
     table('Injector dead time', 0x540, 16, 'us', voltage, high=5000, category='Injectors',

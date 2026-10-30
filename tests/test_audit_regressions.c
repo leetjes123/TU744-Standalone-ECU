@@ -76,7 +76,7 @@ static u8 *record(OemDtcState *s, u8 event) {
 
 static void test_aux_and_mil(void) {
     u16 i;
-    static const u16 reasons[] = {INH_OUTPUT, INH_DEADLINE, INH_POWER, INH_CAL, INH_SERVICE, INH_BOARD};
+    static const u16 reasons[] = {INH_OUTPUT, INH_POWER, INH_CAL, INH_SERVICE, INH_BOARD};
     setup();
     ecu.cal.bytes[0][0x600] = 1;
     ecu.cal.bytes[0][CAL_FLAGS] |= EQUIP_UPSTREAM_RELAY_HEATER;
@@ -87,6 +87,13 @@ static void test_aux_and_mil(void) {
     }
     ecu.authority.inhibits = INH_SYNC; /* key-on controller power remains allowed */
     auxiliary_update(0, &ecu.rotation, cal_active()); CHECK(fake_heaters == 1);
+    /* 0.0.8: a per-pass deadline keeps the wideband supply and the pump. */
+    ecu.authority.inhibits = INH_DEADLINE; ecu.control.key_on = 1; ecu.rotation.state = ROT_VALID;
+    auxiliary_update(0, &ecu.rotation, cal_active());
+    CHECK(fake_heaters == 1 && ecu.control.pump && safety_aux_permitted());
+    ecu.authority.inhibits = INH_OUTPUT;
+    auxiliary_update(0, &ecu.rotation, cal_active()); CHECK(!ecu.control.pump);
+    ecu.rotation.state = ROT_UNSYNCED;
     ecu.diagnostics.mil_steady = 0;
     ecu.diagnostics.mil_flashing_requested = 1;
     diagnostic_mil_update(0xFFFFFF00UL); CHECK(ecu.diagnostics.mil_output);
@@ -206,6 +213,23 @@ static void test_rotation_and_speed_faults(void) {
     ecu.rotation.losses++;
     update(100); update(110); update(120);
     CHECK(events.live[0x4A] & 1); /* even if sync reacquired between polls */
+    /* 0.0.8: a stall goes through cranking before sync drops; it is no
+       crank-sensor fault, however long the engine then stays stopped. */
+    setup(); update(10);
+    ecu.control.mode = ENGINE_CRANKING; ecu.rotation.rpm = 300; update(20);
+    ecu.rotation.epoch++; ecu.rotation.state = ROT_UNSYNCED; ecu.rotation.rpm = 0;
+    ecu.control.mode = ENGINE_STOPPED;
+    for (i = 30; i < 300; i += 10) update(i);
+    CHECK(!(events.live[0x0D] & 1) && !(events.live[0x4A] & 1));
+    /* Sync lost straight from RUNNING (signal gone at 3000 rpm) still fails
+       and stays failed while unsynchronized. */
+    setup(); update(10);
+    ecu.rotation.epoch++; ecu.rotation.state = ROT_UNSYNCED; ecu.rotation.rpm = 0;
+    ecu.control.mode = ENGINE_STOPPED;
+    for (i = 20; i < 300; i += 10) update(i);
+    CHECK((events.live[0x0D] & 1) && (events.live[0x4A] & 1) && m.crank_lost);
+    ecu.rotation.state = ROT_VALID; ecu.control.mode = ENGINE_RUNNING;
+    update(300); CHECK(!m.crank_lost);
 }
 
 static void test_misfire_and_runtime(void) {

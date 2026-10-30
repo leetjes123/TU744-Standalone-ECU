@@ -163,7 +163,8 @@ static void test_sync_recovery(void) {
     CHECK(ecu.control.mode == ENGINE_STOPPED && ecu.control.running_at == 5010);
     ecu.rotation.state = ROT_VALID;
     idle_dfco_pass(5020, 2000);
-    CHECK(ecu.control.mode == ENGINE_CRANKING);
+    /* 0.0.8: a new start, past twice the running threshold: RUNNING now. */
+    CHECK(ecu.control.mode == ENGINE_RUNNING && ecu.control.running_at == 5020);
     /* Inside the window: straight back to RUNNING, start time kept. */
     idle_dfco_setup(); c = ecu.cal.bytes[0];
     put16(c + CAL_SYNC_RECOVERY_MS, 500);
@@ -196,7 +197,7 @@ static void test_sync_recovery(void) {
     CHECK(!ecu.control.sync_recovering && ecu.control.running_at == 5511);
     ecu.rotation.state = ROT_VALID;
     idle_dfco_pass(5520, 2000);
-    CHECK(ecu.control.mode == ENGINE_CRANKING);
+    CHECK(ecu.control.mode == ENGINE_RUNNING && ecu.control.running_at == 5520);
     /* Key-off ends the recovery; a stopped or cranking loss never arms it. */
     idle_dfco_setup(); c = ecu.cal.bytes[0];
     put16(c + CAL_SYNC_RECOVERY_MS, 500);
@@ -209,6 +210,47 @@ static void test_sync_recovery(void) {
     ecu.control.mode = ENGINE_CRANKING;
     idle_dfco_pass(5030, 0);
     CHECK(!ecu.control.sync_recovering);
+}
+/* 0.0.8 engine state: start flare and rpm dips (log nieuwedag.csv). */
+static void test_engine_state_009(void) {
+    idle_dfco_setup();
+    ecu.control.mode = ENGINE_STOPPED;
+    ecu.control.running_at = 0;
+    /* Below twice the 650 rpm threshold the 300 ms qualification holds. */
+    idle_dfco_pass(1000, 700);
+    CHECK(ecu.control.mode == ENGINE_CRANKING && ecu.control.qualifying);
+    idle_dfco_pass(1100, 1299);
+    CHECK(ecu.control.mode == ENGINE_CRANKING);
+    /* At 1300 rpm the start flare ends cranking fuel at once. */
+    idle_dfco_pass(1110, 1300);
+    CHECK(ecu.control.mode == ENGINE_RUNNING && ecu.control.running_at == 1110);
+    /* A dip below 450 rpm within the first second is a failed start. */
+    idle_dfco_pass(1500, 400);
+    CHECK(ecu.control.mode == ENGINE_CRANKING && !ecu.control.dip_recovering);
+    idle_dfco_pass(1510, 700);
+    CHECK(ecu.control.mode == ENGINE_CRANKING);
+    idle_dfco_pass(1810, 700);
+    CHECK(ecu.control.mode == ENGINE_RUNNING && ecu.control.running_at == 1810);
+    /* An established engine dipping to 374 rpm gets cranking fuel, then
+       RUNNING straight back at 650 rpm with its start time kept, so no
+       second after-start enrichment or start catch. */
+    idle_dfco_pass(30000, 374);
+    CHECK(ecu.control.mode == ENGINE_CRANKING && ecu.control.dip_recovering);
+    CHECK(ecu.control.idle_mode == IDLE_CRANK);
+    idle_dfco_pass(30010, 600);
+    CHECK(ecu.control.mode == ENGINE_CRANKING);
+    idle_dfco_pass(30020, 650);
+    CHECK(ecu.control.mode == ENGINE_RUNNING && ecu.control.running_at == 1810);
+    CHECK(!ecu.control.dip_recovering && ecu.control.idle_mode != IDLE_CATCH);
+    /* A stall ends the dip: the next sync is a normal start. */
+    idle_dfco_pass(40000, 374);
+    CHECK(ecu.control.dip_recovering);
+    ecu.rotation.state = ROT_UNSYNCED;
+    idle_dfco_pass(40100, 0);
+    CHECK(ecu.control.mode == ENGINE_STOPPED && !ecu.control.dip_recovering);
+    ecu.rotation.state = ROT_VALID;
+    idle_dfco_pass(41000, 700);
+    CHECK(ecu.control.mode == ENGINE_CRANKING);
 }
 /* Idle spark correction stops above idle target + the calibrated margin. */
 static void test_idle_spark_rpm(void) {
@@ -384,4 +426,43 @@ static void test_latch_recovery(void) {
     safety_trip(INH_DEADLINE, TRIP_FOREGROUND_GAP, now);
     safety_conditions(0, now);
     CHECK(ecu.authority.inhibits == INH_OUTPUT && ecu.authority.trip_source == TRIP_FOREGROUND_GAP);
+}
+#include "knock.h"
+/* 0.0.8 live frame 6: full-range oxygen input, enrichment-adjusted target
+   and knock fallback. All versions report the plan of the last control pass,
+   even while an inhibit refuses publication (log nieuwedag.csv: 18.9 ms and
+   17.5 deg frozen with the outputs off). */
+static void test_live_frame_v6(void) {
+    static const u8 v6[] = {0xAA, 2, 0x13, 0x06, 0x1B};
+    static const u8 v5[] = {0xAA, 2, 0x13, 0x05, 0x1A};
+    static const u8 v7[] = {0xAA, 2, 0x13, 0x07, 0x1C};
+    setup();
+    ecu.authority.plan.pulse_us = 18900; ecu.authority.plan.advance10 = 175;
+    ecu.authority.inhibits = INH_DEADLINE;
+    ecu.control.plan_pulse_us = 3100; ecu.control.plan_advance10 = 245;
+    ecu.control.plan_fuel_cut = CUT_DFCO;
+    ecu.sensors.oxygen_mv = 3550;
+    ecu.control.mode = ENGINE_RUNNING; ecu.control.target_afr = 147;
+    ecu.control.warmup = 113; ecu.control.afterstart = 130; ecu.control.ae_percent = 100;
+    feed(v6, sizeof(v6), 100);
+    CHECK(ecu.protocol.tx[1] == 76 && ecu.protocol.tx[2] == 6);
+    CHECK(get16(ecu.protocol.tx + 2 + 17) == 3100 && get16(ecu.protocol.tx + 2 + 19) == 245);
+    CHECK(ecu.protocol.tx[2 + 32] & 2);
+    CHECK(ecu.protocol.tx[2 + 11] == 255 && get16(ecu.protocol.tx + 2 + 72) == 3550);
+    CHECK(ecu.protocol.tx[2 + 12] == 147 && ecu.protocol.tx[2 + 74] == 100); /* 14.7/1.469 */
+    CHECK(ecu.protocol.tx[2 + 75] == 0);
+    while (ecu.protocol.tx_length) protocol_poll(100);
+    /* Cranking VE replaces the cell: the target is reported unadjusted. */
+    ecu.control.mode = ENGINE_CRANKING;
+    knock.mode = KNOCK_CONTROL; knock.fallback = 1;
+    feed(v6, sizeof(v6), 110);
+    CHECK(ecu.protocol.tx[2 + 74] == 147 && ecu.protocol.tx[2 + 75] == 1);
+    while (ecu.protocol.tx_length) protocol_poll(110);
+    feed(v5, sizeof(v5), 120);
+    CHECK(ecu.protocol.tx[1] == 72 && get16(ecu.protocol.tx + 2 + 17) == 3100);
+    while (ecu.protocol.tx_length) protocol_poll(120);
+    feed(v7, sizeof(v7), 130);
+    CHECK(ecu.protocol.tx[1] == 1);
+    while (ecu.protocol.tx_length) protocol_poll(130);
+    knock.fallback = 0;
 }

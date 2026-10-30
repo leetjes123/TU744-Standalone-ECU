@@ -34,6 +34,9 @@ void hal_unlock(u16 state) {
 void hal_cancel_fuel(void) {
     memset(fake_injectors, 0, 4);
 }
+void hal_revoke_fuel(void) {
+    /* The fake has no start compares: an admitted pulse is already open. */
+}
 void hal_cancel_spark(void) {
     memset(fake_coils, 0, 2);
     ecu.authority.spark_draining = 0;

@@ -56,6 +56,12 @@ typedef struct {
 static InjectionEvent SYSTEM_RAM pending_injection[2];
 static u32 SYSTEM_RAM injection_clock;
 static u16 SYSTEM_RAM injection_at;
+/* Longest pulse the next start accepts: it must end before the same pair's
+   following event, one revolution later (injection_window_ticks). Outside
+   SDATA, which the capture buffers fill; read once per pair start. */
+static u16 injection_window = INJECTOR_MAX_TICKS, pending_window[2];
+/* Lead given to a late start that is issued at once. */
+#define INJECTION_LATE_LEAD 128UL
 static u8 SYSTEM_RAM tach_active;
 static void cancel_stages(void);
 static void oem_prepare(void);
@@ -77,6 +83,12 @@ void hal_cancel_spark(void) SHARED {
     ecu.authority.spark_draining = 0;
 }
 void hal_cancel_all(void) SHARED { hal_cancel_fuel(); hal_cancel_spark(); }
+void hal_revoke_fuel(void) SHARED {
+    u8 ch;
+    pending_injection[0].ready = pending_injection[1].ready = 0;
+    for (ch = 0; ch < 4U; ch++)
+        if (injector_phase[ch] == 1U) { hal_injector_off(ch); injector_done(ch); }
+}
 void board_outputs_init(void) {
     u8 i;
     hal_cancel_all(); tach_active = 0; feedback_owner = 2;
@@ -272,7 +284,14 @@ u8 hal_injector_start(u8 ch, u16 ticks) SHARED {
        and avoids a masked clock read per channel. T7 counts with T1. */
     s16 remaining = (s16)(injection_at - T7);
     if (!BOARD_RELEASED || ch > 3U || ticks < 25U || ticks > 31250U) return 0;
-    if (remaining < 64 || remaining > 30000) return 2;
+    if (remaining < 64 || remaining > 30000 || injection_window < 25U) return 2;
+    /* A pulse planned at the lagging per-revolution rpm can outlast the
+       interval to this pair's next event during a fast rise; it would then
+       overrun that start and lose it. End it before the next event. */
+    if (ticks > injection_window) {
+        ticks = injection_window;
+        if (!(ch & 1U) && ecu.authority.injector_clamps != 65535U) ecu.authority.injector_clamps++;
+    }
     injector_epoch[ch] = ecu.authority.epoch;
     injector_end[ch] = (u16)(injection_at + ticks);
     injector_phase[ch] = 1;
@@ -296,24 +315,45 @@ u8 hal_injector_start(u8 ch, u16 ticks) SHARED {
 static void injection_pending(u8 pair) {
     InjectionEvent *e = &pending_injection[pair];
     u8 ch = (u8)(pair * 2U);
+    u32 now, late;
     if (!e->ready || ecu.authority.injector_active[ch] || ecu.authority.injector_active[ch + 1U]) return;
     e->ready = 0;
     if (ecu.authority.inhibits || e->epoch != ecu.authority.epoch) return;
-    injection_clock = e->clock; injection_at = e->at;
-    if ((s32)(injection_clock - hal_capture_clock()) < 64L) {
-        late_event(); return;
+    injection_clock = e->clock; injection_at = e->at; injection_window = pending_window[pair];
+    now = hal_capture_clock();
+    if ((s32)(injection_clock - now) < 64L) {
+        /* The previous pulse of this pair ended after this start was due.
+           Like the OEM (kb/algorithms.yaml 1898), start it at once rather
+           than lose the fuel, shortened by the delay so that it still ends
+           before this pair's next event. Counted as a late event. */
+        late_event();
+        late = now + INJECTION_LATE_LEAD - injection_clock;
+        if (late >= injection_window || injection_window - late < 25UL) return;
+        injection_window = (u16)(injection_window - late);
+        injection_clock += late; injection_at = (u16)(injection_at + (u16)late);
     }
     injector_admit(pair);
+}
+/* Injection interval of one pair: its next event is one revolution (60
+   tooth periods) later. Keep 1/16 of it free for the following start's
+   lead and compare service; a faster revolution under acceleration than
+   the last tooth predicts is covered by the late-start path above. */
+static u16 injection_window_ticks(void) {
+    u32 revolution = ecu.rotation.normal * 60UL, window;
+    if (!revolution) return INJECTOR_MAX_TICKS;
+    window = revolution - (revolution >> 4);
+    return (u16)(window > INJECTOR_MAX_TICKS ? INJECTOR_MAX_TICKS : window);
 }
 /* Run once per delivered capture block in XP1. Start descriptors are separate
    from an already charging coil, allowing overlapping dwell at high speed. */
 /* Injection (standalone) and the tach, once per delivered capture block in XP1. */
 void board_schedule(u32 captured) {
-    u16 target, counts, cycle, lock, reference;
+    u16 target, counts, cycle, lock, reference, window;
     u32 delay, now;
     u8 ch;
     InjectorTicket ticket;
     if (ecu.rotation.state != ROT_VALID || ecu.authority.inhibits) return;
+    window = injection_window_ticks();
     now = hal_capture_clock(); reference = T7;
     if (now - captured > ecu.rotation.normal * 30UL) {
         late_event(); return; /* block delivered too late: skip its events */
@@ -342,6 +382,7 @@ void board_schedule(u32 captured) {
                 pending_injection[ch].clock = captured + delay;
                 pending_injection[ch].at = (u16)(reference + (u16)delay);
                 pending_injection[ch].epoch = ecu.authority.epoch;
+                pending_window[ch] = window;
                 injection_pending(ch);
             } else if (!ecu.authority.injector_active[ch * 2U] &&
                        !ecu.authority.injector_active[ch * 2U + 1U]) {
@@ -351,6 +392,7 @@ void board_schedule(u32 captured) {
                    >= 128 and <= 30000 ticks away just above). */
                 injection_clock = captured + delay;
                 injection_at = (u16)(reference + (u16)delay);
+                injection_window = window;
                 if ((s16)(injection_at - T7) < 64)
                     late_event();
                 else
@@ -359,6 +401,7 @@ void board_schedule(u32 captured) {
                 pending_injection[ch].clock = captured + delay;
                 pending_injection[ch].at = (u16)(reference + (u16)delay);
                 pending_injection[ch].epoch = ecu.authority.epoch;
+                pending_window[ch] = window;
                 pending_injection[ch].ready = 1;
                 injection_pending(ch);
             }

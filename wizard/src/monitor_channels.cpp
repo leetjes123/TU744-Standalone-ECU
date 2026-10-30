@@ -14,9 +14,9 @@ const SignalDef SIGNAL_DEFS[SIG_COUNT] = {
     {"Coolant Temperature","C",IM_COL32(101,136,122,255),-40,150, "coolant_temperature", "ECT", "CLT|ECT|Coolant", "Engine coolant temperature.", false},
     {"Intake Air Temperature","C",IM_COL32(154,219,153,255),-40,150, "intake_air_temperature", "IAT", "IAT|Intake air", "Intake air temperature.", false},
     {"Battery Voltage","V",IM_COL32(207,127,184,255),0,20, "battery_voltage", "Battery", "Battery|VBATT", "Measured ECU supply voltage.", false},
-    {"Injector Pulse Width - Commanded","ms",IM_COL32(85,210,215,255),0,30, "injector_pulse_width", "Inj PW", "Planned injector PW|Planned pulse width", "Planned injector pulse duration; cuts and output inhibits can prevent injection.", false},
+    {"Injector Pulse Width - Commanded","ms",IM_COL32(85,210,215,255),0,30, "injector_pulse_width", "Inj PW", "Planned injector PW|Planned pulse width", "Planned injector pulse duration from the latest control pass; cuts and output inhibits can prevent injection (firmware 0.0.8 keeps it current while inhibited).", false},
     {"Short Term Fuel Trim","%",IM_COL32(138,118,246,255),-50,50, "short_term_fuel_trim", "STFT", "Applied trim|STFT|STFT correction", "Applied short-term fuel correction. Positive adds fuel, negative removes fuel.", false},
-    {"O2 Sensor Voltage","mV",IM_COL32(191,201,102,255),0,1275, "oxygen_voltage", "O2 Voltage", "Oxygen input", "Raw oxygen-sensor input voltage, not an AFR measurement.", false},
+    {"O2 Sensor Voltage","mV",IM_COL32(191,201,102,255),0,5000, "oxygen_voltage", "O2 Voltage", "Oxygen input", "Raw oxygen-sensor input voltage, not an AFR measurement. Live frame 5 and older saturate at 1275 mV; live frame 6 reports the full 0-5 V range.", false},
     {"Idle Valve Position","steps",IM_COL32(244,109,133,255),0,220, "idle_valve_position", "Idle Position", "IAC position|IAC", "Reported stepper position; not independent physical feedback.", false},
     {"Idle Speed Target","rpm",IM_COL32(122,192,164,255),0,2550, "idle_speed_target", "Idle Target", "Idle target", "Requested idle engine speed.", false},
     {"Vehicle Speed","km/h",IM_COL32(175,100,195,255),0,255, "vehicle_speed", "Speed", "Speed", "Calculated vehicle speed.", false},
@@ -64,8 +64,10 @@ const SignalDef SIGNAL_DEFS[SIG_COUNT] = {
     {"Output Trip Source","",IM_COL32(255,80,80,255),0,5, "output_trip_source", "Trip Source", "", "Check that last tripped an output latch or deadline: 0 none, 1 coil start refused, 2 injector start refused, 3 coil watchdog repeated while running, 4 tick gap > 3 ms, 5 main loop gap > 50 ms. Firmware 0.0.8.", false},
     {"Output Latch Clears","count",IM_COL32(255,140,80,255),0,3, "output_latch_clears", "Latch Clears", "", "Automatic output-latch clears after a stall in this key cycle (at most 3). Firmware 0.0.8.", true},
     {"Coil Watchdog Trips","count",IM_COL32(255,110,60,255),0,65535, "coil_watchdog_trips", "Coil Timeouts", "", "Coil charges ended by the 6.5 ms watchdog since ECU reset; each loses one spark. Rising while cranking points to too much dwell for the cranking speed. Firmware 0.0.8.", false},
-    {"Clamped Injector Pulses","count",IM_COL32(240,200,80,255),0,65535, "clamped_injector_pulses", "Inj Clamps", "", "Injector pulses clamped to 24.8 ms since ECU reset. Firmware 0.0.8.", true},
-    {"Late Output Events","count",IM_COL32(220,160,120,255),0,65535, "late_output_events", "Late Events", "", "Charges, injections or ignition segments serviced too late and skipped since ECU reset. Firmware 0.0.8.", true},
+    {"Clamped Injector Pulses","count",IM_COL32(240,200,80,255),0,65535, "clamped_injector_pulses", "Inj Clamps", "", "Injector pulses clamped since ECU reset: to 24.8 ms, or to end before the pair's next event when the engine accelerates faster than the plan rpm. Firmware 0.0.8.", true},
+    {"Late Output Events","count",IM_COL32(220,160,120,255),0,65535, "late_output_events", "Late Events", "", "Charges, injections or ignition segments serviced too late since ECU reset. A late injection starts at once, shortened to its window; other late events are skipped. Firmware 0.0.8.", true},
+    {"AFR Target - Enrichment Adjusted","AFR",IM_COL32(120,210,190,255),7,22, "afr_target_adjusted", "AFR Target Adj", "Adjusted target AFR", "Target AFR divided by warm-up, after-start and acceleration enrichment: the mixture the running fuel model aims for. Equals AFR Target while cranking. Firmware 0.0.8, live frame 6.", false},
+    {"Knock Fallback Retard","",IM_COL32(255,120,60,255),0,1, "knock_fallback", "Knock Fallback", "", "Knock control is selected but knock sensing is faulted: the full knock retard limit is applied where knock control would be active. Firmware 0.0.8, live frame 6.", false},
 };
 
 namespace {
@@ -180,6 +182,8 @@ float MonitorSignalValue(int sig,const MonitorData& mon) {
     case SIG_COIL_TIMEOUTS: return mon.outputDetailAvailable ? float(mon.coilTimeouts) : NAN;
     case SIG_INJECTOR_CLAMPS: return mon.outputDetailAvailable ? float(mon.injectorClamps) : NAN;
     case SIG_LATE_EVENTS: return mon.outputDetailAvailable ? float(mon.lateEvents) : NAN;
+    case SIG_TARGET_AFR_ADJUSTED: return mon.v6Available ? mon.adjustedTargetAfr : NAN;
+    case SIG_KNOCK_FALLBACK: return mon.v6Available ? float(mon.knockFallback) : NAN;
     default: return 0;
     }
 }

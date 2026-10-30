@@ -151,13 +151,24 @@ void knock_update(u32 now, const Rotation *r, const u8 *c) {
     if (r->epoch != knock_config.epoch ||
         (!knock.bench && (!mode || ecu.service || ecu.authority.inhibits)))
         knock_invalidate(0);
+    /* The stopped-engine ADC15 sample is refreshed only while stopped; once
+       cranking starts nothing renews it until the first running window.
+       Drop it without a fault, or the stale check below faulted knock
+       sensing 150 ms into every start until the next stop. */
+    if (knock.valid && knock.source == 1U && ecu.control.mode != ENGINE_STOPPED)
+        knock_invalidate(0);
     knock_config = cfg;
+    /* Standalone policy (no OEM reference): with knock control selected but
+       sensing faulted, apply the full retard limit wherever knock control
+       would be active, as an unprotected engine at load has no feedback. */
+    knock.fallback = (u8)(mode == KNOCK_CONTROL && knock.fault && !knock.bench &&
+        ecu.control.mode == ENGINE_RUNNING && rpm_gate && coolant_gate && load_gate);
     if (knock.valid && now - knock.stamp > cfg.stale_ms) {
         if (knock.stale_samples != 65535U) knock.stale_samples++;
         knock_invalidate(KNOCK_FAULT_STALE);
     }
     if (ecu.control.mode == ENGINE_STOPPED && !knock.bench) {
-        knock.retard = knock.scheduled = 0;
+        knock.retard = knock.scheduled = knock.fallback = 0;
         knock.fault = knock.qualified = knock.good_count = knock.rail_count = 0;
         knock.null_bad = knock.test_bad = knock.drift_bad = 0;
         knock.last_normal = knock.decision = knock.recent = 0;
@@ -280,14 +291,27 @@ void knock_sample(const KnockConfig *cfg, u16 raw, u8 type, u16 ticks, u32 now) 
     }
     hal_unlock(lock);
 }
+/* Retard to apply (0.75 deg counts): the learned retard, or the configured
+   limit while the faulted-sensing fallback is active. Caller holds hal_lock. */
+static u8 knock_retard(void) {
+    if (knock.mode != KNOCK_CONTROL)
+        return 0;
+    return knock.fallback && knock_config.maximum > knock.retard ? knock_config.maximum : knock.retard;
+}
 s16 knock_advance(s16 base) {
     u16 lock = hal_lock();
     s16 clipped = (s16)clamp32(base, -128, 127), result;
-    u8 retard = knock.mode == KNOCK_CONTROL ? knock.retard : 0;
+    u8 retard = knock_retard();
     result = (s16)clamp32((s32)base - retard, -128, 127);
     knock.scheduled = (u8)(clipped > result ? clipped - result : 0);
     hal_unlock(lock);
     return result;
+}
+u8 knock_fallback_active(void) {
+    u16 lock = hal_lock();
+    u8 active = (u8)(knock.mode == KNOCK_CONTROL && knock.fallback);
+    hal_unlock(lock);
+    return active;
 }
 void knock_monitor(u8 *out, u32 now) {
     u16 lock = hal_lock();
@@ -299,7 +323,7 @@ void knock_monitor(u8 *out, u32 now) {
         (knock.mode == KNOCK_MONITOR ? 8U : 0U) | (knock.fault ? 16U : 0U) |
         (knock.bench ? 32U : 0U) | (knock.decision && fresh ? 64U : 0U) |
         (knock.last_normal && fresh ? 128U : 0U));
-    out[3] = knock.retard;
+    out[3] = knock_retard();
     hal_unlock(lock);
 }
 void knock_details(u8 *out, u32 now) {

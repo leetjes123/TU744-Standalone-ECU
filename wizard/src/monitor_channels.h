@@ -49,6 +49,8 @@ enum LogSignal {
     SIG_DROPPED_FRAMES, SIG_SAMPLE_GAP,
     // Firmware 0.0.8 live frame version 5; unavailable (NaN) on older firmware.
     SIG_TRIP_SOURCE, SIG_LATCH_CLEARS, SIG_COIL_TIMEOUTS, SIG_INJECTOR_CLAMPS, SIG_LATE_EVENTS,
+    // Firmware 0.0.8 live frame version 6; unavailable (NaN) on older firmware.
+    SIG_TARGET_AFR_ADJUSTED, SIG_KNOCK_FALLBACK,
     SIG_COUNT
 };
 

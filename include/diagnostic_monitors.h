@@ -45,6 +45,8 @@ typedef struct {
     u8 misfire_slot[2], misfire_phase[2], misfire_hits[10];
     u8 misfire_seeded, misfire_samples, misfire_qualified, misfire_unattributed;
     u8 rotation_seeded, crank_was_valid, crank_pending, vss_moving, vss_lost, phase_seeded;
+    /* Last poll saw sync with the engine RUNNING; sync then lost from it. */
+    u8 crank_running, crank_lost;
     u8 initialized, o2_side, phase_valid, phase_cylinder_one, processor_test,
        sensor_seeded;
 } DiagnosticMonitors;

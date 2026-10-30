@@ -24,7 +24,16 @@ void safety_inhibit(u16 reason, u32 now) SHARED {
     a->inhibits |= reason;
     a->generation++;
     knock_invalidate(0);
-    hal_cancel_fuel();
+    if (reason & (INH_DEADLINE ^ 0xFFFFU)) {
+        hal_cancel_fuel();
+        a->injector_active[0] = a->injector_active[1] = a->injector_active[2] =
+            a->injector_active[3] = 0;
+    } else {
+        /* A late tick or foreground pass: no new pulse starts, but one
+           already open ends at its own compare, as a charging coil fires.
+           Cutting it mid-pulse lost that cylinder's fuel for a timing hiccup. */
+        hal_revoke_fuel();
+    }
     if (reason & (INH_OUTPUT | INH_BOARD)) {
         hal_cancel_spark();
         a->coil_active[0] = a->coil_active[1] = 0;
@@ -33,8 +42,6 @@ void safety_inhibit(u16 reason, u32 now) SHARED {
            completion. Loss of angle uses its retained time deadline. */
         hal_revoke_spark((u8)((reason & (INH_SYNC | INH_DEADLINE)) || ecu.rotation.state != ROT_VALID));
     }
-    a->injector_active[0] = a->injector_active[1] = a->injector_active[2] = a->injector_active[3] =
-        0;
     hal_unlock(lock);
 }
 /* An inhibit with the check that tripped it, for the live frame. */

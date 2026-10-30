@@ -2,14 +2,58 @@
 
 Calibration schema 5, 3072 bytes, unchanged: the new settings use free bytes
 `0x970..0x977` (`0x972..0x973` reserved), so no migration is needed.
-Identity: `TU744 0.0.8`. The live frame gains version 5 (`13 05`). Versions 3
-and 4 are unchanged.
+Identity: `TU744 0.0.8`. The live frame gains versions 5 (`13 05`) and 6
+(`13 06`). Versions 3 and 4 are unchanged.
 
-The package ships Tuning Wizard 0.0.7 as `wizard/TuningWizard_0.0.7.exe`.
+The package ships Tuning Wizard 0.0.8 as `wizard/TuningWizard_0.0.8.exe`.
+This is the second 0.0.8 package (2026-10-30); its changes, from a cold-start
+log of a 1.4 TU3, are in "Update 2026-10-30" below.
 Everything below is visible and tunable in the Wizard; no command-line tools
 are needed.
 
+## Update 2026-10-30
+
+Same identity and calibration schema. Required fuel now accepts up to
+60000 us; nothing else in the tune format changes.
+
+- **Knock control on every start.** The engine-off knock sample stayed valid
+  into cranking, and the stale check faulted knock sensing 150 ms after the
+  first sync. The fault held until the engine stopped, so knock control never
+  ran. The sample is now dropped without a fault when cranking starts.
+- **Knock fallback retard.** With knock control selected and knock sensing
+  faulted, the full knock retard limit applies wherever knock control would
+  be active (running, above its rpm, coolant and load gates).
+- **Injection window.** In a fast throttle snap a pulse sized at the lagging
+  per-revolution rpm could outlast the interval to its pair's next event
+  (the log: 103% duty at ~3270 rpm). The earlier build skipped the
+  overrun start and lost up to every other injection; firmware 0.0.7 shut the
+  engine down here. Now the duty limit also uses the latest tooth period,
+  each pulse ends 1/16 revolution before the pair's next event, and a late
+  start goes out at once, shortened by its delay, as the OEM does.
+- **Rpm dip.** An engine that has run for at least 1 s and dips below the
+  cranking re-entry rpm with sync kept gets cranking fuel, then returns to
+  running at the running threshold at once. After-start enrichment and the
+  idle start catch are not restarted.
+- **Start flare.** Running is qualified as soon as rpm reaches twice the
+  running threshold, so cranking fuel no longer continues through the flare.
+- **Deadline.** A transient deadline no longer switches off the fuel pump or
+  the heater relays (wideband supply), and an open injector pulse finishes at
+  its own end time; only starts not yet begun are cancelled.
+- **Sync losses.** Counted only from full sync, and not for a crank slowing
+  to a stop while the engine is not running. The crank sensor DTC fails on
+  sync lost from a running engine, not on an ordinary stall.
+- **Required fuel** up to 60000 us (was 20000), for small injectors: a 1.4
+  TU3 with 105 cc/min injectors needs about 23 ms.
+- **Live frame 6** (Tuning Wizard 0.0.8): O2 input voltage over the full
+  0-5 V range, AFR Target - Enrichment Adjusted and Knock Fallback Retard.
+  All frame versions now report the latest calculated pulse width and
+  timing, which used to freeze while an inhibit blocked the outputs.
+
 ## Tuning Wizard 0.0.7
+
+(Tuning Wizard 0.0.8 adds live frame 6 and its log channels to the features
+below.)
+
 
 - **Output inhibits on the dashboard.** A banner at the top always shows
   whether the outputs are enabled (green), waiting with the engine stopped,
@@ -154,8 +198,12 @@ Passed:
 - Keil build of the stock-95080 image with no warnings; native calibration
   validation and HEX/BIN round trip of the packed image.
 - Both 0.0.8 basemaps accepted by the firmware calibration commit.
-- Tuning Wizard 0.0.7: all 5 test suites, against the 0.0.8 firmware
+- Tuning Wizard 0.0.8: all 5 test suites, against the 0.0.8 firmware
   protocol library, and the desktop smoke test.
+- Update 2026-10-30, on the final binary: native and stock-native tests with
+  new regressions for each change, Keil stock-95080 build with no warnings,
+  protocol test including frame 6, and the emulator suites OEM scheduler,
+  scheduler regressions, output closure, fuel and knock.
 - Target simulations (C167 emulator and Keil uVision) passed on the build
   before the idle speed condition and floor were removed. On the final
   binary the emulator suites pass again (main, audit, faults, fuel, reset,
@@ -167,7 +215,8 @@ Not run:
 
 - the bench and engine checks of cranking dwell, the coil watchdog, the stall
   recovery and the new idle settings;
-- Tuning Wizard 0.0.7 against a real ECU;
+- Tuning Wizard 0.0.8 against a real ECU, and bench or engine checks of the
+  2026-10-30 changes (injection window, rpm dip, deadline pump behaviour);
 - native knock ADC completion in uVision (blocked in the installed version).
 
 Known failing, not caused by this release: `tests/test_lifecycle_target.py`

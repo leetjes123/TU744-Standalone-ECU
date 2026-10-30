@@ -106,7 +106,7 @@ int EcuProtocol::readTpsAdc() {
     return tpsSnapshot(s) && (s.flags&3)==3 && !(s.flags&16) && s.ageMs<=100 && s.raw<=1023 ? s.raw : -1;
 }
 bool DecodeMonitor(const unsigned char* d,int len,MonitorData& out) {
-    if(!d || !((len==40 && d[0]==2) || (len==44 && d[0]==3) || (len==64 && d[0]==4) || (len==72 && d[0]==5))) { out.valid=false; return false; }
+    if(!d || !((len==40 && d[0]==2) || (len==44 && d[0]==3) || (len==64 && d[0]==4) || (len==72 && d[0]==5) || (len==76 && d[0]==6))) { out.valid=false; return false; }
     MonitorData m;
     m.rpm=word(d+1); m.kpa=word(d+3); m.tps=word(d+5)*0.1f;
     m.clt=int(d[7])-40; m.iat=int(d[8])-40; m.battery=d[9]*0.1f;
@@ -129,9 +129,13 @@ bool DecodeMonitor(const unsigned char* d,int len,MonitorData& out) {
         m.syncLossReason=d[56]; m.syncLossTooth=d[57]; m.firstInhibit=word(d+58);
         m.captureResyncs=word(d+60); m.captureOverruns=word(d+62);
     }
-    if(len==72) {
+    if(len>=72) {
         m.outputDetailAvailable=true; m.tripSource=d[64]; m.latchClears=d[65];
         m.coilTimeouts=word(d+66); m.injectorClamps=word(d+68); m.lateEvents=word(d+70);
+    }
+    if(len==76) {
+        m.v6Available=true; m.oxygenMv=word(d+72);
+        m.adjustedTargetAfr=d[74]*0.1f; m.knockFallback=(d[75]&1)!=0;
     }
     if(m.cellRpm>14 || m.cellLoad>14 || m.tps>100) { out.valid=false; return false; }
     m.valid=true; out=m; return true;
@@ -140,7 +144,19 @@ bool EcuProtocol::parseMonitorResponse(const unsigned char* d,int len) {
     return DecodeMonitor(d,len,monitorParseTarget ? *monitorParseTarget : monitor);
 }
 bool EcuProtocol::readMonitor(MonitorData& out) {
-    unsigned char b[72];
+    unsigned char b[76];
+    if(!liveV6Unsupported && !liveV5Unsupported && !liveV4Unsupported) {
+        const unsigned char request[]={CMD_MONITOR,6};
+        const int n=transact(request,2,b,sizeof(b));
+        if(n==76 || n==72) {
+            // A version 5 answer is usable as it is; keep asking for version 5.
+            if(DecodeMonitor(b,n,out)) { if(n==72) liveV6Unsupported=true; return true; }
+            lastFailure=LINK_DECODE; return false;
+        }
+        // Firmware without live frame 6 answers an unknown request with one status byte.
+        if(n!=1) { out.valid=false; if(n>=0) lastFailure=LINK_DECODE; return false; }
+        liveV6Unsupported=true;
+    }
     if(!liveV5Unsupported && !liveV4Unsupported) {
         const unsigned char request[]={CMD_MONITOR,5};
         const int n=transact(request,2,b,sizeof(b));

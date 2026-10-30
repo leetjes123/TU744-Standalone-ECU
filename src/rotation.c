@@ -69,9 +69,16 @@ u8 rotation_edge(u32 stamp) SHARED {
     } else {
         if (ecu.rotation.state != ROT_UNSYNCED &&
             (ecu.rotation.tooth >= 57 || irregular)) {
-            ecu.rotation.losses++;
-            ecu.rotation.loss_reason = irregular ? ROT_LOSS_IRREGULAR : ROT_LOSS_GAP_MISSING;
-            ecu.rotation.loss_tooth = ecu.rotation.tooth;
+            /* Count losses of an asserted angle only: acquisition has none to
+               lose. A slowdown past 1.8 tooth periods while not RUNNING is a
+               stopping (or stalling, rocking) crank, not a pattern fault;
+               sync still drops (log nieuwedag.csv: 4 losses at 0 rpm). */
+            if (ecu.rotation.state == ROT_VALID &&
+                !(irregular && dt > normal && ecu.control.mode != ENGINE_RUNNING)) {
+                ecu.rotation.losses++;
+                ecu.rotation.loss_reason = irregular ? ROT_LOSS_IRREGULAR : ROT_LOSS_GAP_MISSING;
+                ecu.rotation.loss_tooth = ecu.rotation.tooth;
+            }
             ecu.rotation.epoch++;
             ecu.rotation.state = ROT_UNSYNCED;
             ecu.rotation.have_gap = 0;

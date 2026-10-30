@@ -1,7 +1,8 @@
 Not run or known failing for this package:
-- target simulations of the final binary (the run on the previous build passed; the final change only removed the idle speed condition and floor)
-- bench and engine validation of the cranking dwell, coil watchdog, stall recovery and the new idle settings
-- Tuning Wizard 0.0.7 against a real ECU (inhibit banner, live frame 5, developer tab)
+- target simulations not repeated on the 2026-10-30 binary: audit, faults, reset, flash, firmware update, knock boot, foreground and uVision (OEM scheduler, scheduler regressions, output closure, fuel, knock and protocol passed)
+- bench and engine validation of the 2026-10-30 changes: injection window and late start, rpm dip and start flare, deadline pump/heater behaviour, knock fallback retard
+- Tuning Wizard 0.0.8 against a real ECU (live frame 6 and its log channels)
 - Keil uVision native knock ADC completion (simulator-blocked in the installed version; the completion model passes)
+- Known failing, not caused by 0.0.8: tests/test_iac_hold.py still expects the 250-tick hold-late bound; HOLD_LATE_TICKS is 1250 since 0.0.5, which stops build.py oem before test_protocol.py (run on its own, it passes)
 - Known failing, not caused by 0.0.8: tests/test_lifecycle_target.py expects wideband policy 0 to disable the wideband; the firmware has treated policy 0 as direct (trusted when the sample is valid) since 0.0.2
 - Known failing, not caused by 0.0.8: the synthetic fixture tune of tests/test_foreground_target.py fails validation (cal_valid 0, also on 0.0.5-0.0.7); foreground runs boot the release binary with --image instead

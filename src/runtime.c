@@ -88,6 +88,10 @@ void controls_update(u32 now, const Rotation *r) {
     idle_update(now, dt, r, c);
     acceleration_update(now, dt, r->rpm, c);
     fuel_plan(now, r, c, &p);
+    s->plan_pulse_us = p.pulse_us;
+    s->plan_advance10 = p.advance10;
+    s->plan_fuel_cut = p.fuel_cut;
+    s->plan_spark_cut = p.spark_cut;
     /* Recover conditions and publish the complete replacement atomically.
        Clearing an inhibit earlier exposes the obsolete plan to the timer,
        which can latch STALE and revoke this still-in-progress publication. */

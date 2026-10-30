@@ -6,6 +6,8 @@
 #include "firmware_flash.h"
 #include "autotune.h"
 #include "diagnostics.h"
+#include "monitor_channels.h"
+#include <cmath>
 #include <windows.h>
 #include <cstdio>
 #include <cstdlib>
@@ -138,7 +140,7 @@ int main() {
             return actual(data,n,out,cap,timeout);
         };
         CHECK(old.readMonitor(m) && m.valid && m.knockAvailable && !m.detailAvailable && old.liveV4Unsupported);
-        CHECK(old.readMonitor(m) && v4Requests==2 && v3Requests==2); /* [13,5] then [13,4], once */
+        CHECK(old.readMonitor(m) && v4Requests==3 && v3Requests==2); /* [13,6], [13,5], [13,4], once */
     }
     // Firmware 0.0.8 version 5 frame: output trip source and per-event output faults.
     reset(); CHECK(ecu.readMonitor(m) && m.outputDetailAvailable && m.detailAvailable && !ecu.liveV5Unsupported);
@@ -155,11 +157,34 @@ int main() {
     {
         int v5Requests=0;
         EcuProtocol old; old.exchange=[&](const unsigned char* data,int n,unsigned char* out,int cap,int timeout) {
-            if(n==2 && data[0]==0x13 && data[1]==5) { ++v5Requests; out[0]=1; return 1; }
+            if(n==2 && data[0]==0x13 && data[1]>=5) { if(data[1]==5) ++v5Requests; out[0]=1; return 1; }
             return actual(data,n,out,cap,timeout);
         };
         CHECK(old.readMonitor(m) && m.detailAvailable && !m.outputDetailAvailable && old.liveV5Unsupported);
         CHECK(old.readMonitor(m) && v5Requests==1 && !old.liveV4Unsupported);
+    }
+    // Firmware 0.0.8 version 6 frame: full-range oxygen input, adjusted target, knock fallback.
+    reset(); CHECK(ecu.readMonitor(m) && m.v6Available && m.outputDetailAvailable && !ecu.liveV6Unsupported);
+    {
+        unsigned char v6Frame[76]={}; v6Frame[0]=6; v6Frame[11]=255; v6Frame[12]=147;
+        v6Frame[72]=0x0d; v6Frame[73]=0xde; v6Frame[74]=100; v6Frame[75]=1;
+        CHECK(DecodeMonitor(v6Frame,76,m) && m.v6Available && m.outputDetailAvailable);
+        CHECK(m.oxygenMv==3550 && std::abs(m.adjustedTargetAfr-10.0f)<.001 && m.knockFallback);
+        CHECK(MonitorSignalValue(SIG_TARGET_AFR_ADJUSTED,m)==m.adjustedTargetAfr);
+        CHECK(!DecodeMonitor(v6Frame,72,m)); v6Frame[0]=5; CHECK(!DecodeMonitor(v6Frame,76,m));
+        unsigned char v5Frame[72]={}; v5Frame[0]=5; v5Frame[11]=255;
+        CHECK(DecodeMonitor(v5Frame,72,m) && !m.v6Available && m.oxygenMv==1275);
+        CHECK(std::isnan(MonitorSignalValue(SIG_KNOCK_FALLBACK,m)));
+    }
+    // Firmware 0.0.8 rejects [13,6]; the Wizard keeps version 5 detail, asking once.
+    {
+        int v6Requests=0;
+        EcuProtocol old; old.exchange=[&](const unsigned char* data,int n,unsigned char* out,int cap,int timeout) {
+            if(n==2 && data[0]==0x13 && data[1]==6) { ++v6Requests; out[0]=1; return 1; }
+            return actual(data,n,out,cap,timeout);
+        };
+        CHECK(old.readMonitor(m) && m.outputDetailAvailable && !m.v6Available && old.liveV6Unsupported);
+        CHECK(old.readMonitor(m) && v6Requests==1 && !old.liveV5Unsupported);
     }
     // Timing health (command 2F 02) from the firmware, and the lost-edge finder.
     {
